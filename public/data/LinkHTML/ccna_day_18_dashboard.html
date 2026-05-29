@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 18: VLANs (Part 3) - Inter-VLAN Routing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 18: VLANs (Pt 3)
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">Inter-VLAN Routing: ROAS & SVIs</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Core Problem -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🚧</span>
+                <h2 class="text-2xl font-bold text-slate-100">The VLAN Boundary</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">VLANs completely isolate Layer 2 broadcast domains. If PC1 in VLAN 10 wants to talk to PC2 in VLAN 20, a standard Layer 2 switch cannot forward that traffic.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-rose-500">
+                    <h3 class="font-bold text-rose-400 mb-1">The Layer 3 Requirement</h3>
+                    <p class="text-slate-400">To move traffic <em>between</em> different subnets/VLANs, you absolutely must have a Layer 3 routing process. We call this <strong>Inter-VLAN Routing</strong>.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Method 1: Legacy (Router per VLAN)</h3>
+                    <p class="text-slate-400">Historically, you'd run a physical cable from the switch to the router for <em>every single VLAN</em>. Highly inefficient, wastes router ports, and doesn't scale.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Modern Methods</h3>
+                    <p class="text-slate-400">We solve this today using two primary designs: <strong>Router-on-a-Stick (ROAS)</strong> or <strong>Multilayer (L3) Switching</strong>.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Router-on-a-Stick (ROAS) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🍭</span>
+                <h2 class="text-2xl font-bold text-slate-100">Router-on-a-Stick (ROAS)</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">ROAS uses a <strong>single physical link</strong> between the Switch and the Router, configured as an 802.1Q Trunk.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-400">
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-orange-400 block mb-1">Subinterfaces</strong>
+                    Instead of assigning an IP to the physical router interface (like G0/0), we divide it into logical subinterfaces (like G0/0.10 and G0/0.20). Each subinterface acts as the default gateway for one specific VLAN.
+                </div>
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-orange-400 block mb-1">The Switch Side</strong>
+                    The switch port connected to the router MUST be configured as a <strong class="text-cyan-400">Trunk port</strong>, allowing all necessary VLANs to pass up to the router.
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. Multilayer Switching (SVIs) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 border-l-4 border-l-purple-500 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🎛️</span>
+                <h2 class="text-2xl font-bold text-slate-100">Multilayer Switching & SVIs</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">A Layer 3 Switch (Multilayer Switch) can perform hardware-based routing internally, making it much faster than ROAS. We don't need a separate physical router.</p>
+            
+            <ul class="space-y-3 text-sm text-slate-400">
+                <li><strong class="text-purple-400">Switch Virtual Interface (SVI):</strong> A logical, virtual interface built inside the switch (e.g., <code class="text-slate-300 bg-slate-900 px-1">interface vlan 10</code>). It acts as the Layer 3 default gateway for devices in that VLAN.</li>
+                <li><strong class="text-purple-400">IP Routing:</strong> By default, Cisco switches only perform Layer 2 switching. You must explicitly turn on the routing engine using the global command <code class="text-yellow-300 bg-slate-900 px-1">ip routing</code>.</li>
+                <li><strong class="text-purple-400">Routed Ports:</strong> You can also turn a physical switch port into a router port (removing its Layer 2 switching ability) by using the <code class="text-slate-300 bg-slate-900 px-1">no switchport</code> command.</li>
+            </ul>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The Office Building</strong>
+                    <p class="text-slate-400">
+                        <strong class="text-orange-400">ROAS:</strong> Every floor (VLAN) must go all the way down to the lobby receptionist (Router) to send a message to another floor. Bottleneck!<br><br>
+                        <strong class="text-purple-400">L3 Switch:</strong> Every single floor has its own local receptionist (SVI). Much faster internal communication!
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. CLI Command Memorization (ROAS) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ ROAS Config (Router)
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# interface g0/0</span>
+                        <span class="text-yellow-300">Router(config-if)# no shutdown</span>
+                        <span class="text-slate-400 text-xs mt-1">Power on the main physical interface (NO IP address goes here).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# interface g0/0.10</span>
+                        <span class="text-slate-400 text-xs mt-1">Create subinterface. (Matching the VLAN ID is best practice).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-rose-500 rounded"></div>
+                        <span class="text-yellow-300">Router(config-subif)# encapsulation dot1q 10</span>
+                        <span class="text-slate-400 text-xs mt-1"><strong>CRITICAL:</strong> You MUST specify the VLAN tagging (dot1q) before it will accept an IP address!</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router(config-subif)# ip address 192.168.10.1 255.255.255.0</span>
+                        <span class="text-slate-400 text-xs mt-1">Assign the default gateway IP.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. CLI Command Memorization (SVI) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ L3 Switch Config (SVIs)
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-rose-500 rounded"></div>
+                        <span class="text-yellow-300">Switch(config)# ip routing</span>
+                        <span class="text-slate-400 text-xs mt-1"><strong>CRITICAL:</strong> Turns on the routing engine. If you forget this, the SVIs will function locally but won't route traffic between them!</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config)# vlan 20</span>
+                        <span class="text-slate-400 text-xs mt-1">Create the L2 VLAN first.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config)# interface vlan 20</span>
+                        <span class="text-slate-400 text-xs mt-1">Create the L3 SVI.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Switch(config-if)# ip address 192.168.20.1 255.255.255.0</span>
+                        <span class="text-yellow-300">Switch(config-if)# no shutdown</span>
+                        <span class="text-slate-400 text-xs mt-1">Assign gateway IP and enable.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">"IP routing not enabled"</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Symptom:</strong> SVIs are 'up/up', PCs can ping their gateway, but they cannot ping a PC in another VLAN.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> You forgot to type <code class="text-cyan-400">ip routing</code> in global config mode on the L3 switch.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">ROAS Ping Fails</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Fix:</strong> Check the switch port connected to the router. It must be explicitly configured as <code class="text-cyan-400">switchport mode trunk</code>.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 8. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: encapsulation dot1q [vlan-id]">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. When configuring a Router-on-a-Stick subinterface, which command must be entered before the router will accept an `ip address` command?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">encapsulation dot1q [vlan-id]</code>. The router must know which 802.1Q VLAN tag this subinterface is responsible for before it will assign an IP to it.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A Trunk port.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. In a ROAS topology, what operational mode MUST the switch port connecting to the router be in?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A <strong>Trunk port</strong> (<code class="text-cyan-400">switchport mode trunk</code>). It must carry tagged frames for multiple VLANs up to the router's subinterfaces.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: ip routing">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. You have configured SVIs for VLAN 10 and VLAN 20 on a Multilayer Switch. What global command is required for the switch to actually route packets between them?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">ip routing</code>
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: SVI (Switch Virtual Interface).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. What does the acronym SVI stand for, and what is its primary purpose in inter-VLAN routing?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Switch Virtual Interface</strong>. It is a logical Layer 3 interface inside a switch that acts as the Default Gateway for all hosts in that specific VLAN.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

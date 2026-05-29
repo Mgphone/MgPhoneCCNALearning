@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 56: Wireless Architectures</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 56: Wireless Architectures
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">APs, WLCs, Split-MAC & CAPWAP</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. Autonomous vs Lightweight -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🎛️</span>
+                <h2 class="text-2xl font-bold text-slate-100">AP Architecture Types</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Managing a wireless network with 5 Access Points is easy. Managing one with 500 is impossible without changing the architecture.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Autonomous APs ("Fat APs")</h3>
+                    <p class="text-slate-400">Standalone devices. Every single AP must be individually configured with SSIDs, security policies, and RF channels. It performs all management and real-time functions itself. <em>Does not scale well.</em></p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Lightweight APs (LAPs)</h3>
+                    <p class="text-slate-400">"Thin APs". They have zero configuration on them. They boot up, find a <strong>Wireless LAN Controller (WLC)</strong>, and download their configuration. The WLC acts as the central brain for hundreds of LAPs.</p>
+                </div>
+
+                <div class="p-3 bg-emerald-900/20 rounded border border-emerald-500/50">
+                    <strong class="text-emerald-400 block mb-1">The Paradigm Shift</strong>
+                    <span class="text-slate-300 text-xs">With LAPs, you no longer configure APs; you configure the WLC, and the WLC pushes the policy to the entire network instantly.</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. The Split-MAC Architecture -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2 border-l-4 border-l-purple-500">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🧠</span>
+                <h2 class="text-2xl font-bold text-slate-100">Split-MAC Architecture</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">In a Lightweight deployment, the duties of the MAC layer are split between the AP and the WLC.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-cyan-400 mb-2 border-b border-slate-700 pb-1">LAP (Real-Time Functions)</h3>
+                    <p class="text-slate-300 text-xs mb-2">The physical AP handles anything that requires immediate, millisecond response times over the airwaves.</p>
+                    <ul class="list-disc pl-4 text-slate-400 text-xs space-y-1">
+                        <li>Transmitting Beacons and Probes.</li>
+                        <li>CSMA/CA and MAC acknowledgments.</li>
+                        <li>Packet encryption/decryption (so plain text goes to WLC).</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-purple-400 mb-2 border-b border-slate-700 pb-1">WLC (Management Functions)</h3>
+                    <p class="text-slate-300 text-xs mb-2">The Controller handles the heavy lifting, security, and global coordination.</p>
+                    <ul class="list-disc pl-4 text-slate-400 text-xs space-y-1">
+                        <li>Client Authentication (e.g., 802.1X/RADIUS).</li>
+                        <li>Roaming coordination between APs.</li>
+                        <li>Radio Frequency Management (RRM) - Auto-tuning power and channels.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. CAPWAP Tunnels -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🚇 CAPWAP Protocol
+            </h2>
+            <p class="text-slate-300 text-sm mb-3"><strong>Control and Provisioning of Wireless Access Points.</strong> It is the protocol that bridges the LAP and the WLC. It builds two separate UDP tunnels.</p>
+            
+            <div class="space-y-3 text-sm font-mono">
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-rose-400 block mb-1">CAPWAP Control (UDP 5246)</strong>
+                    <p class="text-slate-400 text-xs">Used to manage the AP. <strong>Always encrypted via DTLS</strong> (Datagram Transport Layer Security). Protects configuration and passwords.</p>
+                </div>
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-emerald-400 block mb-1">CAPWAP Data (UDP 5247)</strong>
+                    <p class="text-slate-400 text-xs">Used to tunnel the actual user traffic (like web browsing) from the AP to the WLC. <strong>Unencrypted by default</strong> (can be enabled if hardware supports it).</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 4. WLC Deployment Models -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-blue-500 transition-colors duration-300 md:col-span-1 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-blue-400 mb-4 flex items-center gap-2">
+                🏢 WLC Deployment Models
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">Where should the WLC sit physically? Cisco outlines four primary deployment models.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-[#0d1117] p-3 rounded border-t-4 border-t-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">1. Centralized (Unified)</h3>
+                    <p class="text-slate-400 text-xs">A hardware appliance sitting in the core data center. Supports thousands of APs. All client traffic from every AP is tunneled all the way back to this WLC before hitting the LAN.</p>
+                </div>
+                
+                <div class="bg-[#0d1117] p-3 rounded border-t-4 border-t-rose-500">
+                    <h3 class="font-bold text-rose-400 mb-1">2. FlexConnect (Branch)</h3>
+                    <p class="text-slate-400 text-xs">Used for remote branches connected over slow WANs. APs get config from a central WLC, but can drop client traffic <em>locally</em> onto the branch switch without tunneling it to HQ. Has survivability if WAN drops.</p>
+                </div>
+
+                <div class="bg-[#0d1117] p-3 rounded border-t-4 border-t-yellow-400">
+                    <h3 class="font-bold text-yellow-400 mb-1">3. Embedded</h3>
+                    <p class="text-slate-400 text-xs">The WLC software is built directly into an access-layer switch (e.g., Catalyst 9300). Used for very small campuses (~200 APs max) to save money on buying a dedicated appliance.</p>
+                </div>
+
+                <div class="bg-[#0d1117] p-3 rounded border-t-4 border-t-purple-400">
+                    <h3 class="font-bold text-purple-400 mb-1">4. Cloud (Meraki)</h3>
+                    <p class="text-slate-400 text-xs">WLC is hosted as a service in the public cloud. APs connect over the internet to get their config. Extremely simple GUI, scales infinitely.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">CAPWAP Ports Mnemonic</strong>
+                    <p class="text-slate-400 font-mono text-xs">
+                        524<strong class="text-rose-400 font-bold text-base">6</strong> = <strong class="text-rose-400 font-bold">C</strong>ontrol (<strong class="text-slate-200">C</strong> is a round letter, like <strong class="text-slate-200">6</strong>)<br>
+                        524<strong class="text-emerald-400 font-bold text-base">7</strong> = <strong class="text-emerald-400 font-bold">D</strong>ata (<strong class="text-slate-200">D</strong> is an angular letter, like <strong class="text-slate-200">7</strong>)
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">FlexConnect Analogy</strong>
+                    <p class="text-slate-400">
+                        Think of FlexConnect like a remote retail store. The store manager (WLC) is at HQ. The cashier (AP) usually asks the manager what to do. If the phone lines (WAN) go down, the cashier has permission to keep checking out local customers (Local Switching) until the manager returns.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A Wireless LAN Controller (WLC).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. A Lightweight Access Point (LAP) cannot function on its own. What central device must it discover and tunnel traffic to?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A <strong>Wireless LAN Controller (WLC)</strong>.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Control traffic uses UDP 5246 and is encrypted via DTLS. Data traffic uses UDP 5247 and is unencrypted by default.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. CAPWAP establishes two UDP tunnels. What are the port numbers, and which one is encrypted by default?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        Control traffic uses <strong>UDP 5246</strong> and is <strong>always encrypted via DTLS</strong>. Data traffic uses <strong>UDP 5247</strong> and is unencrypted by default.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: The WLC. (The AP handles real-time tasks like beacons and ACKs).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. In the Split-MAC architecture, which device is responsible for authenticating clients via 802.1X and managing roaming?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        The <strong>Wireless LAN Controller (WLC)</strong>. The AP only handles real-time airwave tasks.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: FlexConnect.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. Which WLC deployment model allows branch office APs to drop user traffic directly onto the local switch, maintaining functionality even if the WAN link to HQ goes down?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>FlexConnect</strong>.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

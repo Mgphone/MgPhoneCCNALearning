@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 54: Virtualization (Part 2) - Containers & NFV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 54: Virtualization (Pt 2)
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">Containers, NFV, VRFs, and vSwitches</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. Containers Under the Hood -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🐳</span>
+                <h2 class="text-2xl font-bold text-slate-100">Containers Under the Hood</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">We know Containers share the Host OS Kernel instead of booting a full Guest OS. But how do they stay secure and isolated from each other while sharing the exact same core OS?</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Namespaces (Isolation)</h3>
+                    <p class="text-slate-400">A Linux feature that partitions kernel resources. It ensures that a container only sees its own processes, its own virtual network interfaces, and its own file system. Container A literally cannot "see" Container B.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Cgroups (Control Groups)</h3>
+                    <p class="text-slate-400">Limits resource usage. Cgroups ensure that one container doesn't consume 100% of the host's CPU or RAM, preventing "noisy neighbor" scenarios and stabilizing the host.</p>
+                </div>
+
+                <div class="bg-[#0d1117] p-3 rounded border border-slate-600">
+                    <h3 class="font-bold text-blue-400 mb-1">The Container Engine</h3>
+                    <p class="text-slate-400 text-xs">Software like <strong>Docker</strong> acts as the engine. It handles building the images, deploying them, and configuring the namespaces and cgroups so you don't have to do it manually.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Virtual Networking (vSwitches) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔀</span>
+                <h2 class="text-2xl font-bold text-slate-100">Virtual Switches (vSwitch)</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">If you have 20 VMs or 100 Containers running on a single physical server, how do they talk to the network? A server only has one or two physical Network Interface Cards (pNICs)!</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-emerald-400 mb-2 border-b border-slate-700 pb-1">The vSwitch Architecture</h3>
+                    <ul class="list-disc pl-4 text-slate-400 text-xs space-y-2">
+                        <li>The Hypervisor (or Container Engine) creates a software-based switch inside the server.</li>
+                        <li>VMs are given <strong>vNICs</strong> (virtual NICs) that cable directly into the vSwitch.</li>
+                        <li>The vSwitch connects to the physical <strong>pNIC</strong> (acting as an uplink/trunk) to reach the physical Cisco network.</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-emerald-400 mb-2 border-b border-slate-700 pb-1">Docker Network Modes</h3>
+                    <ul class="list-disc pl-4 text-slate-400 text-xs space-y-2">
+                        <li><strong class="text-cyan-400">Bridge (Default):</strong> Creates an internal private NAT network. Containers can talk to each other, but the outside world must use port forwarding to reach them.</li>
+                        <li><strong class="text-rose-400">Host:</strong> Bypasses the vSwitch. The container binds directly to the Host's IP and ports.</li>
+                        <li><strong class="text-slate-500">None:</strong> Total isolation. No network access at all.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. Network Functions Virtualization (NFV) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 border-l-4 border-l-purple-500 md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🖥️ NFV
+            </h2>
+            <p class="text-slate-300 text-sm mb-3"><strong>Network Functions Virtualization</strong> is the concept of taking traditional, dedicated hardware appliances (Routers, Firewalls) and turning them into Virtual Machines.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-purple-400 block mb-1">Cisco NFV Examples</strong>
+                    <ul class="list-disc pl-4 text-slate-400 text-xs space-y-1 mt-1 font-mono">
+                        <li><strong>ASAv:</strong> Cisco ASA Firewall as a VM.</li>
+                        <li><strong>CSR 1000v / Catalyst 8000v:</strong> Full Cisco IOS-XE Routers running as VMs.</li>
+                        <li><strong>WLCv:</strong> Virtual Wireless LAN Controller.</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-emerald-400 block mb-1">The Benefit</strong>
+                    <p class="text-slate-400 text-xs">Instead of shipping physical hardware to a new branch office, you ship a generic x86 server (Cisco ENCS) and simply spin up a Router VM and a Firewall VM remotely!</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 4. Virtual Routing and Forwarding (VRF) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-yellow-400 transition-colors duration-300 md:col-span-1 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                🔀 VRF (Virtual Routing and Forwarding)
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">Just as VLANs virtualize a Layer 2 Switch into multiple isolated switches, <strong>VRFs virtualize a Layer 3 Router</strong> into multiple isolated routing tables.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4 text-left">
+                <div class="bg-[#0d1117] p-4 rounded border-t-4 border-t-yellow-400">
+                    <h3 class="font-bold text-yellow-400 mb-1">How it Works</h3>
+                    <p class="text-slate-400 text-xs mb-2">By default, a router has one Global Routing Table. With VRFs, you create multiple tables (e.g., VRF RED, VRF BLUE). Interfaces are assigned to specific VRFs.</p>
+                    <p class="text-slate-400 text-xs font-semibold text-rose-400">Traffic in VRF RED cannot cross over or route into VRF BLUE. They are completely segregated.</p>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border-t-4 border-t-orange-400">
+                    <h3 class="font-bold text-orange-400 mb-1">The Power of VRFs</h3>
+                    <p class="text-slate-400 text-xs mb-2">Because the routing tables are 100% isolated, <strong>you can reuse the exact same IP subnets!</strong></p>
+                    <p class="text-slate-400 text-xs">VRF RED can use `10.0.0.0/24` and VRF BLUE can also use `10.0.0.0/24` on the exact same physical router without causing an overlap error.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">VLAN vs. VRF</strong>
+                    <p class="text-slate-400">
+                        <strong class="text-cyan-400">VLAN:</strong> Slices a Switch into multiple isolated Layer 2 Broadcast Domains.<br><br>
+                        <strong class="text-yellow-400">VRF:</strong> Slices a Router into multiple isolated Layer 3 Routing Tables.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">NFV vs SDN</strong>
+                    <p class="text-slate-400">
+                        <strong class="text-purple-400">NFV</strong> virtualizes the network <em>hardware</em> (turning a physical router into a VM).<br>
+                        <strong class="text-emerald-400">SDN</strong> virtualizes the network <em>control</em> (separating the control plane from the data plane).
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Cisco Configuration CLI (VRF Focus) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ VRF Configuration CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# ip vrf GUEST</span>
+                        <span class="text-slate-400 text-xs mt-1">Creates a new Virtual Routing table named 'GUEST'.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-rose-500 rounded"></div>
+                        <span class="text-yellow-300">Router(config)# interface g0/1</span>
+                        <span class="text-yellow-300">Router(config-if)# ip vrf forwarding GUEST</span>
+                        <span class="text-slate-400 text-xs mt-1">Assigns the interface to the VRF. <strong class="text-rose-400">WARNING:</strong> Doing this instantly deletes any IP address currently on the interface! You must reassign the IP afterward.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router# show ip route vrf GUEST</span>
+                        <span class="text-slate-400 text-xs mt-1">Views the routing table specifically for the GUEST VRF (ignores the global table).</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router# ping vrf GUEST 10.1.1.5</span>
+                        <span class="text-slate-400 text-xs mt-1">To ping a device inside a VRF, you must specify the VRF name, otherwise the router checks the global table and fails.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Namespaces and Cgroups.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Which two underlying Linux technologies allow Containers to achieve isolation and resource limiting while sharing a single OS kernel?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Namespaces</strong> (for process/network isolation) and <strong>Cgroups</strong> (for CPU/RAM resource limits).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: NFV (Network Functions Virtualization).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Replacing a physical hardware ASA firewall with an ASAv Virtual Machine running on an ESXi host is an example of what concept?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>NFV</strong> (Network Functions Virtualization).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Overlapping IP Addresses.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. Because VRFs completely isolate routing tables from one another, what specific IP addressing scenario is made possible on a single router?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Overlapping IP Addresses.</strong> You can configure the exact same IP subnet (e.g., 192.168.1.0/24) on two different interfaces, as long as they belong to different VRFs.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Bridge mode.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. What is the default networking mode for Docker containers, which relies on a virtual switch and NAT to communicate externally?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Bridge mode.</strong>
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

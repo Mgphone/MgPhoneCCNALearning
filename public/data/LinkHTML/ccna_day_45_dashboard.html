@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 45: NAT (Dynamic) - Part 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 45: NAT (Pt 2)
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">Dynamic Network Address Translation</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Dynamic Shift -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔄</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Dynamic Shift</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Static NAT is excellent for servers but terrible for standard office employees. You don't want to manually map 500 individual PCs. <strong>Dynamic NAT</strong> automates the translation process.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Pool-Based Allocation</h3>
+                    <p class="text-slate-400">Instead of hardcoding IPs, you configure a range (a "Pool") of public IP addresses on the router. When an internal PC wants to access the internet, the router pulls an available public IP from the pool and assigns it dynamically.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Temporary Bindings</h3>
+                    <p class="text-slate-400">Unlike Static NAT, the mapping in the NAT table is temporary. Once the host finishes its session and the idle timer expires, the router clears the binding and returns the public IP to the pool.</p>
+                </div>
+
+                <div class="p-3 bg-blue-900/20 rounded border border-blue-500/50">
+                    <strong class="text-blue-400 block mb-1">Outbound Only</strong>
+                    <span class="text-slate-300 text-xs">Dynamic NAT relies on the internal host initiating the connection. An external user on the internet cannot reach inside to a PC because there is no static mapping telling the router where to send the inbound traffic.</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. The Dynamic NAT Lifecycle -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 border-l-4 border-l-orange-500 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">⚙️</span>
+                <h2 class="text-2xl font-bold text-slate-100">The NAT Lifecycle</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">How does the router process a packet requesting dynamic translation?</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600 relative overflow-hidden">
+                    <div class="absolute -right-2 -bottom-2 text-6xl opacity-10 font-bold text-rose-400">1</div>
+                    <h3 class="font-bold text-rose-400 mb-2 border-b border-slate-700 pb-1">Traffic Arrival & Matching</h3>
+                    <p class="text-slate-300 text-xs">A host sends a packet to the internet. The router intercepts it and checks its configured <code class="text-cyan-400">access-list</code>. If the host's Source IP matches the ACL, it proceeds to translation.</p>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600 relative overflow-hidden">
+                    <div class="absolute -right-2 -bottom-2 text-6xl opacity-10 font-bold text-emerald-400">2</div>
+                    <h3 class="font-bold text-emerald-400 mb-2 border-b border-slate-700 pb-1">Pool Selection & Translation</h3>
+                    <p class="text-slate-300 text-xs">The router finds an unused Public IP from the <code class="text-cyan-400">ip nat pool</code>. It logs the entry in the NAT table (`Inside Local` → `Inside Global`) and forwards the translated packet.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. Exam Gotchas -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🛑 The "Gotchas" (Exam Focus)
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">Dynamic NAT has a massive constraint that you must understand for the CCNA.</p>
+            
+            <ul class="space-y-4 text-sm text-slate-400">
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-purple-400 block mb-1 text-base">The 1:1 Constraint</strong>
+                    <p class="text-xs">It is a huge misconception that Dynamic NAT shares a public IP. <strong>It does not!</strong> Dynamic NAT is still strictly a 1-to-1 mapping. If you have 11 public IPs in your pool, only 11 users can access the internet simultaneously.</p>
+                </li>
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-rose-400 block mb-1 text-base">Pool Exhaustion</strong>
+                    <p class="text-xs">If your pool has 10 IPs and the 11th user tries to open a webpage, the router will drop their traffic and log a "%NAT: Pool exhausted" error. <br><br><em>This exact limitation is why we must use NAT Overload (PAT) in modern networks.</em></p>
+                </li>
+            </ul>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The Bowling Shoe Rental</strong>
+                    <p class="text-slate-400">
+                        Dynamic NAT is like a bowling alley renting out shoes (Public IPs). If they have 50 pairs of shoes, only 50 people can bowl. If a 51st person shows up, they must wait until someone leaves and returns a pair.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Interest & Resources</strong>
+                    <p class="text-slate-400">
+                        To configure Dynamic NAT, you need two things: The <strong>Interest</strong> (The Access-List defining who is allowed) and the <strong>Resource</strong> (The NAT Pool defining what IPs they get).
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Cisco Configuration CLI -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Dynamic NAT Configuration CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-emerald-500 rounded"></div>
+                        <span class="text-slate-400 text-[10px] font-sans">Step 1: Define the range of available Public IPs</span>
+                        <span class="text-yellow-300">Router(config)# ip nat pool PUBLIC_POOL 203.0.113.5 203.0.113.15 netmask 255.255.255.240</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Creates a pool named 'PUBLIC_POOL' containing 11 usable public IPs.</span>
+                    </div>
+                    
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-cyan-500 rounded"></div>
+                        <span class="text-slate-400 text-[10px] font-sans">Step 2: Define who is allowed to use those IPs</span>
+                        <span class="text-yellow-300">Router(config)# access-list 10 permit 192.168.10.0 0.0.0.255</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Creates a standard ACL permitting the entire internal 192.168.10.x subnet.</span>
+                    </div>
+
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-purple-500 rounded"></div>
+                        <span class="text-slate-400 text-[10px] font-sans">Step 3: Link the ACL to the Pool</span>
+                        <span class="text-yellow-300">Router(config)# ip nat inside source list 10 pool PUBLIC_POOL</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Tells the router: "If traffic matches list 10, translate it using an IP from PUBLIC_POOL."</span>
+                    </div>
+                    
+                    <div class="flex flex-col">
+                        <span class="text-slate-400 text-[10px] font-sans">Step 4: Assign Interfaces (Crucial!)</span>
+                        <span class="text-yellow-300">Router(config-if)# ip nat inside <span class="text-slate-400 font-sans">(on the LAN port)</span></span>
+                        <span class="text-yellow-300">Router(config-if)# ip nat outside <span class="text-slate-400 font-sans">(on the WAN port)</span></span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Troubleshooting & Verification -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Verification CLI
+            </h2>
+            <div class="space-y-4 font-mono text-xs">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <p class="text-yellow-300">show ip nat translations</p>
+                    <p class="text-slate-400 mt-1 font-sans">Displays the active temporary mappings currently in the router's memory.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <p class="text-yellow-300">show ip nat statistics</p>
+                    <p class="text-slate-400 mt-1 font-sans">Highly useful. Shows the total number of hits, misses, and how many IPs are currently in use within your pool.</p>
+                </div>
+                <div class="border-l-4 border-rose-500 pl-4">
+                    <p class="text-yellow-300">clear ip nat translation *</p>
+                    <p class="text-slate-400 mt-1 font-sans"><strong>Danger:</strong> Destroys all current active NAT mappings, effectively disconnecting all current users from the internet. Use with caution.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: No. Dynamic NAT still enforces a strict 1-to-1 ratio.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Does Dynamic NAT allow multiple internal hosts to share a single public IP address simultaneously?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>No.</strong> Dynamic NAT still enforces a strict 1-to-1 ratio. It simply automates the assignment from a pool. To share a single IP, you must use NAT Overload (PAT).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: An Access Control List (ACL) and a NAT Pool.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Which two specific configuration components must be linked together in the `ip nat inside source...` command to make Dynamic NAT work?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        An <strong>Access Control List (list)</strong> to define who is permitted, and a <strong>NAT Pool (pool)</strong> to define what public IPs they are assigned.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Pool Exhaustion. The router will drop the traffic.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. What condition occurs when 50 internal hosts attempt to access the internet through a Dynamic NAT pool that contains only 10 public IP addresses?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Pool Exhaustion.</strong> The first 10 users will get online, and the remaining 40 users will have their traffic dropped until an IP is freed up.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: clear ip nat translation *">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. Which CLI command completely flushes all active dynamic NAT mappings from the router's memory?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">clear ip nat translation *</code>
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

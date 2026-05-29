@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 19: DTP & VTP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 19: DTP & VTP
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. DTP Overview -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🤝</span>
+                <h2 class="text-2xl font-bold text-slate-100">DTP (Dynamic Trunking)</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Dynamic Trunking Protocol is a Cisco-proprietary protocol that automatically negotiates whether a link should be an access port or a trunk port.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-[#0d1117] p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">DTP Modes</h3>
+                    <ul class="list-disc pl-4 text-slate-400 space-y-1">
+                        <li><strong class="text-slate-200">Dynamic Desirable:</strong> Actively tries to form a trunk. Sends DTP frames.</li>
+                        <li><strong class="text-slate-200">Dynamic Auto:</strong> Passively waits. Will form a trunk only if the other side asks. (Default on modern switches).</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border border-slate-700 text-center">
+                    <p class="font-bold text-slate-200 mb-2 border-b border-slate-700 pb-1">Negotiation Matrix</p>
+                    <table class="w-full text-xs text-slate-400">
+                        <tr><td class="text-right pr-2">Auto + Auto =</td><td class="text-left font-bold text-rose-400 pl-2">Access</td></tr>
+                        <tr><td class="text-right pr-2">Desirable + Auto =</td><td class="text-left font-bold text-emerald-400 pl-2">Trunk</td></tr>
+                        <tr><td class="text-right pr-2">Desirable + Desirable =</td><td class="text-left font-bold text-emerald-400 pl-2">Trunk</td></tr>
+                        <tr><td class="text-right pr-2">On + Auto/Desirable =</td><td class="text-left font-bold text-emerald-400 pl-2">Trunk</td></tr>
+                    </table>
+                </div>
+
+                <div class="p-3 bg-rose-900/20 rounded border border-rose-500/50">
+                    <strong class="text-rose-400 block mb-1 font-bold">Security Best Practice 🚨</strong>
+                    <span class="text-slate-300 text-xs">Never leave DTP running in a production network. Attackers can spoof DTP frames to negotiate a trunk and perform VLAN Hopping. Hardcode ports as `access` or `trunk` and use `switchport nonegotiate`.</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. VTP Overview & Modes -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📡</span>
+                <h2 class="text-2xl font-bold text-slate-100">VTP (VLAN Trunking Protocol)</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">VTP is a Cisco-proprietary protocol that synchronizes the VLAN database (creation, modification, and deletion of VLANs 1-1005) across all switches in the same VTP domain. It sends updates over Trunk links.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-4">
+                <div class="bg-emerald-900/20 p-4 rounded border border-emerald-500/50">
+                    <h3 class="font-bold text-emerald-400 mb-2 flex items-center gap-2">👑 Server (Default)</h3>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1">
+                        <li><strong>Can</strong> create, modify, delete VLANs.</li>
+                        <li>Sends VTP updates.</li>
+                        <li>Syncs its database with other updates.</li>
+                        <li>Saves VLANs to NVRAM (`vlan.dat`).</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-blue-900/20 p-4 rounded border border-blue-500/50">
+                    <h3 class="font-bold text-blue-400 mb-2 flex items-center gap-2">🎧 Client</h3>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1">
+                        <li><strong>Cannot</strong> create, modify, delete VLANs.</li>
+                        <li>Forwards VTP updates.</li>
+                        <li>Syncs its database with the Server.</li>
+                        <li>Does NOT save VLANs to NVRAM (in older versions).</li>
+                    </ul>
+                </div>
+
+                <div class="bg-purple-900/20 p-4 rounded border border-purple-500/50">
+                    <h3 class="font-bold text-purple-400 mb-2 flex items-center gap-2">👻 Transparent</h3>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1">
+                        <li><strong>Can</strong> create LOCAL VLANs only.</li>
+                        <li><strong>Forwards</strong> updates (acts like a bridge).</li>
+                        <li>Does <strong>NOT</strong> sync its own database.</li>
+                        <li>Saves local VLANs to running-config.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. The Revision Number (The VTP Bomb) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 border-l-4 border-l-orange-500 md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                💣 The Configuration Revision #
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">The Configuration Revision (CR) number is the most important concept in VTP. Every time you add, delete, or modify a VLAN on a VTP Server, the CR number increases by 1.</p>
+            
+            <div class="bg-[#0d1117] p-3 rounded border border-slate-700 text-sm">
+                <p class="text-slate-200 font-bold mb-2 border-b border-slate-700 pb-1">The Rule of the Realm:</p>
+                <p class="text-slate-400 mb-3">Switches will ALWAYS overwrite their own VLAN database if they receive a VTP update with a <strong>HIGHER</strong> revision number than their own, <em>even if they are a VTP Server!</em></p>
+                
+                <h3 class="font-bold text-rose-400">The "VTP Bomb"</h3>
+                <p class="text-slate-400 text-xs mt-1">If you take an old lab switch that has a CR of 500 (with all its VLANs deleted) and plug it into a production network (CR of 40), the entire production network will sync to CR 500 and <strong>delete all their VLANs!</strong></p>
+            </div>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The Office Gossip (VTP)</strong>
+                    <p class="text-slate-400">
+                        <strong class="text-emerald-400">Server:</strong> Creates the rumors and listens to newer ones.<br>
+                        <strong class="text-blue-400">Client:</strong> Just listens and passes them on. Can't start a rumor.<br>
+                        <strong class="text-purple-400">Transparent:</strong> Doesn't care about your drama (won't sync), but will politely pass the note to the next person.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Defusing the Bomb</strong>
+                    <p class="text-slate-400">
+                        To reset a VTP Revision Number to 0 before plugging a switch in: Change the VTP Domain name to a fake name, then change it back. Or, change it to Transparent mode, then back to Server/Client.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ VTP & DTP Configuration
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config)# vtp domain CISCO</span>
+                        <span class="text-slate-400 text-xs mt-1">Sets the VTP domain. (Switches with no domain will automatically adopt the domain name of the first VTP packet they receive!)</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config)# vtp mode {server | client | transparent}</span>
+                        <span class="text-slate-400 text-xs mt-1">Changes the VTP operating mode. Default is server.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config)# vtp password CCNA</span>
+                        <span class="text-slate-400 text-xs mt-1">Sets a password. If set, it MUST match on all switches for updates to sync.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch# show vtp status</span>
+                        <span class="text-slate-400 text-xs mt-1">Critical verification command. Shows VTP Version, Domain Name, Mode, and the <strong>Configuration Revision</strong> number.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Switch# show dtp interface g0/1</span>
+                        <span class="text-slate-400 text-xs mt-1">Shows detailed DTP information for a port, including if it is actively negotiating.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">VLANs aren't syncing</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Check 1:</strong> Are the links between switches actively forming a Trunk? (VTP only travels over trunks).</p>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Check 2:</strong> Does the VTP Domain name match <em>exactly</em> (case-sensitive)?</p>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Check 3:</strong> Is a password configured on one switch but not the other?</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A trunk will form.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Switch A's interface is set to `dynamic desirable`. Switch B's interface is set to `dynamic auto`. Will a trunk successfully form between them?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Yes, a trunk will form.</strong> Switch A actively initiates the negotiation (desirable), and Switch B passively accepts it (auto).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: VTP Transparent Mode.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Which VTP mode allows you to create local VLANs on the switch, but ignores VTP updates from the network while still forwarding them to downstream switches?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>VTP Transparent mode.</strong>
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Because it has a higher Configuration Revision number.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. You plug a lab switch (VTP Server) into your production network (VTP Server). Suddenly, all production VLANs disappear. Why did the production switch overwrite its own database?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        Because the lab switch had a <strong>higher Configuration Revision number</strong>. VTP unconditionally trusts the update with the highest revision number.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Change the VTP Domain name, or temporarily change the mode to Transparent.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. What is the standard administrative method to safely reset a switch's VTP Revision Number back to 0 before connecting it to a network?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        Temporarily change the <strong>VTP Domain name</strong> to a bogus name and change it back, OR change the VTP mode to <strong>Transparent</strong> and then back to Server/Client.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

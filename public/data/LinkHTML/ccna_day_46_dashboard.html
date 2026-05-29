@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 46: QoS & Voice VLANs (Part 1)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 46: QoS (Pt 1)
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">Quality of Service & Voice VLANs</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Need for QoS -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🚦</span>
+                <h2 class="text-2xl font-bold text-slate-100">Why do we need QoS?</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">When network bandwidth is abundant, everything works fine. But when a link gets congested, packets line up in a queue. Without QoS, it's <strong>First-In, First-Out (FIFO)</strong>. A critical voice packet might get stuck behind a massive file download.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Data Traffic (TCP)</h3>
+                    <p class="text-slate-400">Forgiving. If a packet drops, TCP retransmits it. It doesn't matter if an email takes 1 second or 3 seconds to arrive. <br><span class="italic text-xs text-slate-500">Requirements: Low loss, delay is acceptable.</span></p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Voice Traffic (UDP)</h3>
+                    <p class="text-slate-400">Unforgiving. If a voice packet is dropped, it's gone. If it's delayed, the conversation overlaps and echoes. It MUST be placed at the very front of the line. <br><span class="italic text-xs text-slate-500">Requirements: Strict limits on delay, jitter, and loss.</span></p>
+                </div>
+
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-purple-500">
+                    <h3 class="font-bold text-purple-400 mb-1">Video Traffic (UDP)</h3>
+                    <p class="text-slate-400">Similar to voice but requires significantly more bandwidth. Bursty traffic. <br><span class="italic text-xs text-slate-500">Requirements: High bandwidth, strict limits on delay and loss.</span></p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Voice Traffic Characteristics -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 md:col-span-2 border-l-4 border-l-orange-500">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🎙️</span>
+                <h2 class="text-2xl font-bold text-slate-100">Voice Traffic Strict Constraints</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">You must memorize these three specific metrics for the CCNA. Voice is highly sensitive to network congestion.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-4">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600 text-center">
+                    <h3 class="font-bold text-orange-400 mb-2">1. One-Way Delay (Latency)</h3>
+                    <p class="text-3xl font-bold text-white mb-1">≤ 150 ms</p>
+                    <p class="text-slate-400 text-xs">The time it takes a packet to travel from speaker to listener. Above 150ms, people start talking over each other.</p>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600 text-center">
+                    <h3 class="font-bold text-yellow-400 mb-2">2. Jitter</h3>
+                    <p class="text-3xl font-bold text-white mb-1">≤ 30 ms</p>
+                    <p class="text-slate-400 text-xs">The <em>variation</em> in delay. If packet 1 takes 50ms, and packet 2 takes 120ms, the jitter is 70ms. Causes choppy, robotic audio.</p>
+                </div>
+
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600 text-center">
+                    <h3 class="font-bold text-rose-400 mb-2">3. Packet Loss</h3>
+                    <p class="text-3xl font-bold text-white mb-1">≤ 1%</p>
+                    <p class="text-slate-400 text-xs">Since Voice uses UDP (RTP), lost packets are not retransmitted. High loss results in missing syllables or dropped calls.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. Voice VLANs (The Physical Setup) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ☎️ Voice VLAN Mechanics
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">To save on cabling, PCs are usually plugged into the back of the IP Phone, and the IP Phone plugs into the wall jack (Switch).</p>
+            
+            <ul class="space-y-3 text-sm text-slate-400">
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-emerald-400 block mb-1 text-base">The "Mini-Trunk"</strong>
+                    <p class="text-xs">Even though the switchport is configured as an <code class="text-cyan-400">access</code> port, it acts like a miniature trunk, carrying two VLANs.</p>
+                </li>
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-blue-400 block mb-1 text-base">Untagged Data</strong>
+                    <p class="text-xs">The PC sends raw Ethernet frames. The phone acts as a hub for these, passing them straight to the switch. The switch places this untagged traffic into the configured Access (Data) VLAN.</p>
+                </div>
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-rose-400 block mb-1 text-base">Tagged Voice</strong>
+                    <p class="text-xs">The switch uses <strong>CDP (Cisco Discovery Protocol)</strong> to tell the phone which VLAN ID to use for voice. The phone then applies an 802.1Q tag to its own voice packets.</p>
+                </li>
+            </ul>
+        </article>
+
+        <!-- 4. QoS Markings (L2 vs L3) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-1 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🏷️ QoS Markings (Classification)
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">To prioritize traffic, we must first "mark" or "color" the packets so routers and switches know what they are dealing with.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-purple-400 mb-2 border-b border-slate-700 pb-1">Layer 2: Class of Service (CoS)</h3>
+                    <p class="text-slate-400 mb-2">Only exists inside the <strong>802.1Q VLAN Tag</strong>. If a frame has no VLAN tag, it has no CoS! It uses 3 bits, giving 8 values (0-7).</p>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1 font-mono">
+                        <li>CoS 0: Best Effort (Data)</li>
+                        <li><strong class="text-emerald-400">CoS 5: Voice Payload</strong></li>
+                        <li>CoS 6/7: Network Control (STP, Routing)</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-cyan-400 mb-2 border-b border-slate-700 pb-1">Layer 3: DSCP</h3>
+                    <p class="text-slate-400 mb-2">Differentiated Services Code Point. Exists inside the <strong>IPv4/IPv6 Header</strong>. It travels end-to-end across routers. Uses 6 bits, giving 64 values.</p>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1 font-mono">
+                        <li>DF: Default (Best Effort)</li>
+                        <li>AF: Assured Forwarding (Video/Important Data)</li>
+                        <li><strong class="text-rose-400">EF (46): Expedited Forwarding (Voice)</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The Theme Park Analogy</strong>
+                    <p class="text-slate-400">
+                        <strong class="text-cyan-400">Classification/Marking:</strong> Giving a VIP guest a fast-pass wristband at the front gate.<br>
+                        <strong class="text-rose-400">Queuing:</strong> When the roller coaster gets busy, the employee sees the wristband and puts them in the shorter, faster line.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Trust Boundaries</strong>
+                    <p class="text-slate-400">
+                        Never trust a PC's markings. Users can easily download software to tag their BitTorrent traffic as "Voice" to get priority. We establish a <strong>Trust Boundary</strong> at the IP Phone or the Switch Port.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Cisco Configuration CLI -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Voice VLAN Configuration CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <span class="text-slate-500 text-[10px] font-sans">Step 1: Standard Access Port Setup</span>
+                        <span class="text-yellow-300">Switch(config-if)# switchport mode access</span>
+                        <span class="text-yellow-300">Switch(config-if)# switchport access vlan 10</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Assigns the untagged PC data traffic to VLAN 10.</span>
+                    </div>
+                    
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-emerald-500 rounded"></div>
+                        <span class="text-slate-500 text-[10px] font-sans">Step 2: Voice VLAN Assignment</span>
+                        <span class="text-yellow-300">Switch(config-if)# switchport voice vlan 20</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Uses CDP to instruct the attached IP phone to tag its voice packets with VLAN 20 and CoS 5.</span>
+                    </div>
+
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-purple-500 rounded"></div>
+                        <span class="text-slate-500 text-[10px] font-sans">Step 3: Establish the Trust Boundary (Optional but recommended)</span>
+                        <span class="text-yellow-300">Switch(config-if)# mls qos trust device cisco-phone</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Tells the switch port to trust the QoS markings (CoS 5) coming from the Cisco phone, but to overwrite/un-trust any markings coming from the PC attached behind the phone.</span>
+                    </div>
+                    
+                    <div class="flex flex-col">
+                        <span class="text-slate-500 text-[10px] font-sans">Verification</span>
+                        <span class="text-yellow-300">Switch# show interfaces f0/1 switchport</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Look for "Access Mode VLAN: 10" and "Voice VLAN: 20".</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Troubleshooting & Verification -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4 font-mono text-xs">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <p class="text-slate-200 font-sans font-bold">Phone has no dial tone / no IP</p>
+                    <p class="text-slate-400 mt-1 font-sans"><strong>Action 1:</strong> Is CDP disabled? (`no cdp run`). The switch relies on CDP to negotiate the Voice VLAN ID with the phone.</p>
+                    <p class="text-slate-400 mt-1 font-sans"><strong>Action 2:</strong> Is there a DHCP server configured specifically for the Voice VLAN subnet?</p>
+                </div>
+                <div class="border-l-4 border-rose-500 pl-4">
+                    <p class="text-slate-200 font-sans font-bold">Portfast Warning</p>
+                    <p class="text-slate-400 mt-1 font-sans">Always configure <code class="text-cyan-400">spanning-tree portfast</code> on voice VLAN ports so the phone boots up immediately without waiting 30 seconds for STP timers.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 8. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: ≤ 150 ms.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. For acceptable voice quality over an IP network, one-way delay (latency) should not exceed what specific millisecond value?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>150 ms</strong> (milliseconds).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: CDP (Cisco Discovery Protocol).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Which protocol does a Cisco switch use to dynamically communicate the Voice VLAN ID to a connected Cisco IP Phone?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>CDP</strong> (Cisco Discovery Protocol).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: EF (Expedited Forwarding), which has a value of 46.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. In the Layer 3 IPv4 header, what specific DSCP value is universally recommended for marking Voice payload traffic?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>EF (Expedited Forwarding)</strong>, which equates to a decimal value of <strong>46</strong>.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Because the switch will strip untagged frames, so CoS can only exist if an 802.1Q tag is present.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. Why is it impossible for a standard untagged data frame from a PC to contain a Layer 2 CoS (Class of Service) marking?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        Because the CoS field (3 bits) <strong>only exists inside the 802.1Q VLAN tag</strong>. Untagged frames do not have an 802.1Q header, so they cannot carry Layer 2 QoS markings.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

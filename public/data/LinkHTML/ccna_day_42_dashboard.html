@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 42: SSH (Secure Shell)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 42: SSH
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">Secure Shell & Remote Management</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. Telnet vs SSH -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔐</span>
+                <h2 class="text-2xl font-bold text-slate-100">Telnet vs. SSH</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">To manage a Cisco router or switch remotely over the network (In-Band management), you must use the VTY (Virtual Teletype) lines. There are two primary protocols for this.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-rose-500">
+                    <h3 class="font-bold text-rose-400 mb-1">Telnet (TCP Port 23)</h3>
+                    <p class="text-slate-400 mb-2">The legacy remote access protocol. It is fundamentally insecure.</p>
+                    <p class="text-slate-300 text-xs p-2 bg-rose-900/20 border border-rose-500/30 rounded"><strong>Critical Flaw:</strong> Telnet sends ALL data—including your username, password, and the entire configuration you type—in <strong>clear text</strong>. Anyone with Wireshark can read it.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">SSH (TCP Port 22)</h3>
+                    <p class="text-slate-400 mb-2">Secure Shell. The modern standard for remote CLI access.</p>
+                    <p class="text-slate-300 text-xs p-2 bg-emerald-900/20 border border-emerald-500/30 rounded"><strong>The Fix:</strong> SSH uses robust cryptographic algorithms to establish a secure, <strong>encrypted tunnel</strong> before any data is sent. Eavesdroppers only see gibberish.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. The SSH Prerequisites -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 border-l-4 border-l-orange-500 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📋</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Prerequisites</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">You cannot just "turn on" SSH on a brand new Cisco device. Because SSH requires encryption, the router must first generate an RSA cryptographic key pair. <strong>The router refuses to generate this key until two prerequisites are met.</strong></p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-orange-400 mb-2 border-b border-slate-700 pb-1">1. Hostname</h3>
+                    <p class="text-slate-400 text-xs">The device cannot use the default hostname of "Router" or "Switch". You must change it.</p>
+                    <code class="text-yellow-300 block mt-2 text-xs">Router(config)# hostname R1</code>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-orange-400 mb-2 border-b border-slate-700 pb-1">2. Domain Name</h3>
+                    <p class="text-slate-400 text-xs">You must configure an IP domain name for the device.</p>
+                    <code class="text-yellow-300 block mt-2 text-xs break-all">R1(config)# ip domain-name cisco.com</code>
+                </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-4 italic"><strong>Why?</strong> The router concatenates the hostname and domain name (e.g., <span class="text-cyan-400">R1.cisco.com</span>) and uses that exact string to name the RSA cryptographic key it generates.</p>
+        </article>
+
+        <!-- 3. Local Authentication & VTY Lines -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                👤 VTY & Local Auth
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">Unlike a console port which might just ask for a password, SSH requires a <strong>Username AND a Password</strong> to authenticate the session.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <h3 class="font-bold text-slate-200 mb-1">Step 1: The Local Database</h3>
+                    <p class="text-slate-400 text-xs mb-2">You must create a user account stored locally on the router's NVRAM.</p>
+                    <code class="text-yellow-300 text-[11px] block bg-black/50 p-2 rounded">username admin secret Cisco123</code>
+                </div>
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <h3 class="font-bold text-slate-200 mb-1">Step 2: Line VTY Config</h3>
+                    <p class="text-slate-400 text-xs mb-2">You must tell the VTY lines to stop using a generic line password, and instead check the local database you just created.</p>
+                    <code class="text-cyan-400 text-[11px] font-bold block bg-black/50 p-2 rounded">login local</code>
+                </div>
+            </div>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The Postcard vs Armored Truck</strong>
+                    <p class="text-slate-400">
+                        <strong class="text-rose-400">Telnet</strong> is a postcard. Anyone handling it (routers/switches in the path) can read your password.<br>
+                        <strong class="text-emerald-400">SSH</strong> is an armored truck. Even if they intercept the truck, they can't see what's inside.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Transport Input Rule</strong>
+                    <p class="text-slate-400">
+                        If you configure SSH, but forget <code class="text-cyan-400">transport input ssh</code>, users can still Telnet in! You must explicitly lock the door.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Step-by-Step CLI Configuration -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Complete SSH Configuration CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-slate-500 text-[10px] font-sans">1. Fulfill Prerequisites & Create User</span>
+                        <span class="text-yellow-300">Router(config)# hostname R1</span>
+                        <span class="text-yellow-300">R1(config)# ip domain-name lab.local</span>
+                        <span class="text-yellow-300">R1(config)# username admin privilege 15 secret cisco123</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-emerald-500 rounded"></div>
+                        <span class="text-slate-500 text-[10px] font-sans">2. Generate Keys & Enforce SSHv2</span>
+                        <span class="text-yellow-300">R1(config)# crypto key generate rsa</span>
+                        <span class="text-slate-400 text-[11px] ml-4 italic">How many bits in the modulus [512]: <strong class="text-emerald-400">1024</strong></span>
+                        <span class="text-yellow-300 mt-1">R1(config)# ip ssh version 2</span>
+                        <span class="text-slate-400 text-[11px] mt-1 font-sans">Requires a modulus of at least 768 to enable SSH version 2 (which is vastly more secure than v1).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-purple-500 rounded"></div>
+                        <span class="text-slate-500 text-[10px] font-sans">3. Apply to VTY Lines</span>
+                        <span class="text-yellow-300">R1(config)# line vty 0 4</span>
+                        <span class="text-yellow-300">R1(config-line)# login local</span>
+                        <span class="text-yellow-300">R1(config-line)# transport input ssh</span>
+                        <span class="text-slate-400 text-[11px] mt-1 font-sans">`login local` tells the line to use the username database. `transport input ssh` disables Telnet and forces SSH exclusively.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-slate-500 text-[10px] font-sans">Verification</span>
+                        <span class="text-yellow-300">R1# show ip ssh</span>
+                        <span class="text-slate-400 text-[11px] mt-1 font-sans">Confirms SSH is enabled and displays the version (1.99 or 2.0).</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">"Please define a domain-name first"</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Issue:</strong> You typed `crypto key generate rsa` and it immediately threw an error.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> You forgot the prerequisites. Ensure you have changed the hostname and set an `ip domain-name`.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">"Connection Refused" when connecting</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Issue:</strong> Keys are generated, but PuTTY/TeraTerm says connection refused on port 22.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> Check the VTY lines. Did you type `transport input ssh`? Did you type `login local` and actually create a username?</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: SSH uses TCP Port 22. Telnet uses TCP Port 23.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Which Transport Layer protocol and port number does SSH utilize? (And what port does Telnet use?)
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        SSH uses <strong>TCP Port 22</strong>. (Telnet uses TCP Port 23).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A hostname and an IP domain-name.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. What two specific configuration parameters MUST be set on a Cisco device before it will allow you to generate an RSA cryptographic key?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A unique <strong>hostname</strong> and an <strong>IP domain-name</strong>. The router concatenates these to name the generated key file.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 'login local'">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. You created a username and password in global configuration mode. What command must you apply to `line vty 0 4` to force the router to use those credentials?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">login local</code>
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 'transport input ssh'">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. What command is applied to the VTY lines to explicitly disable Telnet and permit only encrypted remote connections?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">transport input ssh</code>
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 11: Routing Fundamentals (Part 1)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 11: Routing Fundamentals (Pt 1)
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Life of a Packet (Routing Process) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🛣️</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Routing Process</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">What exactly does a router do when a frame arrives on its interface?</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-[#0d1117] p-3 rounded border-l-4 border-rose-500 relative">
+                    <div class="absolute -left-3 top-3 bg-rose-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">1</div>
+                    <h3 class="font-bold text-rose-400 mb-1 ml-4">De-encapsulate</h3>
+                    <p class="text-slate-400 ml-4">The router receives the L2 Frame. It checks the Destination MAC. If it matches the router's interface MAC, it strips off the L2 Header and Trailer.</p>
+                </div>
+                
+                <div class="bg-[#0d1117] p-3 rounded border-l-4 border-emerald-500 relative">
+                    <div class="absolute -left-3 top-3 bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">2</div>
+                    <h3 class="font-bold text-emerald-400 mb-1 ml-4">Lookup</h3>
+                    <p class="text-slate-400 ml-4">The router examines the L3 Packet's <strong class="text-slate-200">Destination IP address</strong>. It searches its Routing Table for the best match.</p>
+                </div>
+
+                <div class="bg-[#0d1117] p-3 rounded border-l-4 border-cyan-500 relative">
+                    <div class="absolute -left-3 top-3 bg-cyan-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">3</div>
+                    <h3 class="font-bold text-cyan-400 mb-1 ml-4">Re-encapsulate & Forward</h3>
+                    <p class="text-slate-400 ml-4">The router packages the L3 Packet into a <strong class="text-cyan-400">BRAND NEW L2 Frame</strong> (New Source MAC = Router's exit int, New Dest MAC = Next hop). It forwards it out the exit interface.</p>
+                </div>
+
+                <div class="p-3 bg-rose-900/20 rounded border border-rose-500/50 text-center font-bold text-rose-400">
+                    Rule: IP Addresses stay the same end-to-end.<br>MAC Addresses change at EVERY router hop.
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. The Routing Table (C and L) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🗺️</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Routing Table: C & L Routes</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">A router needs to know where to send packets. The most basic routes are generated automatically when you configure an IP address on an interface and bring it <code class="text-emerald-400">up/up</code>.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="text-lg font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                        <span class="bg-emerald-500/20 px-2 py-1 rounded text-emerald-400">C</span> Connected Route
+                    </h3>
+                    <p class="text-slate-400 text-sm mb-2">Represents the <strong>entire subnet</strong> attached to the interface.</p>
+                    <code class="text-slate-300 text-xs block bg-black/50 p-2 rounded">C &nbsp;&nbsp;192.168.1.0/24 is directly connected, GigabitEthernet0/0</code>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="text-lg font-bold text-blue-400 mb-2 flex items-center gap-2">
+                        <span class="bg-blue-500/20 px-2 py-1 rounded text-blue-400">L</span> Local Route
+                    </h3>
+                    <p class="text-slate-400 text-sm mb-2">Represents the router's <strong>exact interface IP address</strong>. It always has a <code class="text-rose-400">/32</code> mask. (Added in IOS 15).</p>
+                    <code class="text-slate-300 text-xs block bg-black/50 p-2 rounded">L &nbsp;&nbsp;192.168.1.1/32 is directly connected, GigabitEthernet0/0</code>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. Longest Prefix Match -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg border-l-4 border-l-orange-500 hover:border-orange-500 transition-colors duration-300 md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                📏 Longest Prefix Match
+            </h2>
+            <p class="text-slate-300 text-sm mb-3"><strong>The Golden Rule of Routing:</strong> If a destination IP matches multiple routes in the routing table, the router will ALWAYS choose the most specific route.</p>
+            <p class="text-slate-400 text-sm mb-3">The "most specific" route is the one with the highest subnet mask number (e.g., /24 beats /16).</p>
+            
+            <div class="bg-slate-900 p-3 rounded border border-slate-700 text-sm">
+                <p class="text-slate-200 font-bold mb-2">Scenario: Packet arrives for <span class="text-cyan-400">10.1.1.50</span></p>
+                <ul class="space-y-1 text-slate-400 mb-3">
+                    <li>Route 1: 10.0.0.0 <strong class="text-rose-400">/8</strong> <span class="text-xs">(Match! First octet matches)</span></li>
+                    <li>Route 2: 10.1.1.0 <strong class="text-emerald-400">/24</strong> <span class="text-xs">(Match! First 3 octets match)</span></li>
+                </ul>
+                <p class="text-slate-200 border-t border-slate-700 pt-2">
+                    <strong>Winner:</strong> <span class="text-emerald-400">Route 2</span>. It has a longer prefix (/24 > /8), making it a more precise match.
+                </p>
+            </div>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The Envelope vs The Mail Truck</strong>
+                    <p class="text-slate-400">
+                        The <strong class="text-emerald-400">Destination IP</strong> is the address written on the envelope. It never changes. <br>
+                        The <strong class="text-cyan-400">MAC Address</strong> is the license plate of the mail truck. It changes every time the envelope is handed off to a new truck (router).
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">"L" for "Literally Me"</strong>
+                    <p class="text-slate-400">
+                        The <strong class="text-blue-400">L (Local)</strong> route with a /32 mask means "This is literally my own IP address." If traffic hits this route, it's meant for the router itself (like SSH or Ping).
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ CLI Commands: The Routing Table
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router# show ip route</span>
+                        <span class="text-slate-400 text-xs mt-1">Displays the entire IPv4 routing table. Shows the codes (C, L, O, S) and the routing entries.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router# show ip route connected</span>
+                        <span class="text-slate-400 text-xs mt-1">Filters the output to display ONLY the directly connected ('C' and 'L') networks.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router# show ip route 192.168.1.100</span>
+                        <span class="text-slate-400 text-xs mt-1">Incredibly useful! Forces the router to do a lookup for this specific IP and tells you exactly which route it would use (verifies Longest Prefix Match).</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Missing 'C' and 'L' Routes</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Issue:</strong> You configured an IP address on Gigabit0/0, but it doesn't show up in <code class="text-slate-300">show ip route</code>.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> Run <code class="text-cyan-400">show ip interface brief</code>. The interface must be physically UP and protocol UP. Did you forget to type <code class="text-emerald-400">no shutdown</code>?</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: No. IP addresses remain constant end-to-end. Only MAC addresses change hop-by-hop.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. True or False: When a router forwards a packet, it rewrites the Source IP address to be its own IP address.
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>False.</strong> IP addresses stay the same end-to-end. The router strips the old L2 frame and creates a new one, meaning only the <strong>MAC addresses</strong> change.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 'C' represents the entire connected subnet. 'L' represents the specific /32 IP address of the router's interface.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. In the routing table, what is the primary difference between a 'C' route and an 'L' route?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>'C' (Connected)</strong> represents the entire subnet network address. <strong>'L' (Local)</strong> is a /32 route representing the exact IP address assigned to the router's interface.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: /32">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. What subnet mask is always associated with a Local (L) route?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>/32</strong>. It is a "Host Route" pointing to one single IP address.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Route B (10.1.1.0 /26). It has the longest prefix mask.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. A packet arrives for 10.1.1.15. The table has Route A (10.1.1.0 /24) and Route B (10.1.1.0 /26). Which route is chosen and why?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Route B (/26) is chosen.</strong> Due to the rule of <strong>Longest Prefix Match</strong>, the router always selects the most specific route available (the one with the highest slash number).
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

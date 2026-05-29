@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 36: CDP & LLDP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 36: CDP & LLDP
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">Layer 2 Discovery Protocols</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. What are Discovery Protocols? -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📡</span>
+                <h2 class="text-2xl font-bold text-slate-100">Layer 2 Discovery</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Discovery protocols allow network devices to advertise their identity and capabilities to their <strong>directly connected neighbors</strong>. They are invaluable tools for mapping out undocumented network topologies.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Layer 2 Operation</h3>
+                    <p class="text-slate-400">These protocols operate strictly at <strong>Layer 2 (Data Link)</strong>. This means they do NOT require IP addresses to function! Even if two routers have completely mismatched IP subnets, they can still discover each other.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Information Shared</h3>
+                    <ul class="list-disc pl-4 text-slate-300 space-y-1 text-xs mt-1">
+                        <li><strong>Hostname:</strong> The name of the neighbor device.</li>
+                        <li><strong>Local Interface:</strong> The port on <em>your</em> device receiving the data.</li>
+                        <li><strong>Port ID:</strong> The port on the <em>neighbor's</em> device sending the data.</li>
+                        <li><strong>Device Capability:</strong> Is it a Router, Switch, IP Phone, or AP?</li>
+                        <li><strong>Platform:</strong> The specific hardware model and OS version.</li>
+                        <li><strong>IP Addresses:</strong> The management IPs of the neighbor (even though the protocol runs at L2).</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Security Risks -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-rose-500 transition-colors duration-300 border-l-4 border-l-rose-500 md:col-span-1">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">⚠️</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Security Risk</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Discovery protocols are a double-edged sword. While they help admins map the network, they hand attackers a silver platter of reconnaissance data.</p>
+            
+            <div class="bg-[#0d1117] p-4 rounded border border-rose-500/50 text-sm">
+                <h3 class="font-bold text-rose-400 mb-2">Best Practice</h3>
+                <p class="text-slate-400 mb-2">Never run CDP or LLDP on <strong>edge ports</strong> (ports connected to PCs, servers, or untrusted devices). An attacker can run Wireshark, listen to the multicast CDP frames, and immediately know your switch's management IP, OS version, and exact port number.</p>
+                <p class="text-slate-300 text-xs italic">Only enable discovery protocols on switch-to-switch or switch-to-router links.</p>
+            </div>
+        </article>
+
+        <!-- 3. CDP vs LLDP Comparison -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🥊 CDP vs. LLDP
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-cyan-400 mb-2 border-b border-slate-700 pb-1">CDP (Cisco Discovery Protocol)</h3>
+                    <ul class="list-none text-slate-400 space-y-2">
+                        <li><strong class="text-slate-200">Ownership:</strong> Cisco Proprietary.</li>
+                        <li><strong class="text-slate-200">Status:</strong> Enabled globally by default on Cisco gear.</li>
+                        <li><strong class="text-slate-200">Hello Timer:</strong> 60 seconds.</li>
+                        <li><strong class="text-slate-200">Hold Timer:</strong> 180 seconds.</li>
+                        <li><strong class="text-slate-200">Use Case:</strong> Communicating with Cisco IP Phones (Voice VLAN assignment, PoE power negotiation).</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-emerald-400 mb-2 border-b border-slate-700 pb-1">LLDP (Link Layer Discovery Protocol)</h3>
+                    <ul class="list-none text-slate-400 space-y-2">
+                        <li><strong class="text-slate-200">Ownership:</strong> Open Standard (IEEE 802.1AB).</li>
+                        <li><strong class="text-slate-200">Status:</strong> Usually disabled globally by default on Cisco gear.</li>
+                        <li><strong class="text-slate-200">Hello Timer:</strong> 30 seconds.</li>
+                        <li><strong class="text-slate-200">Hold Timer:</strong> 120 seconds.</li>
+                        <li><strong class="text-slate-200">Use Case:</strong> Multi-vendor environments. Discovering non-Cisco servers, VMs, or switches.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">"Enable" vs "Transmit/Receive"</strong>
+                    <p class="text-slate-400">
+                        When configuring an interface:<br>
+                        <strong class="text-cyan-400">CDP</strong> uses one command: <code class="text-xs">cdp enable</code>.<br>
+                        <strong class="text-emerald-400">LLDP</strong> uses two: <code class="text-xs">lldp transmit</code> & <code class="text-xs">lldp receive</code>. (You can set it to listen only!).
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The Timers Rule</strong>
+                    <p class="text-slate-400">
+                        Hold timers are generally <strong>3x to 4x</strong> the Hello timer. CDP sends every minute, holds for 3. LLDP sends every 30s, holds for 120s (4x).
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Discovery Configuration CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <!-- Global Commands -->
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-slate-400 text-xs mb-1 font-sans">Global Config (Turn on/off entire switch)</span>
+                        <span class="text-yellow-300">Switch(config)# no cdp run</span>
+                        <span class="text-slate-500 text-xs mt-1">Disables CDP globally.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-slate-400 text-xs mb-1 font-sans">Global Config</span>
+                        <span class="text-yellow-300">Switch(config)# lldp run</span>
+                        <span class="text-slate-500 text-xs mt-1">Enables LLDP globally (disabled by default).</span>
+                    </div>
+
+                    <!-- Interface Commands -->
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-slate-400 text-xs mb-1 font-sans">Interface Config (CDP)</span>
+                        <span class="text-yellow-300">Switch(config-if)# no cdp enable</span>
+                        <span class="text-slate-500 text-xs mt-1">Disables CDP on a specific port (Security best practice).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-slate-400 text-xs mb-1 font-sans">Interface Config (LLDP)</span>
+                        <span class="text-yellow-300">Switch(config-if)# lldp transmit</span>
+                        <span class="text-yellow-300">Switch(config-if)# lldp receive</span>
+                        <span class="text-slate-500 text-xs mt-1">LLDP direction must be enabled separately.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Verification & Troubleshooting CLI -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔎 Verification CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">show cdp neighbors</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Quick summary of attached devices, their capability (R, S, I), and the local/remote ports.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-emerald-500 rounded"></div>
+                        <span class="text-yellow-300">show cdp neighbors detail</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">Crucial! Shows the <strong>IP Address</strong> and specific iOS version of the neighboring device.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">show lldp neighbors</span>
+                        <span class="text-slate-400 text-xs mt-1 font-sans">The LLDP equivalent of the summary command.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: LLDP (Link Layer Discovery Protocol).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. You have a Cisco switch connected to a Juniper router. Which discovery protocol must you use to map this connection?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>LLDP</strong> (Link Layer Discovery Protocol), because it is an open IEEE 802.1AB standard. CDP is Cisco-proprietary.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Layer 2 (Data Link).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. At which OSI layer do CDP and LLDP operate?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Layer 2</strong> (Data Link Layer). They use multicast MAC addresses and do not require IP connectivity to function.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 'show cdp neighbors detail' or 'show cdp entry *'">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. You run `show cdp neighbors` but it only lists hostnames and interfaces. Which command will reveal the actual IP Address of the neighbor?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">show cdp neighbors detail</code> (or <code class="text-cyan-400">show cdp entry *</code>).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 'no cdp run' turns it off globally for the whole switch. 'no cdp enable' turns it off for one specific interface.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. What is the difference between the commands `no cdp run` and `no cdp enable`?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">no cdp run</code> is a <strong>Global Configuration</strong> command that turns CDP off for the entire switch. <code class="text-cyan-400">no cdp enable</code> is an <strong>Interface Configuration</strong> command that disables CDP on a single, specific port.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

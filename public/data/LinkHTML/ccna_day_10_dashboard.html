@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 10: The IPv4 Header</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+
+        /* IPv4 Header Visual Grid Utils */
+        .ipv4-row { display: flex; width: 100%; border-bottom: 1px solid #334155; }
+        .ipv4-row:last-child { border-bottom: none; }
+        .ipv4-cell { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.75rem; padding: 0.5rem; border-right: 1px solid #334155; font-weight: bold; }
+        .ipv4-cell:last-child { border-right: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 10: The IPv4 Header
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The IPv4 Header Map -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3 hover:border-cyan-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🗺️</span>
+                <h2 class="text-2xl font-bold text-slate-100">IPv4 Header Structure (20 Bytes Minimum)</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Every IP packet has this header. It is exactly <strong>32 bits wide (4 Bytes)</strong> per row. The standard header is 5 rows deep, totaling <strong>20 Bytes</strong>.</p>
+            
+            <!-- Interactive Visual Grid -->
+            <div class="border border-slate-600 rounded bg-slate-900 overflow-hidden font-mono text-slate-200">
+                <!-- Row 1 -->
+                <div class="ipv4-row">
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-cyan-400" style="width: 12.5%;" title="Version: Always 4 (0100) for IPv4">Version (4)</div>
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-emerald-400" style="width: 12.5%;" title="IHL: Header length in 32-bit words">IHL (4)</div>
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-purple-400" style="width: 18.75%;" title="DSCP: Quality of Service (QoS)">DSCP (6)</div>
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-purple-400/70" style="width: 6.25%;" title="ECN: Congestion Notification">ECN(2)</div>
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-orange-400" style="width: 50%;" title="Total Length: Header + Payload size">Total Length (16)</div>
+                </div>
+                <!-- Row 2 -->
+                <div class="ipv4-row">
+                    <div class="ipv4-cell bg-slate-800/50 hover:bg-slate-700 text-slate-300" style="width: 50%;" title="Identification: Used for reassembling fragmented packets">Identification (16)</div>
+                    <div class="ipv4-cell bg-slate-800/50 hover:bg-slate-700 text-rose-400" style="width: 9.375%;" title="Flags: DF (Don't Fragment) & MF (More Fragments)">Flags(3)</div>
+                    <div class="ipv4-cell bg-slate-800/50 hover:bg-slate-700 text-slate-300" style="width: 40.625%;" title="Fragment Offset: Position in original packet">Fragment Offset (13)</div>
+                </div>
+                <!-- Row 3 -->
+                <div class="ipv4-row">
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-rose-500" style="width: 25%;" title="Time to Live: Prevents routing loops. Decrements by 1 each hop.">TTL (8)</div>
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-yellow-300" style="width: 25%;" title="Protocol: L4 Payload identifier (e.g., TCP=6, UDP=17)">Protocol (8)</div>
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-slate-400" style="width: 50%;" title="Header Checksum: Error checking for the header only">Header Checksum (16)</div>
+                </div>
+                <!-- Row 4 -->
+                <div class="ipv4-row">
+                    <div class="ipv4-cell bg-slate-800/50 hover:bg-slate-700 text-blue-400" style="width: 100%;">Source IP Address (32)</div>
+                </div>
+                <!-- Row 5 -->
+                <div class="ipv4-row">
+                    <div class="ipv4-cell bg-slate-800/80 hover:bg-slate-700 text-emerald-400" style="width: 100%;">Destination IP Address (32)</div>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2 text-right">*(Hover over fields to see their function. Options/Padding row is omitted as it's rarely used in modern IPv4).*</p>
+        </article>
+
+        <!-- 2. The Heavy Hitters (Highly Tested Fields) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 hover:border-emerald-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔥</span>
+                <h2 class="text-2xl font-bold text-slate-100">Highly Tested Fields</h2>
+            </div>
+            
+            <div class="space-y-4 text-sm text-slate-300">
+                <div class="border-l-4 border-rose-500 pl-3">
+                    <strong class="text-rose-400 text-base">TTL (Time to Live)</strong>
+                    <p class="mt-1">Starts at a specific number (like 64, 128, or 255) depending on the OS. Every time a router forwards the packet, it subtracts 1. <strong>If TTL hits 0, the router drops the packet</strong> and sends an ICMP "Time Exceeded" message back. This prevents packets from looping forever if there is a routing error.</p>
+                </div>
+
+                <div class="border-l-4 border-yellow-300 pl-3">
+                    <strong class="text-yellow-300 text-base">Protocol</strong>
+                    <p class="mt-1">Tells the receiving device what is inside the payload so it can pass it to the correct Layer 4 process. <strong>Memorize these numbers:</strong></p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                        <div class="bg-slate-900 p-2 text-center rounded border border-slate-700"><span class="text-cyan-400 font-bold">1</span> = ICMP</div>
+                        <div class="bg-slate-900 p-2 text-center rounded border border-slate-700"><span class="text-cyan-400 font-bold">6</span> = TCP</div>
+                        <div class="bg-slate-900 p-2 text-center rounded border border-slate-700"><span class="text-cyan-400 font-bold">17</span> = UDP</div>
+                        <div class="bg-slate-900 p-2 text-center rounded border border-slate-700"><span class="text-cyan-400 font-bold">89</span> = OSPF</div>
+                    </div>
+                </div>
+
+                <div class="border-l-4 border-purple-400 pl-3">
+                    <strong class="text-purple-400 text-base">DSCP (Differentiated Services Code Point)</strong>
+                    <p class="mt-1">Formerly called the ToS (Type of Service) byte. Used for <strong>QoS (Quality of Service)</strong>. Routers look at this to prioritize traffic (e.g., Voice over IP gets higher priority than web browsing).</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. Fragmentation Concepts -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🧩</span>
+                <h2 class="text-2xl font-bold text-slate-100">Fragmentation</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">If a packet is larger than an interface's MTU (Maximum Transmission Unit, typically 1500 bytes), a router must slice it into smaller pieces.</p>
+            
+            <ul class="space-y-3 text-sm text-slate-400">
+                <li><strong class="text-orange-400">Identification:</strong> All fragments of a single original packet get the same ID number, so the destination knows they belong together.</li>
+                <li><strong class="text-orange-400">DF Flag (Don't Fragment):</strong> If set to 1, the router is forbidden from fragmenting. If the packet is too big, it drops it and sends an ICMP error.</li>
+                <li><strong class="text-orange-400">MF Flag (More Fragments):</strong> Set to 1 on all fragments <em>except</em> the very last one, which is set to 0.</li>
+                <li><strong class="text-orange-400">Fragment Offset:</strong> Tells the destination exactly what order to reassemble the pieces in.</li>
+            </ul>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Protocol Number Trick</strong>
+                    <p class="text-slate-400">
+                        TCP has 3 letters. 3 x 2 = <strong class="text-cyan-400">6</strong>.<br>
+                        UDP has 3 letters... well, just memorize <strong class="text-cyan-400">17</strong> (it's prime and fast, like UDP).<br>
+                        ICMP is number <strong class="text-cyan-400">1</strong> (Ping is the #1 tool we use).
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">TTL = The Expiration Date</strong>
+                    <p class="text-slate-400">
+                        Think of a packet like a gallon of milk passed down an assembly line. Every person (router) subtracts a day. If it hits 0, it's thrown in the trash (dropped).
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. CLI & Troubleshooting (How Tools Use the Header) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ How CLI Tools Exploit the Header
+            </h2>
+            <p class="text-slate-300 text-sm mb-4">You don't configure the header directly in the CLI, but your standard troubleshooting tools manipulate it!</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-700">
+                    <strong class="text-yellow-300 block mb-1">traceroute (or Windows 'tracert')</strong>
+                    <p class="text-slate-400">
+                        Traceroute ingeniously hacks the <strong class="text-rose-400">TTL field</strong>.<br>
+                        1. It sends a packet with a TTL of 1. The 1st router drops it and replies. Traceroute records Router 1's IP.<br>
+                        2. It sends a packet with a TTL of 2. The 2nd router drops it. Traceroute records Router 2's IP.<br>
+                        3. It repeats this until the packet reaches the destination, effectively mapping every hop on the path.
+                    </p>
+                </div>
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-700">
+                    <strong class="text-yellow-300 block mb-1">ping</strong>
+                    <p class="text-slate-400">
+                        When you ping, your PC crafts an IPv4 packet, sets the Destination IP, and sets the <strong class="text-cyan-400">Protocol field to 1</strong> to indicate an ICMP Echo Request payload is inside.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 20 Bytes.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. What is the minimum length of an IPv4 header?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>20 Bytes.</strong> (Without any optional padding).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: TTL (Time to Live).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Which field specifically prevents a packet from endlessly circulating in a routing loop?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>TTL (Time to Live).</strong> Every router decrements it by 1, dropping the packet if it reaches 0.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: TCP (Transmission Control Protocol).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. You capture a packet in Wireshark and see the Protocol field is set to '6'. What payload is this packet carrying?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>TCP.</strong> (1=ICMP, 6=TCP, 17=UDP, 89=OSPF).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: DSCP (Differentiated Services Code Point).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. Which field is primarily used by routers to implement Quality of Service (QoS) and prioritize voice traffic?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>DSCP</strong> (Differentiated Services Code Point), formerly known as the ToS (Type of Service) byte.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

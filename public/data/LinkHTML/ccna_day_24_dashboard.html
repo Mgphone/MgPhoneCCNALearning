@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 24: Dynamic Routing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 24: Dynamic Routing
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">⚖️</span>
+                <h2 class="text-2xl font-bold text-slate-100">Static vs. Dynamic</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Why move away from static routes? In large networks, maintaining static routes becomes impossible. Dynamic routing protocols automate path discovery and recovery.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-slate-500">
+                    <h3 class="font-bold text-slate-300 mb-1">Static Routing</h3>
+                    <ul class="list-disc pl-4 text-slate-400 space-y-1 text-xs">
+                        <li><strong class="text-rose-400">High</strong> administrative overhead.</li>
+                        <li><strong class="text-rose-400">Does not</strong> react to topology changes (if a link fails, the route stays until manually removed or the interface goes down).</li>
+                        <li><strong class="text-emerald-400">Low</strong> CPU/RAM usage.</li>
+                        <li><strong class="text-emerald-400">Highly</strong> secure (no routing updates to spoof).</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Dynamic Routing</h3>
+                    <ul class="list-disc pl-4 text-slate-400 space-y-1 text-xs">
+                        <li><strong class="text-emerald-400">Low</strong> administrative overhead (scales easily).</li>
+                        <li><strong class="text-emerald-400">Automatically</strong> adapts to topology changes (reroutes traffic if a link fails).</li>
+                        <li><strong class="text-rose-400">Higher</strong> CPU, RAM, and bandwidth usage (sends periodic or event-driven updates).</li>
+                        <li>Requires authentication to prevent rogue routers from injecting false routes.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🌍</span>
+                <h2 class="text-2xl font-bold text-slate-100">IGP vs EGP & The Autonomous System</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">An <strong>Autonomous System (AS)</strong> is a collection of networks under a single administrative domain (e.g., an ISP, a large enterprise). The Internet is essentially a web of connected Autonomous Systems.</p>
+            
+            
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                <div class="bg-purple-900/20 p-4 rounded border border-purple-500/50">
+                    <h3 class="font-bold text-purple-400 mb-2 flex items-center gap-2">IGP (Interior Gateway Protocol)</h3>
+                    <p class="text-slate-300 text-xs mb-2">Used to route traffic <em>within</em> a single Autonomous System.</p>
+                    <ul class="list-disc pl-4 text-slate-400 text-xs space-y-1">
+                        <li>Optimized for speed and fast convergence.</li>
+                        <li>Finds the absolute fastest path.</li>
+                        <li><strong>Examples:</strong> OSPF, EIGRP, IS-IS, RIP.</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-blue-900/20 p-4 rounded border border-blue-500/50">
+                    <h3 class="font-bold text-blue-400 mb-2 flex items-center gap-2">EGP (Exterior Gateway Protocol)</h3>
+                    <p class="text-slate-300 text-xs mb-2">Used to route traffic <em>between</em> different Autonomous Systems.</p>
+                    <ul class="list-disc pl-4 text-slate-400 text-xs space-y-1">
+                        <li>Optimized for scale and administrative policy.</li>
+                        <li>Path selection is based on rules, not necessarily speed.</li>
+                        <li><strong>Example:</strong> BGP (Border Gateway Protocol) - the protocol of the Internet.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                🧩 Types of IGPs: Distance Vector vs Link State
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-orange-400 mb-2 border-b border-slate-700 pb-1">1. Distance Vector</h3>
+                    <p class="text-slate-400 mb-2 text-xs">"Routing by Rumor." A router only knows what its direct neighbors tell it. It has no map of the full network.</p>
+                    <ul class="list-disc pl-5 text-slate-300 space-y-1 text-xs mb-3">
+                        <li>Sends its <em>entire routing table</em> to neighbors.</li>
+                        <li>Updates are usually sent periodically (e.g., every 30s).</li>
+                        <li>Slow to converge; prone to routing loops.</li>
+                        <li>Uses Bellman-Ford algorithm.</li>
+                    </ul>
+                    <p class="text-cyan-400 font-bold text-xs mt-auto">Protocols: RIPv1, RIPv2</p>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-emerald-400 mb-2 border-b border-slate-700 pb-1">2. Advanced Distance Vector</h3>
+                    <p class="text-slate-400 mb-2 text-xs">A Cisco-proprietary hybrid. Acts like a Distance Vector protocol but utilizes features of Link State protocols.</p>
+                    <ul class="list-disc pl-5 text-slate-300 space-y-1 text-xs mb-3">
+                        <li>Sends partial, triggered updates instead of periodic full-table updates.</li>
+                        <li>Maintains a topology table of neighbor routes.</li>
+                        <li>Extremely fast convergence (DUAL algorithm).</li>
+                    </ul>
+                    <p class="text-cyan-400 font-bold text-xs mt-auto">Protocols: EIGRP</p>
+                </div>
+
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-blue-400 mb-2 border-b border-slate-700 pb-1">3. Link State</h3>
+                    <p class="text-slate-400 mb-2 text-xs">"The Map Maker." Every router floods information about its own links to every other router in the area.</p>
+                    <ul class="list-disc pl-5 text-slate-300 space-y-1 text-xs mb-3">
+                        <li>Every router builds an identical, complete topology map of the network.</li>
+                        <li>Each router independently calculates the best path to every destination using Dijkstra's Shortest Path First (SPF) algorithm.</li>
+                        <li>Updates are sent only when a change occurs.</li>
+                    </ul>
+                    <p class="text-cyan-400 font-bold text-xs mt-auto">Protocols: OSPF, IS-IS</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-yellow-400 transition-colors duration-300 border-l-4 border-l-yellow-400">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📏</span>
+                <h2 class="text-2xl font-bold text-slate-100">Routing Metrics</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">A metric is the "cost" of a path. If a routing protocol learns two different ways to reach 10.1.1.0/24, it compares their metrics. <strong>The lowest metric wins.</strong></p>
+            
+            <ul class="space-y-4 text-sm text-slate-400">
+                <li>
+                    <strong class="text-orange-400 block text-base">RIP (Hop Count)</strong>
+                    <p>Counts the number of routers crossed. A 10-Gig link and a 10 Mbps link are treated exactly the same. (Max hops = 15).</p>
+                </li>
+                <li>
+                    <strong class="text-emerald-400 block text-base">OSPF (Cost)</strong>
+                    <p>Based inversely on bandwidth. Faster links have lower costs. 10-Gig is preferred over a 10 Mbps link.</p>
+                </li>
+                <li>
+                    <strong class="text-blue-400 block text-base">EIGRP (Composite)</strong>
+                    <p>A complex formula that defaults to using the lowest <strong>Bandwidth</strong> along the path plus the cumulative <strong>Delay</strong> of all links.</p>
+                </li>
+            </ul>
+        </article>
+
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-rose-500 transition-colors duration-300 border-l-4 border-l-rose-500 md:col-span-2">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                🏆 AD vs Metric
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-rose-400 mb-2">Metric</h3>
+                    <p class="text-slate-400 mb-2">Used to decide between multiple paths learned by the <strong>SAME</strong> routing protocol. (e.g., OSPF Path A vs OSPF Path B).</p>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-cyan-400 mb-2">Administrative Distance (AD)</h3>
+                    <p class="text-slate-400 mb-2">Used to decide between paths learned by <strong>DIFFERENT</strong> routing protocols. Represents the "trustworthiness" of the source.</p>
+                </div>
+            </div>
+
+            <div class="mt-4 bg-[#0d1117] p-3 rounded border border-slate-600 text-sm">
+                <p class="font-bold text-slate-200 mb-2 border-b border-slate-700 pb-1">Core AD Values to Memorize (Lowest Wins):</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 font-mono text-xs">
+                    <div class="p-1"><span class="text-emerald-400">Connected:</span> 0</div>
+                    <div class="p-1"><span class="text-cyan-400">Static:</span> 1</div>
+                    <div class="p-1"><span class="text-purple-400">eBGP:</span> 20</div>
+                    <div class="p-1"><span class="text-yellow-400">EIGRP:</span> 90</div>
+                    <div class="p-1"><span class="text-blue-400">OSPF:</span> 110</div>
+                    <div class="p-1"><span class="text-slate-400">IS-IS:</span> 115</div>
+                    <div class="p-1"><span class="text-orange-400">RIP:</span> 120</div>
+                    <div class="p-1"><span class="text-rose-400">Unknown:</span> 255</div>
+                </div>
+            </div>
+        </article>
+
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Dynamic Routing Verification
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router# show ip protocols</span>
+                        <span class="text-slate-400 text-xs mt-1">Shows which routing protocols are currently active on the router, their AD, timers, and which networks they are advertising.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <span class="text-yellow-300">Router# show ip route</span>
+                        <span class="text-slate-400 text-xs mt-1">Displays the routing table. Look at the code on the far left: <strong class="text-blue-400">O</strong> = OSPF, <strong class="text-yellow-400">D</strong> = EIGRP, <strong class="text-orange-400">R</strong> = RIP, <strong class="text-purple-400">B</strong> = BGP.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router# clear ip route *</span>
+                        <span class="text-slate-400 text-xs mt-1">Forces the router to clear its routing table and rebuild it from scratch.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: EGP (specifically BGP).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Which protocol category is used to route traffic between different Autonomous Systems across the Internet?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>EGP</strong> (Exterior Gateway Protocol). The only EGP in use today is BGP.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Link State protocols.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Which type of IGP builds a complete, identical topology map of the network on every router?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Link State</strong> protocols (like OSPF and IS-IS).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: EIGRP (AD 90).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. A router learns about 10.1.1.0/24 from both OSPF and EIGRP. Which protocol's route will be injected into the routing table?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>EIGRP</strong>. Because the protocols are different, the router uses Administrative Distance. EIGRP (AD 90) is lower and more trusted than OSPF (AD 110).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Metric evaluates paths within the same protocol; AD evaluates different protocols.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. What is the fundamental difference in how a router uses a Metric versus Administrative Distance?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Metric</strong> is used to choose the best path when a <em>single protocol</em> finds multiple ways to reach a destination. <strong>Administrative Distance</strong> is used to choose which <em>protocol</em> to trust when multiple protocols find the same destination.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

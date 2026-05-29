@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 13: Subnetting (Part 1)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 13: Subnetting (Pt 1)
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Core Concept -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">✂️</span>
+                <h2 class="text-2xl font-bold text-slate-100">Why Subnet?</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Subnetting is the process of borrowing host bits to create smaller, more efficient network divisions.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">1. Reduces Broadcast Traffic</h3>
+                    <p class="text-slate-400">Large networks suffer from excessive broadcast traffic (ARP, DHCP). Subnetting breaks one massive broadcast domain into several smaller ones.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">2. Conserves IP Addresses</h3>
+                    <p class="text-slate-400">Instead of wasting a full /24 (254 hosts) on a point-to-point link that only needs 2 IPs, you can use a /30 subnet and save the rest.</p>
+                </div>
+
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-purple-500">
+                    <h3 class="font-bold text-purple-400 mb-1">3. Improves Security</h3>
+                    <p class="text-slate-400">By dividing networks (e.g., HR, Sales, IT), you can place a Router or Firewall between them and apply Access Control Lists (ACLs).</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. The Two Golden Formulas -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 border-l-4 border-l-orange-500 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🧮</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Golden Formulas</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">You must know these two formulas by heart to pass the CCNA.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600 text-center relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-6xl opacity-10 font-bold">N</div>
+                    <h3 class="text-lg font-bold text-emerald-400 mb-2">Number of Subnets</h3>
+                    <p class="text-3xl font-extrabold text-slate-100 font-mono mb-2">2<sup class="text-emerald-400 text-xl">n</sup></p>
+                    <p class="text-slate-400 text-xs"><strong class="text-emerald-400">n</strong> = Number of network bits <em>borrowed</em> from the host portion.</p>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600 text-center relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-6xl opacity-10 font-bold">H</div>
+                    <h3 class="text-lg font-bold text-rose-400 mb-2">Usable Hosts per Subnet</h3>
+                    <p class="text-3xl font-extrabold text-slate-100 font-mono mb-2">2<sup class="text-rose-400 text-xl">h</sup> - 2</p>
+                    <p class="text-slate-400 text-xs"><strong class="text-rose-400">h</strong> = Number of remaining host bits (0s).<br>*(Subtract 2 for Network & Broadcast IDs)*</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. The Magic Number (Block Size) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-yellow-400 transition-colors duration-300 md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                ✨ The Magic Number
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">The fastest way to subnet on an exam is finding the <strong>Block Size</strong> (how much each subnet jumps by).</p>
+            
+            <div class="bg-slate-900 p-4 rounded border border-slate-700 text-sm">
+                <p class="font-bold text-slate-200 text-center text-lg mb-2">256 - <span class="text-cyan-400">Interesting Octet</span></p>
+                
+                <ol class="list-decimal pl-4 text-slate-400 space-y-2 mt-4">
+                    <li>Find the "interesting octet" in the subnet mask (the one that is not 255 or 0).</li>
+                    <li>Subtract that value from 256.</li>
+                    <li>The result is your block size! Your subnets will increment by this number.</li>
+                </ol>
+            </div>
+        </article>
+
+        <!-- 4. Step-by-Step Example -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🛠️ Subnetting in Action: <span class="text-slate-100">192.168.1.0 /26</span>
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div>
+                    <h3 class="font-bold text-slate-200 mb-2 border-b border-slate-700 pb-1">1. Find the Magic Number</h3>
+                    <p class="text-slate-400">A /26 mask is <strong class="text-cyan-400">255.255.255.192</strong>.</p>
+                    <p class="text-slate-400">The interesting octet is the 4th (192).</p>
+                    <p class="text-slate-300 font-mono bg-slate-900 p-2 rounded border border-slate-700 mt-2">256 - 192 = <strong class="text-yellow-400">64</strong> (Block Size)</p>
+                </div>
+                
+                <div>
+                    <h3 class="font-bold text-slate-200 mb-2 border-b border-slate-700 pb-1">2. Build the Subnet Table</h3>
+                    <p class="text-slate-400 mb-2">Start at 0, and add the Magic Number (64) to the 4th octet.</p>
+                    <table class="w-full text-left text-xs border-collapse font-mono bg-slate-900 rounded overflow-hidden">
+                        <thead>
+                            <tr class="bg-slate-700 text-slate-200">
+                                <th class="p-2">Network ID</th>
+                                <th class="p-2 text-emerald-400">Range</th>
+                                <th class="p-2 text-rose-400">Broadcast</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-300 divide-y divide-slate-700">
+                            <tr>
+                                <td class="p-2">.0</td>
+                                <td class="p-2">.1 - .62</td>
+                                <td class="p-2">.63</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2">.64</td>
+                                <td class="p-2">.65 - .126</td>
+                                <td class="p-2">.127</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2">.128</td>
+                                <td class="p-2">.129 - .190</td>
+                                <td class="p-2">.191</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2">.192</td>
+                                <td class="p-2">.193 - .254</td>
+                                <td class="p-2">.255</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The Broadcast Trick</strong>
+                    <p class="text-slate-400">
+                        The Broadcast address is ALWAYS exactly <strong class="text-rose-400">1 less</strong> than the NEXT Network ID. <br><br>If the next network starts at .64, the previous broadcast must be .63.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Powers of 2 to memorize:</strong>
+                    <p class="text-slate-400 font-mono text-xs">
+                        2<sup>2</sup> = 4<br>
+                        2<sup>3</sup> = 8<br>
+                        2<sup>4</sup> = 16<br>
+                        2<sup>5</sup> = 32<br>
+                        2<sup>6</sup> = 64<br>
+                        2<sup>7</sup> = 128
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Verifying Subnets in CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router# show ip interface brief</span>
+                        <span class="text-slate-400 text-xs mt-1">Displays the exact IP address configured on the interface, but NOT the subnet mask.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router# show ip route connected</span>
+                        <span class="text-slate-400 text-xs mt-1">Look at the 'C' routes. The router automatically calculates the Network ID based on your configured IP/Mask and displays it here. E.g., `C 192.168.1.64/26 is directly connected...`</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router# show interfaces g0/0</span>
+                        <span class="text-slate-400 text-xs mt-1">Look near the top. It displays the IP address alongside its subnet mask in dotted decimal format (e.g., `Internet address is 192.168.1.65/26`).</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 256 - 224 = 32.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. What is the "Magic Number" (block size) for a subnet mask of 255.255.255.224?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>32</strong>. (Calculation: 256 - 224 = 32). This means the subnets will increment by 32 (0, 32, 64, 96...).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 14 usable hosts.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. You have a /28 subnet mask. How many USABLE hosts are available in each subnet?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>14 usable hosts.</strong> A /28 leaves 4 bits for hosts (32 - 28 = 4). The formula is $2^4 - 2$. (16 - 2 = 14).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Because the Network Address (all 0s) and Broadcast Address (all 1s) cannot be assigned to hosts.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. In the host formula ($2^h - 2$), exactly why do we subtract the number 2?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        Because two addresses in every subnet are reserved and cannot be assigned to devices: The <strong>Network Address</strong> (host bits all 0) and the <strong>Broadcast Address</strong> (host bits all 1).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 192.168.1.127. (Next subnet is .128).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. If your current Network ID is 192.168.1.64 /26, what is the Broadcast Address for this subnet?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>192.168.1.127</strong>. A /26 has a block size of 64. The <em>next</em> network starts at 192.168.1.128 (64+64). The broadcast is always one less than the next network (128 - 1 = 127).
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

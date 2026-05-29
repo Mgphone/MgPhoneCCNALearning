@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 11: Static Routing (Part 2)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 11: Static Routing
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard (Part 2)</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. Static Route Anatomy -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:col-span-2 lg:col-span-1">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🎯</span>
+                <h2 class="text-2xl font-bold text-slate-100">Static Route Anatomy</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">A static route is manually configured by the administrator. It overrides dynamic routing protocols.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-700 font-mono text-xs leading-relaxed">
+                    <span class="text-slate-300">Router(config)#</span> <span class="text-yellow-300">ip route</span> <span class="text-cyan-400">[dest-network]</span> <span class="text-purple-400">[mask]</span> <span class="text-emerald-400">[next-hop | exit-int]</span>
+                </div>
+                
+                <ul class="list-disc pl-5 text-slate-400 space-y-2">
+                    <li><strong class="text-cyan-400">Destination Network:</strong> The remote subnet you want to reach.</li>
+                    <li><strong class="text-purple-400">Subnet Mask:</strong> The mask of the destination network.</li>
+                    <li><strong class="text-emerald-400">Forwarding IP/Int:</strong> How to get there (either the neighbor's IP or your own local exit interface).</li>
+                </ul>
+            </div>
+        </article>
+
+        <!-- 2. Next-Hop vs Exit Interface -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔀</span>
+                <h2 class="text-2xl font-bold text-slate-100">Next-Hop vs Exit Int</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">You have two choices for instructing the router where to forward the packet.</p>
+            
+            <div class="space-y-3 text-sm">
+                <div class="border-l-4 border-emerald-500 pl-3">
+                    <h3 class="font-bold text-emerald-400 mb-1">Next-Hop IP Address</h3>
+                    <p class="text-slate-400">"Send to my neighbor's IP." Requires a <strong class="text-slate-200">Recursive Lookup</strong> (router checks the table once for the destination, then a second time to find out how to reach the next-hop IP). Best practice for Ethernet links.</p>
+                </div>
+                
+                <div class="border-l-4 border-blue-500 pl-3">
+                    <h3 class="font-bold text-blue-400 mb-1">Exit Interface</h3>
+                    <p class="text-slate-400">"Send directly out my local port (e.g., G0/0)." No recursive lookup needed. Best practice for point-to-point (serial) links. Using this on Ethernet can cause proxy ARP issues.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. The Default Route -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-rose-500 transition-colors duration-300 border-l-4 border-l-rose-500">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🌐</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Default Route</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">The "Gateway of Last Resort." Used when a packet's destination IP doesn't match any specific route in the routing table.</p>
+            
+            <div class="bg-slate-900 p-3 rounded border border-slate-700 text-sm">
+                <code class="text-yellow-300 block mb-2 break-all text-xs">ip route 0.0.0.0 0.0.0.0 203.0.113.1</code>
+                <p class="text-slate-400 mb-2">
+                    <strong class="text-rose-400">0.0.0.0 /0</strong> means "Match any IP address".
+                </p>
+                <p class="text-slate-400">
+                    Because of the <strong>Longest Prefix Match</strong> rule (/0 is the shortest possible prefix), this route is only used if absolutely no other route matches. Essential for routing traffic to the Internet!
+                </p>
+                <p class="text-emerald-400 font-bold mt-2 text-xs">Symbol in Routing Table: <span class="bg-emerald-500/20 px-2 py-1 rounded">S*</span></p>
+            </div>
+        </article>
+
+        <!-- 4. Administrative Distance (AD) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-1 hover:border-orange-500 transition-colors duration-300">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🏆 Administrative Distance
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">AD is the "trustworthiness" of a route source. If a router learns about the <strong class="text-cyan-400">exact same network</strong> from multiple sources, it chooses the one with the <strong class="text-emerald-400">Lowest AD</strong>.</p>
+            
+            <table class="w-full text-left text-sm border-collapse mt-2">
+                <thead>
+                    <tr class="bg-slate-700/50">
+                        <th class="p-2 border border-slate-600 text-slate-200">Route Source</th>
+                        <th class="p-2 border border-slate-600 text-slate-200">Default AD</th>
+                    </tr>
+                </thead>
+                <tbody class="text-slate-400">
+                    <tr><td class="p-2 border border-slate-600">Connected Interface</td><td class="p-2 border border-slate-600 font-bold text-emerald-400">0</td></tr>
+                    <tr class="bg-slate-900/50"><td class="p-2 border border-slate-600 font-bold text-cyan-400">Static Route</td><td class="p-2 border border-slate-600 font-bold text-cyan-400">1</td></tr>
+                    <tr><td class="p-2 border border-slate-600">eBGP</td><td class="p-2 border border-slate-600 text-slate-300">20</td></tr>
+                    <tr class="bg-slate-900/50"><td class="p-2 border border-slate-600">EIGRP</td><td class="p-2 border border-slate-600 text-slate-300">90</td></tr>
+                    <tr><td class="p-2 border border-slate-600">OSPF</td><td class="p-2 border border-slate-600 text-slate-300">110</td></tr>
+                </tbody>
+            </table>
+        </article>
+
+        <!-- 5. Floating Static Routes -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2 hover:border-purple-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🛟</span>
+                <h2 class="text-2xl font-bold text-slate-100">Floating Static Routes</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">A floating static route is a <strong>backup route</strong>. It is configured with an Administrative Distance higher than the primary route.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-purple-400 mb-2">How it Works</h3>
+                    <p class="text-slate-400 mb-2">Because its AD is artificially raised, it "floats" invisibly in the configuration file, staying OUT of the active routing table.</p>
+                    <p class="text-slate-400">If the primary route (e.g., an OSPF route with AD 110) goes down, the router looks for a backup. The floating static route (e.g., AD 115) immediately drops into the routing table and takes over.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-purple-400 mb-2">Configuration Syntax</h3>
+                    <p class="text-slate-400 mb-2">Simply add the desired AD value to the very end of your normal static route command.</p>
+                    <code class="text-yellow-300 text-xs block bg-black/50 p-2 rounded break-all">ip route 10.1.1.0 255.255.255.0 192.168.2.2 <strong class="text-rose-400">115</strong></code>
+                    <p class="text-xs text-slate-500 mt-2">*(In this example, 115 is the manually configured AD).*</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Static Route Config & Verification
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# ip route 172.16.1.0 255.255.255.0 10.0.0.2</span>
+                        <span class="text-slate-400 text-xs mt-1">Creates a standard static route pointing to the next-hop IP of 10.0.0.2.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# ip route 0.0.0.0 0.0.0.0 g0/1</span>
+                        <span class="text-slate-400 text-xs mt-1">Creates a default route pointing out the local interface GigabitEthernet0/1.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router# show ip route static</span>
+                        <span class="text-slate-400 text-xs mt-1">Filters the routing table to show ONLY routes manually configured (Static routes).</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router# show ip route 172.16.1.5</span>
+                        <span class="text-slate-400 text-xs mt-1">Checks which route the router will use for this specific destination IP (including AD and metrics).</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">The Disappearing Route</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Issue:</strong> You configured a static route using a next-hop IP, but it doesn't show up in <code class="text-slate-300">show ip route</code>.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Reason:</strong> A router will NOT put a static route into the routing table if the next-hop IP is completely unreachable (or if the exit interface is down). Verify layer 1/2 connectivity to the next-hop router!</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 8. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A recursive lookup.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. If a static route uses a Next-Hop IP instead of an Exit Interface, what specific action must the router perform to find out how to forward the packet?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A <strong>Recursive Lookup</strong>. The router must check the routing table a second time to determine which exit interface is used to reach the next-hop IP address.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Administrative Distance is the trustworthiness of a route source. The lower AD is chosen.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. A router learns about 10.1.1.0/24 from both OSPF (AD 110) and a Static Route (AD 1). What is Administrative Distance, and which route wins?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        Administrative Distance (AD) measures the <strong>trustworthiness</strong> of the routing protocol. The <strong>lowest</strong> AD wins, so the <strong>Static Route (AD 1)</strong> is installed in the routing table.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: It serves as a backup route.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. What is the purpose of a "Floating Static Route"?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        It serves as a <strong>backup route</strong>. By artificially configuring it with a higher AD than the primary routing protocol, it remains inactive until the primary path fails.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: ip route 0.0.0.0 0.0.0.0 [next-hop/exit-int]">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. What is the exact syntax (IP and Mask) used to configure a Default Route?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">ip route 0.0.0.0 0.0.0.0 [next-hop IP or exit-interface]</code>. The 0.0.0.0 /0 mask matches all destination IPs not explicitly found elsewhere in the table.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

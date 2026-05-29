@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 57: Wireless Security</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 57: Wireless Security
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">WPA2, WPA3, 802.1X & EAP</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Evolution of Wireless Encryption -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🛡️</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Evolution of Encryption</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Because wireless signals travel through the air, anyone with an antenna can capture your packets. Encryption is mandatory.</p>
+            
+            <div class="space-y-4 text-sm">
+                <!-- WEP -->
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-rose-500">
+                    <h3 class="font-bold text-rose-400 mb-1">WEP (Wired Equivalent Privacy) - The Legacy Flaw</h3>
+                    <p class="text-slate-400 text-xs">Used the RC4 cipher. <strong>Totally broken.</strong> The Initialization Vectors (IVs) were too short and reused often. Hackers can crack WEP in minutes by capturing enough packets. Never use it.</p>
+                </div>
+                
+                <!-- WPA -->
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-orange-500">
+                    <h3 class="font-bold text-orange-400 mb-1">WPA (Wi-Fi Protected Access) - The Stopgap</h3>
+                    <p class="text-slate-400 text-xs">A temporary fix for WEP that could run on older hardware. Introduced <strong>TKIP</strong> (Temporal Key Integrity Protocol) which dynamically changed keys. Still considered insecure today.</p>
+                </div>
+
+                <!-- WPA2 -->
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">WPA2 - The Modern Standard</h3>
+                    <p class="text-slate-400 text-xs">Required new hardware. Scrapped RC4/TKIP entirely and introduced <strong>AES</strong> (Advanced Encryption Standard) running in <strong>CCMP</strong> mode. It remains highly secure, provided you use a strong password.</p>
+                </div>
+
+                <!-- WPA3 -->
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-purple-500">
+                    <h3 class="font-bold text-purple-400 mb-1">WPA3 - The Future</h3>
+                    <p class="text-slate-400 text-xs">The newest standard. Replaces CCMP with the even stronger <strong>GCMP</strong> mode. Makes Protected Management Frames (PMF) mandatory to stop deauthentication attacks. Dramatically improves public hotspot security (OWE).</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Personal vs. Enterprise -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-blue-500 transition-colors duration-300 md:col-span-1">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔑</span>
+                <h2 class="text-2xl font-bold text-slate-100">Personal vs. Enterprise</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Once you choose an encryption method (like WPA2), you must choose an <strong>Authentication</strong> method.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-[#0d1117] p-3 rounded border border-slate-600">
+                    <h3 class="font-bold text-cyan-400 mb-1">Personal (PSK)</h3>
+                    <p class="text-slate-400 text-xs mb-1"><strong>Pre-Shared Key.</strong> Everyone connecting to the network types in the exact same password.</p>
+                    <p class="text-rose-400 text-xs mt-1"><em>Problem:</em> If an employee leaves, you must change the password on every single device in the company to keep them out.</p>
+                </div>
+                
+                <div class="bg-[#0d1117] p-3 rounded border border-slate-600">
+                    <h3 class="font-bold text-blue-400 mb-1">Enterprise (802.1X)</h3>
+                    <p class="text-slate-400 text-xs mb-1">Every user authenticates with their <strong>own unique username and password</strong> (or certificate), usually backed by Active Directory and a RADIUS server.</p>
+                    <p class="text-emerald-400 text-xs mt-1"><em>Benefit:</em> You can instantly revoke one person's access without affecting anyone else.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. Enterprise Authentication (802.1X) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2 lg:col-span-2 border-l-4 border-l-purple-500">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🏛️ The 802.1X Framework
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">Enterprise Wi-Fi requires a robust authentication framework. 802.1X defines three specific roles.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div class="bg-slate-900 p-4 rounded border border-slate-700 text-center">
+                    <div class="text-2xl mb-2">💻</div>
+                    <h3 class="font-bold text-cyan-400 mb-1">1. Supplicant</h3>
+                    <p class="text-slate-400 text-xs">The end-user's device (laptop, phone) requesting access to the network.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700 text-center">
+                    <div class="text-2xl mb-2">📡</div>
+                    <h3 class="font-bold text-emerald-400 mb-1">2. Authenticator</h3>
+                    <p class="text-slate-400 text-xs">The Wireless LAN Controller (WLC) or the Access Point. It acts as the "bouncer," blocking traffic until identity is verified.</p>
+                </div>
+
+                <div class="bg-slate-900 p-4 rounded border border-slate-700 text-center">
+                    <div class="text-2xl mb-2">🗄️</div>
+                    <h3 class="font-bold text-rose-400 mb-1">3. Auth Server</h3>
+                    <p class="text-slate-400 text-xs">The RADIUS server (e.g., Cisco ISE). Holds the actual database of valid credentials and tells the Authenticator "Yes" or "No".</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 4. EAP Types -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-yellow-400 transition-colors duration-300 md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                📜 EAP Types
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">802.1X is just the framework. The actual conversation happens using the <strong>Extensible Authentication Protocol (EAP)</strong>.</p>
+            
+            <div class="space-y-3 text-sm">
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <h3 class="font-bold text-emerald-400 text-xs">EAP-TLS (Most Secure)</h3>
+                    <p class="text-slate-400 text-xs mt-1">Requires a digital certificate installed on the RADIUS server <strong>AND</strong> a certificate installed on every single client PC. Highly secure, but difficult to deploy.</p>
+                </div>
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <h3 class="font-bold text-yellow-300 text-xs">PEAP (Most Common)</h3>
+                    <p class="text-slate-400 text-xs mt-1">Protected EAP. Only requires a certificate on the RADIUS server. The server establishes an encrypted TLS tunnel, and the client securely passes their standard username/password inside the tunnel.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. WPA3 Specific Enhancements -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                🚀 WPA3 Key Enhancements
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-cyan-400 mb-1 border-b border-slate-700 pb-1">SAE (Replaces PSK)</h3>
+                    <p class="text-slate-400 text-xs mt-2"><strong>Simultaneous Authentication of Equals.</strong> In WPA2, a hacker could capture the 4-way handshake, take the packet home, and brute-force the PSK offline. WPA3's SAE uses a cryptographic "Dragonfly" handshake that completely prevents offline dictionary attacks.</p>
+                </div>
+                <div class="bg-[#0d1117] p-4 rounded border border-slate-600">
+                    <h3 class="font-bold text-cyan-400 mb-1 border-b border-slate-700 pb-1">PMF Mandatory</h3>
+                    <p class="text-slate-400 text-xs mt-2"><strong>Protected Management Frames.</strong> In WPA2, an attacker can forge "deauthentication" frames to kick you off the network (causing a DoS) because management frames were unencrypted. WPA3 encrypts them, stopping this attack.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The 802.1X Nightclub</strong>
+                    <p class="text-slate-400 text-xs">
+                        <strong class="text-cyan-400">Supplicant:</strong> The guest trying to get in.<br>
+                        <strong class="text-emerald-400">Authenticator:</strong> The Bouncer at the door (The AP).<br>
+                        <strong class="text-rose-400">Auth Server:</strong> The Manager inside with the VIP list (RADIUS). The Bouncer asks the Manager if the guest is allowed in.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">PEAP = Passwords</strong>
+                    <p class="text-slate-400 text-xs">
+                        If you are typing a Username and <strong>Password</strong> into a prompt to join Wi-Fi, you are almost certainly using <strong>PEAP</strong>.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Advanced Encryption Standard (AES) using CCMP mode.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Which encryption standard and mode were introduced as the mandatory requirement for WPA2 certification?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>AES</strong> (Advanced Encryption Standard) running in <strong>CCMP</strong> mode. (WPA used TKIP, WEP used RC4).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A Pre-Shared Key (PSK).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. If a WLAN is configured for "WPA2 Personal", what specific authentication method is being used?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A <strong>Pre-Shared Key (PSK)</strong>. All users share the exact same passphrase.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: EAP-TLS.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. Which EAP type is considered the most secure but requires digital certificates to be installed on both the RADIUS server and every client machine?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>EAP-TLS</strong> (Transport Layer Security).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: SAE (Simultaneous Authentication of Equals).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. To prevent offline dictionary attacks, WPA3 replaces the Pre-Shared Key (PSK) exchange mechanism with what new protocol?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>SAE</strong> (Simultaneous Authentication of Equals).
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

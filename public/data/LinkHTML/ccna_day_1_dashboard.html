@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 1: Network Devices</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar for sleek dark mode */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles for PDF Generation */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 12pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-cyan-400, .text-emerald-400 { color: black !important; }
+            .border-slate-700, .border-slate-600 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand all details/summaries for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            /* Force reveal answers on print regardless of toggle state */
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; margin-top: 10px; border-left: 4px solid black; }
+            .print-answer-block { display: block !important; border-left: 3px solid #333; padding-left: 10px; margin-top: 10px; }
+            details .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4">
+        <div class="flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                    Day 1: Network Devices
+                </h1>
+                <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+            </div>
+            <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+                🖨️ Save as PDF
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. Clients & Endpoints -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">💻</span>
+                <h2 class="text-2xl font-bold text-slate-100">Endpoints (Clients)</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">The devices that end-users interact with to access network resources.</p>
+            <ul class="list-disc pl-5 text-sm text-slate-400 space-y-1">
+                <li><strong class="text-slate-200">Examples:</strong> PCs, Laptops, IP Phones, IoT devices.</li>
+                <li><strong class="text-slate-200">Function:</strong> Initiate requests to servers for data, web pages, or files.</li>
+                <li><strong class="text-slate-200">Edge Location:</strong> Always sit at the very edge of the network topology.</li>
+            </ul>
+        </article>
+
+        <!-- 2. Servers -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🗄️</span>
+                <h2 class="text-2xl font-bold text-slate-100">Servers</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Powerful computers that provide services, resources, and data to clients.</p>
+            <ul class="list-disc pl-5 text-sm text-slate-400 space-y-1">
+                <li><strong class="text-slate-200">Examples:</strong> Web Server, Email Server, DNS Server.</li>
+                <li><strong class="text-slate-200">Function:</strong> Continuously listen for and fulfill client requests.</li>
+                <li><strong class="text-slate-200">Architecture:</strong> Often centralized in data centers or the cloud.</li>
+            </ul>
+        </article>
+
+        <!-- 3. Switches -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-blue-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔀</span>
+                <h2 class="text-2xl font-bold text-slate-100">Switches</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">The core building block of a Local Area Network (LAN).</p>
+            <ul class="list-disc pl-5 text-sm text-slate-400 space-y-1">
+                <li><strong class="text-slate-200">Scope:</strong> Connects devices <span class="italic text-cyan-400">within the same network</span>.</li>
+                <li><strong class="text-slate-200">Mechanism:</strong> Forwards traffic (Frames) based on <strong>MAC Addresses</strong>.</li>
+                <li><strong class="text-slate-200">Intelligence:</strong> Dynamically builds a MAC address table to forward traffic only out the required port.</li>
+            </ul>
+        </article>
+
+        <!-- 4. Routers -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-blue-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🌐</span>
+                <h2 class="text-2xl font-bold text-slate-100">Routers</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">The gateways that connect different networks together.</p>
+            <ul class="list-disc pl-5 text-sm text-slate-400 space-y-1">
+                <li><strong class="text-slate-200">Scope:</strong> Connects LANs to other LANs or WANs (the Internet).</li>
+                <li><strong class="text-slate-200">Mechanism:</strong> Forwards traffic (Packets) based on <strong>IP Addresses</strong>.</li>
+                <li><strong class="text-slate-200">Function:</strong> Makes routing decisions to find the "best path" to a destination network.</li>
+            </ul>
+        </article>
+
+        <!-- 5. Firewalls -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-red-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🧱</span>
+                <h2 class="text-2xl font-bold text-slate-100">Firewalls</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Security checkpoint devices guarding the network boundary.</p>
+            <ul class="list-disc pl-5 text-sm text-slate-400 space-y-1">
+                <li><strong class="text-slate-200">Function:</strong> Monitors and controls incoming/outgoing traffic based on rules.</li>
+                <li><strong class="text-slate-200">Stateful:</strong> Remembers the state of connections (e.g., if a PC asked for a webpage, it allows the webpage back in).</li>
+                <li><strong class="text-slate-200">NGFW:</strong> Next-Generation Firewalls can inspect traffic deep into the application layer (Layer 7).</li>
+            </ul>
+        </article>
+
+        <!-- 6. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🧠 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100">The Switch = Local Post Office</strong><br>
+                    <span class="text-slate-400">Only handles mail for people inside the same city (LAN). Uses precise street addresses (MAC Addresses).</span>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100">The Router = International Airport</strong><br>
+                    <span class="text-slate-400">Moves you between completely different countries (Networks/Subnets). Uses Passports/Zip Codes (IP Addresses).</span>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100">The Firewall = The Bouncer</strong><br>
+                    <span class="text-slate-400">Checks the guest list (Access Control Lists). If you aren't on the list or look suspicious, your packet is dropped.</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Intro CLI Commands (Conditional) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ CLI Command Teasers (Day 1)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4">While deep CLI configuration comes later, here are the first commands you'll run in Packet Tracer to verify these devices.</p>
+            
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-2">
+                    <div class="flex gap-4">
+                        <span class="text-yellow-300 w-48 shrink-0">Router> enable</span>
+                        <span class="text-slate-500">// Moves from User mode to Privileged mode.</span>
+                    </div>
+                    <div class="flex gap-4">
+                        <span class="text-yellow-300 w-48 shrink-0">Router# show version</span>
+                        <span class="text-slate-500">// Displays hardware, OS, and uptime info.</span>
+                    </div>
+                    <div class="flex gap-4">
+                        <span class="text-yellow-300 w-48 shrink-0">Switch# show mac address-table</span>
+                        <span class="text-slate-500">// Shows the MAC addresses the switch has learned.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 8. Common Troubleshooting (Conditional) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Issue: Can't reach a PC in a different department (LAN).</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Likely Culprit:</strong> The <span class="text-cyan-400">Router</span> is down, or the client's <span class="text-cyan-400">Default Gateway</span> IP is misconfigured.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Issue: Can't reach the PC sitting right next to you.</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Likely Culprit:</strong> The <span class="text-cyan-400">Switch</span> port is shut down, there is a bad ethernet cable, or devices are in different VLANs.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 9. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click on the questions to reveal the answers. Test yourself before looking!</p>
+
+            <div class="space-y-3">
+                <!-- Q1 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Switch.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Which device creates a Local Area Network (LAN) by forwarding traffic based on MAC addresses?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Switch.</strong> It builds a MAC address table to intelligently forward frames only to the specific port where the destination MAC resides.
+                    </div>
+                    <div class="print-answer-block hidden text-black text-sm"><strong>Answer:</strong> Switch. It uses MAC addresses to forward frames locally.</div>
+                </details>
+
+                <!-- Q2 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Router.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. You need to connect your office LAN to the Internet. Which device makes this routing decision based on IP addresses?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Router.</strong> Routers connect distinct networks and use routing tables to determine the best path for IP packets.
+                    </div>
+                    <div class="print-answer-block hidden text-black text-sm"><strong>Answer:</strong> Router. It routes packets between different IP networks.</div>
+                </details>
+
+                <!-- Q3 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Firewall.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. Which device acts as a security sentry, dropping unauthorized traffic before it enters the internal network?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Firewall.</strong> It monitors incoming and outgoing traffic based on stateful rules and Access Control Lists (ACLs).
+                    </div>
+                    <div class="print-answer-block hidden text-black text-sm"><strong>Answer:</strong> Firewall. It enforces security policies to allow or deny traffic.</div>
+                </details>
+                
+                <!-- Q4 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Servers provide resources; Clients request resources.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. What is the primary difference in function between a Client and a Server?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A <strong>Client</strong> (like a PC) initiates requests for data or services. A <strong>Server</strong> (like a Web Server) continuously listens for those requests and provides the data.
+                    </div>
+                    <div class="print-answer-block hidden text-black text-sm"><strong>Answer:</strong> Clients initiate requests; Servers fulfill them.</div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

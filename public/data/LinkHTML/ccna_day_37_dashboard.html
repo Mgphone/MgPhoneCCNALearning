@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 37: NTP (Network Time Protocol)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 37: NTP
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">Network Time Protocol & Clock Synchronization</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. What is NTP & Why do we need it? -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">⏱️</span>
+                <h2 class="text-2xl font-bold text-slate-100">Why Network Time?</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Network Time Protocol (NTP) ensures all devices on a network share the exact same time. It operates over <strong class="text-cyan-400">UDP Port 123</strong>.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">1. Syslog Correlation</h3>
+                    <p class="text-slate-400">If a network outage occurs, you must piece together logs from multiple routers and switches. If their clocks are off by even 30 seconds, figuring out exactly what broke first becomes impossible.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">2. Cryptography & Certificates</h3>
+                    <p class="text-slate-400">Digital certificates (like those used for HTTPS, VPNs, and SSH) have strict valid dates. If a router thinks it's 1993, it will reject modern certificates as "not yet valid" and secure connections will fail.</p>
+                </div>
+
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-purple-500">
+                    <h3 class="font-bold text-purple-400 mb-1">3. Two Clocks</h3>
+                    <p class="text-slate-400">Cisco devices have two clocks: the <strong>Hardware Clock</strong> (Calendar/battery-backed) and the <strong>Software Clock</strong> (runs only while powered on). NTP updates the Software Clock by default.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Stratum Levels -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📶</span>
+                <h2 class="text-2xl font-bold text-slate-100">Stratum Levels</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">NTP uses a hierarchical system called "Stratum" to measure the distance (in hops) from the highly accurate reference clock.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-rose-500/20 text-rose-400 px-2 py-1 rounded font-bold border border-rose-500/30 shrink-0">Stratum 0</span>
+                        <span class="text-slate-300 text-xs">Highly precise reference clocks (Atomic clocks, GPS). Cannot be connected to directly over a network.</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded font-bold border border-orange-500/30 shrink-0">Stratum 1</span>
+                        <span class="text-slate-300 text-xs">Primary time servers. Devices physically attached to a Stratum 0 clock.</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded font-bold border border-emerald-500/30 shrink-0">Stratum 2</span>
+                        <span class="text-slate-300 text-xs">Secondary servers. Devices that sync their time over the network from a Stratum 1 server.</span>
+                    </div>
+                </div>
+                
+                <div class="bg-[#0d1117] p-4 rounded border border-rose-500 text-center flex flex-col justify-center">
+                    <h3 class="font-bold text-rose-400 text-lg mb-2">Stratum 16 = Unsynchronized</h3>
+                    <p class="text-slate-400 text-xs">The maximum valid stratum is 15. If a device shows a stratum level of 16, it means the clock is unsynchronized and unreliable. It will not be trusted by other NTP clients.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. NTP Architecture & Modes -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2 lg:col-span-1 border-l-4 border-l-purple-500">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🏛️ NTP Architecture Roles
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">Devices can participate in NTP in different ways depending on their configuration.</p>
+            
+            <ul class="space-y-4 text-sm text-slate-400">
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-emerald-400 block text-base">Client Mode</strong>
+                    <p class="text-xs mt-1">Polls an NTP server for time. It updates its own clock but does not provide time to other devices.</p>
+                </li>
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-cyan-400 block text-base">Server Mode</strong>
+                    <p class="text-xs mt-1">Provides time to clients. It can also act as a client itself by syncing to a higher-stratum server (e.g., getting time from the internet, then serving it to the local LAN).</p>
+                </li>
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-purple-400 block text-base">Symmetric Active (Peer)</strong>
+                    <p class="text-xs mt-1">Two routers are configured to peer with each other. If one loses its connection to the internet time server, it can temporarily sync its clock from its peer.</p>
+                </li>
+            </ul>
+        </article>
+
+        <!-- 4. NTP Authentication -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-1 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                🔐 NTP Authentication
+            </h2>
+            <p class="text-slate-300 mb-3 text-sm">Attackers can spoof NTP packets, sending the network back in time to invalidate certificates or bypass time-based Access Control Lists. <strong>NTP Authentication</strong> prevents this.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-emerald-400 mb-2">How it Works</h3>
+                    <p class="text-slate-400 mb-2">Instead of blindly trusting any NTP packet, the router uses an MD5 hash and a pre-shared key. The client hashes the packet using the key, and the server verifies it.</p>
+                    <p class="text-slate-300 text-xs italic">Note: The timestamp itself isn't encrypted, but the packet is authenticated so the receiver knows the source is legitimate.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700 font-mono text-xs">
+                    <h3 class="font-bold text-cyan-400 mb-2 font-sans border-b border-slate-700 pb-1">Auth Configuration</h3>
+                    <span class="text-yellow-300 block">ntp authenticate</span>
+                    <span class="text-yellow-300 block mt-1">ntp authentication-key 1 md5 CISCO123</span>
+                    <span class="text-yellow-300 block mt-1">ntp trusted-key 1</span>
+                    <span class="text-yellow-300 block mt-1">ntp server 10.1.1.1 key 1</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">"Sixteen is Sunk"</strong>
+                    <p class="text-slate-400">
+                        When looking at Stratum levels, remember 16 means the ship is sunk. The clock is unsynchronized and cannot be trusted.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">UDP 123</strong>
+                    <p class="text-slate-400">
+                        NTP uses <strong class="text-cyan-400">UDP Port 123</strong>. Just remember the clock counts up: 1, 2, 3!
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Configuration & Verification CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# ntp server 8.8.8.8</span>
+                        <span class="text-slate-400 text-xs mt-1">Configures the router as an NTP client to sync its clock to the specified IP address.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# ntp master 5</span>
+                        <span class="text-slate-400 text-xs mt-1">Forces the router to act as an authoritative NTP server for the network, claiming to be Stratum 5. (Useful if the router loses internet connectivity but still needs to provide a unified time to the internal LAN).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-emerald-500 rounded"></div>
+                        <span class="text-yellow-300">Router# show ntp status</span>
+                        <span class="text-slate-400 text-xs mt-1">Crucial! The first line will say <strong class="text-emerald-400">Clock is synchronized</strong> or <strong class="text-rose-400">Clock is unsynchronized</strong>. Also displays the local Stratum and reference IP.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router# show ntp associations</span>
+                        <span class="text-slate-400 text-xs mt-1">Displays a table of all configured NTP servers/peers. Shows their Stratum, Delay, Offset (how far off your clock is), and Jitter. An asterisk (*) indicates the server you are currently synced to.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">"Clock is unsynchronized"</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Action 1:</strong> Be patient! NTP is a slow protocol. It can take 5-10 minutes for a device to fully synchronize after a reboot.</p>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Action 2:</strong> Check ACLs and firewalls. Are you blocking UDP Port 123 outbound?</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Stratum 16 in Associations</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Issue:</strong> You run `show ntp associations` and the server you pointed to shows a stratum of 16.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> The upstream server itself has lost its time source and is currently dead/unreliable. Point to a different server.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 8. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: UDP Port 123.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. What Transport Layer protocol and port number does NTP use to communicate?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>UDP Port 123.</strong>
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A Stratum 0 clock.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. An atomic clock or a GPS receiver acting as the highly accurate reference time source is assigned which specific Stratum level?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A <strong>Stratum 0</strong> clock. (Devices connected over a network to it become Stratum 1).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 'show ntp status'.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. Which CLI command will immediately tell you if the router's clock is "synchronized" or "unsynchronized"?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">show ntp status</code>
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: It makes the router act as an authoritative NTP Server.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. If you enter the global configuration command `ntp master 4`, what specific role does the router assume?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        It makes the router act as an authoritative <strong>NTP Server</strong> at Stratum level 4, allowing it to provide time to downstream clients even if it loses its own internet connection.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

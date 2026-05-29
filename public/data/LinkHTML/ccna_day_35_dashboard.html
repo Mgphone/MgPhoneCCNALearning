@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 35: Extended Access Control Lists (ACLs)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 35: Extended ACLs
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">Precision Traffic Filtering & Named ACLs</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Power of Extended ACLs -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔍</span>
+                <h2 class="text-2xl font-bold text-slate-100">Extended Capabilities</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">While Standard ACLs only filter based on the Source IP, Extended ACLs act as a true stateless firewall, inspecting deep into Layer 3 and Layer 4 headers.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Filtering Parameters</h3>
+                    <ul class="list-disc pl-4 text-slate-300 space-y-1 mt-1">
+                        <li><strong>Protocol:</strong> IP, TCP, UDP, ICMP, OSPF.</li>
+                        <li><strong>Source:</strong> IP Address & Wildcard Mask.</li>
+                        <li><strong>Destination:</strong> IP Address & Wildcard Mask.</li>
+                        <li><strong>Port (L4):</strong> Specific source or destination port (e.g., eq 80, eq 443).</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Numbered Ranges</h3>
+                    <p class="text-slate-400 mb-1">Cisco routers identify legacy numbered Extended ACLs using specific ID ranges:</p>
+                    <ul class="list-disc pl-4 text-slate-300 font-mono text-xs">
+                        <li>100 - 199</li>
+                        <li>2000 - 2699 (Expanded range)</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. The Golden Rule of Placement -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 border-l-4 border-l-orange-500 md:col-span-2 lg:col-span-1">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📍</span>
+                <h2 class="text-2xl font-bold text-slate-100">Placement Rule</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Extended ACLs are surgically precise, which changes where we should place them compared to Standard ACLs.</p>
+            
+            <div class="bg-[#0d1117] p-4 rounded border border-orange-500/50 text-center mb-4">
+                <p class="text-xl font-bold text-orange-400">Place Extended ACLs as close to the<br><span class="text-white text-2xl uppercase tracking-wider">Source</span> as possible.</p>
+            </div>
+            
+            <div class="text-sm text-slate-400 space-y-2">
+                <p><strong class="text-rose-400">Why?</strong> Because an Extended ACL knows exactly where the packet is going and what port it's trying to hit, we can drop unwanted traffic immediately. Why let a packet travel across 5 routers and waste WAN bandwidth just to drop it at the destination?</p>
+            </div>
+        </article>
+
+        <!-- 3. Extended Syntax Anatomy -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🧩 Syntax Anatomy
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">Extended ACL statements must follow a strict, logical order: Action, Protocol, Source, Destination, Port.</p>
+            
+            <div class="bg-[#0d1117] p-4 rounded border border-slate-600 font-mono text-sm overflow-x-auto whitespace-nowrap mb-4">
+                <span class="text-slate-400">access-list 100</span> 
+                <span class="text-emerald-400 font-bold">permit</span> 
+                <span class="text-cyan-400 font-bold">tcp</span> 
+                <span class="text-yellow-400">192.168.1.0 0.0.0.255</span> 
+                <span class="text-rose-400">host 10.0.0.5</span> 
+                <span class="text-purple-400 font-bold">eq 80</span>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-300">
+                <div class="border-l-2 border-emerald-400 pl-2"><strong>Action:</strong> <span class="text-slate-400">permit or deny</span></div>
+                <div class="border-l-2 border-cyan-400 pl-2"><strong>Protocol:</strong> <span class="text-slate-400">ip, tcp, udp, icmp</span></div>
+                <div class="border-l-2 border-yellow-400 pl-2"><strong>Source:</strong> <span class="text-slate-400">IP & Mask (or host/any)</span></div>
+                <div class="border-l-2 border-rose-400 pl-2"><strong>Dest:</strong> <span class="text-slate-400">IP & Mask (or host/any)</span></div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-700">
+                <h3 class="font-bold text-slate-200 mb-2 text-sm">L4 Operators (Used with TCP/UDP)</h3>
+                <ul class="flex flex-wrap gap-4 text-xs font-mono text-slate-400">
+                    <li><strong class="text-purple-400">eq</strong> = Equal to</li>
+                    <li><strong class="text-purple-400">gt</strong> = Greater than</li>
+                    <li><strong class="text-purple-400">lt</strong> = Less than</li>
+                    <li><strong class="text-purple-400">neq</strong> = Not equal to</li>
+                    <li><strong class="text-purple-400">range</strong> = Port range</li>
+                </ul>
+            </div>
+        </article>
+
+        <!-- 4. Named ACLs (The Modern Standard) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                📛 Named ACLs
+            </h2>
+            <div class="space-y-4 text-sm">
+                <p class="text-slate-300">Numbers are hard to remember. Modern Cisco best practice uses <strong>Named ACLs</strong>.</p>
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <p class="text-slate-400 mb-2 text-xs">Instead of a single line, it drops you into a sub-configuration mode. You can easily insert or delete individual lines using sequence numbers!</p>
+                    <code class="text-yellow-300 text-xs block mb-1">Router(config)# ip access-list extended BLOCK_WEB</code>
+                    <code class="text-yellow-300 text-xs block mb-1">Router(config-ext-nacl)# deny tcp 10.1.1.0 0.0.0.255 any eq 80</code>
+                    <code class="text-yellow-300 text-xs block">Router(config-ext-nacl)# permit ip any any</code>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">"Permit IP ANY ANY"</strong>
+                    <p class="text-slate-400">
+                        In a Standard ACL, you write <code class="text-cyan-400">permit any</code> to bypass the implicit deny. In an Extended ACL, you MUST specify the protocol. <code class="text-cyan-400">permit ip any any</code> means "Permit the IP protocol, from any source, to any destination."
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Source / Source / Dest</strong>
+                    <p class="text-slate-400">
+                        <strong class="text-orange-400">S</strong>tandard ACLs check the <strong class="text-orange-400">S</strong>ource, and go near the <strong class="text-orange-400">D</strong>estination.<br>
+                        Extended ACLs check everything, so put them near the Source to save bandwidth.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Extended ACL CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# access-list 101 deny icmp host 10.1.1.5 any echo</span>
+                        <span class="text-slate-400 text-xs mt-1">Blocks PC 10.1.1.5 from pinging ANY destination. (Note: 'echo' is the specific ICMP type for a ping request).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config)# ip access-list extended SERVER_DMZ</span>
+                        <span class="text-yellow-300">Router(config-ext-nacl)# 5 deny tcp any host 192.168.50.5 eq 22</span>
+                        <span class="text-slate-400 text-xs mt-1">Creates a named ACL and uses a manual sequence number (5) to inject a rule denying SSH (port 22) to a specific server.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-emerald-500 rounded"></div>
+                        <span class="text-yellow-300">Router(config)# interface g0/1</span>
+                        <span class="text-yellow-300">Router(config-if)# ip access-group SERVER_DMZ in</span>
+                        <span class="text-slate-400 text-xs mt-1"><strong>CRITICAL:</strong> Applies the named ACL to the interface in the inbound direction.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router# show access-lists</span>
+                        <span class="text-slate-400 text-xs mt-1">Displays the ACLs, their sequence numbers, and match counters.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">"I blocked port 80, but I still can't browse the web!"</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Symptom:</strong> You added an `eq 80` rule but DNS resolution is failing.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> Remember the Implicit Deny! If you only permit TCP port 80, you are blocking UDP port 53 (DNS). A PC cannot load a webpage if it can't resolve the URL first. Ensure DNS is permitted.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">The Sequence Issue</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Fix:</strong> If you use numbered ACLs (e.g., 100) and type a new line, it goes to the <strong>bottom</strong>. If a `permit ip any any` is already above it, your new line will never be hit. Use Named ACLs to insert sequence numbers directly (e.g., `15 deny ...`).</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 8. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: As close to the Source as possible.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. According to Cisco best practices, where should an Extended ACL be placed in the network topology?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        As close to the <strong>Source</strong> as possible. (This drops unwanted traffic immediately, saving bandwidth across the rest of the network).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 'permit ip any any'.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. You write a specific 'deny' statement to block a PC from reaching a Web Server. What statement MUST you put at the bottom of the Extended ACL to allow all other traffic to pass?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">permit ip any any</code>. (Unlike a Standard ACL which just needs `permit any`, an Extended ACL requires a protocol specification).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: It is an Extended ACL (because 101 falls in the 100-199 range).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. You see the command `access-list 101 permit tcp any any eq 443`. Just by looking at the number "101", is this a Standard or Extended ACL?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        It is an <strong>Extended ACL</strong>. (Standard ACLs use 1-99, while Extended use 100-199).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: ICMP.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. If you want to use an Extended ACL to block a host from "pinging" a server, which protocol keyword must you specify in the command?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        You must specify <strong>ICMP</strong>. (e.g., <code class="text-cyan-400">deny icmp host 10.1.1.5 host 192.168.2.2 echo</code>). Ping does not use TCP or UDP.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

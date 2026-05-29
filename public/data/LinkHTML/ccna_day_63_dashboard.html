@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 63: Configuration Management (Ansible, Puppet, Chef)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Friendly Styles */
+        @media print {
+            body { background: white !important; color: black !important; padding: 0; }
+            .bg-slate-900, .bg-slate-800 { background: white !important; }
+            .border-slate-700 { border-color: #cbd5e1 !important; }
+            .text-slate-300, .text-slate-400 { color: #334155 !important; }
+            .text-emerald-400 { color: #059669 !important; font-weight: bold; }
+            .text-cyan-400 { color: #0284c7 !important; font-weight: bold; }
+            .text-violet-400 { color: #7c3aed !important; font-weight: bold; }
+            .text-amber-400 { color: #d97706 !important; font-weight: bold; }
+            .no-print { display: none !important; }
+            /* Auto-expand details for print */
+            details { display: block !important; margin-bottom: 1rem; }
+            details > summary { display: none !important; }
+            details > div { display: block !important; border: 1px solid #ccc; padding: 10px; margin-top: 5px; }
+            .shadow-lg { shadow: none !important; }
+            .grid { display: block !important; }
+            .card { margin-bottom: 20px !important; break-inside: avoid; }
+        }
+        
+        .card { transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen">
+
+    <!-- Header -->
+    <header class="mb-8 border-b border-slate-700 pb-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Day 63: Config Management</h1>
+                <p class="text-slate-400 mt-2">Ansible, Puppet, & Chef <span class="text-xs ml-2 bg-slate-800 px-2 py-1 rounded text-slate-300">CCNA 200-301 Exam Blueprint 6.6</span></p>
+            </div>
+            <button onclick="window.print()" class="no-print mt-4 md:mt-0 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow-lg font-semibold flex items-center gap-2 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                Print Cheat Sheet
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Core Concept: Config Management -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg col-span-1 md:col-span-2 lg:col-span-3">
+            <h2 class="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                <span class="text-blue-400">⚡</span> The "Why" of Configuration Management
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                    <h3 class="font-bold text-slate-300 mb-1 border-b border-slate-600 pb-1">Traditional Method</h3>
+                    <p class="text-slate-400">Device-by-device via CLI (SSH/Telnet). Slow, error-prone, hard to scale, lacks version control.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-300 mb-1 border-b border-slate-600 pb-1">Modern Automation</h3>
+                    <p class="text-slate-400">Centralized controller manages configs as code. Scalable, consistent, easy rollbacks.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-emerald-400 mb-1 border-b border-slate-600 pb-1">Idempotency (Crucial Concept)</h3>
+                    <p class="text-slate-400">Making the same change multiple times yields the same result. The tool only makes changes if the current state differs from the desired state.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tool 1: Ansible -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg border-t-4 border-t-red-500">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 font-bold">A</div>
+                <h2 class="text-2xl font-bold text-white">Ansible</h2>
+            </div>
+            <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex items-start gap-2"><span class="text-red-400">▸</span> <strong>Architecture:</strong> <span class="text-white bg-slate-700 px-1 rounded">Agentless</span> (Connects via SSH/NETCONF). No software installation required on managed devices.</li>
+                <li class="flex items-start gap-2"><span class="text-red-400">▸</span> <strong>Model:</strong> <span class="text-white">Push</span>. Control node pushes configuration down to nodes.</li>
+                <li class="flex items-start gap-2"><span class="text-red-400">▸</span> <strong>Core Language:</strong> Python (under the hood).</li>
+                <li class="flex items-start gap-2"><span class="text-red-400">▸</span> <strong>Config Format:</strong> <strong>YAML</strong>. Human-readable data serialization.</li>
+            </ul>
+            <div class="mt-4 p-3 bg-slate-900 rounded border border-slate-700">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Key Terminology</h3>
+                <p class="text-sm"><span class="text-red-400 font-bold">Playbook:</span> The file containing the config instructions (YAML).<br>
+                <span class="text-red-400 font-bold">Inventory:</span> List of devices to manage.<br>
+                <span class="text-red-400 font-bold">Module:</span> Scripts that Ansible executes on the device.</p>
+            </div>
+        </section>
+
+        <!-- Tool 2: Puppet -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg border-t-4 border-t-amber-500">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 font-bold">P</div>
+                <h2 class="text-2xl font-bold text-white">Puppet</h2>
+            </div>
+            <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex items-start gap-2"><span class="text-amber-400">▸</span> <strong>Architecture:</strong> <span class="text-white bg-slate-700 px-1 rounded">Agent-based</span> (typically). Requires a Puppet agent installed on the managed node.</li>
+                <li class="flex items-start gap-2"><span class="text-amber-400">▸</span> <strong>Model:</strong> <span class="text-white">Pull</span>. Agents check in with the Puppet Master (port 8140) to request configs.</li>
+                <li class="flex items-start gap-2"><span class="text-amber-400">▸</span> <strong>Core Language:</strong> Ruby.</li>
+                <li class="flex items-start gap-2"><span class="text-amber-400">▸</span> <strong>Config Format:</strong> Puppet DSL (Domain Specific Language).</li>
+            </ul>
+            <div class="mt-4 p-3 bg-slate-900 rounded border border-slate-700">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Key Terminology</h3>
+                <p class="text-sm"><span class="text-amber-400 font-bold">Puppet Master:</span> The centralized control server.<br>
+                <span class="text-amber-400 font-bold">Manifest:</span> The file containing configuration instructions.<br>
+                <span class="text-amber-400 font-bold">Puppet Agent:</span> Software running on the managed device.</p>
+            </div>
+        </section>
+
+        <!-- Tool 3: Chef -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg border-t-4 border-t-emerald-500">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 font-bold">C</div>
+                <h2 class="text-2xl font-bold text-white">Chef</h2>
+            </div>
+            <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex items-start gap-2"><span class="text-emerald-400">▸</span> <strong>Architecture:</strong> <span class="text-white bg-slate-700 px-1 rounded">Agent-based</span>. Requires Chef client software on managed devices.</li>
+                <li class="flex items-start gap-2"><span class="text-emerald-400">▸</span> <strong>Model:</strong> <span class="text-white">Pull</span>. Clients poll the Chef server for updates.</li>
+                <li class="flex items-start gap-2"><span class="text-emerald-400">▸</span> <strong>Core Language:</strong> Ruby.</li>
+                <li class="flex items-start gap-2"><span class="text-emerald-400">▸</span> <strong>Config Format:</strong> Ruby (specifically Chef DSL).</li>
+            </ul>
+            <div class="mt-4 p-3 bg-slate-900 rounded border border-slate-700">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Key Terminology</h3>
+                <p class="text-sm"><span class="text-emerald-400 font-bold">Recipe:</span> A file containing configuration tasks.<br>
+                <span class="text-emerald-400 font-bold">Cookbook:</span> A collection of related recipes.<br>
+                <span class="text-emerald-400 font-bold">Chef Server/Client:</span> The control plane and managed endpoint.</p>
+            </div>
+        </section>
+
+        <!-- Matrix & Mnemonics -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg lg:col-span-2">
+            <h2 class="text-xl font-bold text-white mb-4">🔥 Rapid Memorization Matrix</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-300">
+                    <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+                        <tr>
+                            <th class="px-4 py-3 rounded-tl-lg">Feature</th>
+                            <th class="px-4 py-3 text-red-400">Ansible</th>
+                            <th class="px-4 py-3 text-amber-400">Puppet</th>
+                            <th class="px-4 py-3 text-emerald-400 rounded-tr-lg">Chef</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-slate-700">
+                            <td class="px-4 py-3 font-semibold text-white">Agent</td>
+                            <td class="px-4 py-3 bg-red-900/10 font-bold">Agentless</td>
+                            <td class="px-4 py-3 bg-amber-900/10">Agent-based</td>
+                            <td class="px-4 py-3 bg-emerald-900/10">Agent-based</td>
+                        </tr>
+                        <tr class="border-b border-slate-700">
+                            <td class="px-4 py-3 font-semibold text-white">Model</td>
+                            <td class="px-4 py-3 bg-red-900/10 font-bold">Push</td>
+                            <td class="px-4 py-3 bg-amber-900/10">Pull</td>
+                            <td class="px-4 py-3 bg-emerald-900/10">Pull</td>
+                        </tr>
+                        <tr class="border-b border-slate-700">
+                            <td class="px-4 py-3 font-semibold text-white">Language</td>
+                            <td class="px-4 py-3 bg-red-900/10">Python</td>
+                            <td class="px-4 py-3 bg-amber-900/10">Ruby</td>
+                            <td class="px-4 py-3 bg-emerald-900/10">Ruby</td>
+                        </tr>
+                        <tr class="border-b border-slate-700">
+                            <td class="px-4 py-3 font-semibold text-white">File Syntax</td>
+                            <td class="px-4 py-3 bg-red-900/10 font-bold">YAML</td>
+                            <td class="px-4 py-3 bg-amber-900/10">Puppet DSL (Ruby)</td>
+                            <td class="px-4 py-3 bg-emerald-900/10">Ruby DSL</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-semibold text-white">Instructions File</td>
+                            <td class="px-4 py-3 bg-red-900/10">Playbook</td>
+                            <td class="px-4 py-3 bg-amber-900/10">Manifest</td>
+                            <td class="px-4 py-3 bg-emerald-900/10">Recipe / Cookbook</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Mnemonics Box -->
+        <section class="card bg-gradient-to-br from-indigo-900 to-purple-900 rounded-xl p-6 border border-indigo-700 shadow-lg">
+            <h2 class="text-xl font-bold text-white mb-4">🧠 Memory Tricks</h2>
+            <div class="space-y-4">
+                <div class="bg-black/30 p-3 rounded-lg border-l-4 border-red-500">
+                    <p class="text-sm text-slate-200">
+                        <strong class="text-red-400">A.P.Y.</strong><br>
+                        <strong>A</strong>nsible is <strong>A</strong>gentless. It <strong>P</strong>ushes <strong>Y</strong>AML <strong>P</strong>laybooks.
+                    </p>
+                </div>
+                <div class="bg-black/30 p-3 rounded-lg border-l-4 border-emerald-500">
+                    <p class="text-sm text-slate-200">
+                        <strong class="text-emerald-400">Culinary Chef</strong><br>
+                        A <strong>Chef</strong> pulls out a <strong>Ruby</strong> red tomato to make a <strong>Recipe</strong> in their <strong>Cookbook</strong>.
+                    </p>
+                </div>
+                <div class="bg-black/30 p-3 rounded-lg border-l-4 border-amber-500">
+                    <p class="text-sm text-slate-200">
+                        <strong class="text-amber-400">Puppet Master</strong><br>
+                        The Master waits for the Puppet (Agent) to <strong>Pull</strong> the strings via a <strong>Manifest</strong>.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Active Recall Quiz -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg col-span-1 md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <span>🎯</span> Active Recall: Quick Quiz
+            </h2>
+            <p class="text-slate-400 text-sm mb-4">Test your knowledge. Click on the question to reveal the answer.</p>
+            
+            <div class="space-y-3">
+                <!-- Q1 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        1. Which configuration management tool does NOT require installing software on the managed devices?
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <strong class="text-red-400 text-base">Ansible.</strong> It is "agentless" and connects to devices using standard protocols like SSH or NETCONF.
+                    </div>
+                </details>
+
+                <!-- Q2 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        2. Match the configuration file terms (Playbook, Manifest, Recipe) to their respective tools.
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <ul class="list-disc pl-5 mt-2 space-y-1">
+                            <li><strong>Ansible:</strong> Playbook</li>
+                            <li><strong>Puppet:</strong> Manifest</li>
+                            <li><strong>Chef:</strong> Recipe (grouped in Cookbooks)</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <!-- Q3 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        3. Which tool utilizes a "Push" model, and what does that mean?
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <strong class="text-red-400 text-base">Ansible.</strong> In a push model, the control node initiates the connection and pushes the configuration down to the managed devices. (Puppet and Chef use a Pull model where agents poll the server).
+                    </div>
+                </details>
+
+                <!-- Q4 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        4. Ansible playbooks are written in which data serialization format?
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <strong class="text-blue-400 text-base">YAML</strong> (YAML Ain't Markup Language). It relies heavily on indentation for structure.
+                    </div>
+                </details>
+
+                <!-- Q5 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        5. Define "Idempotency" in the context of automation tools.
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <strong class="text-emerald-400 text-base">Idempotency</strong> means an operation can be applied multiple times without changing the result beyond the initial application. If a device is already configured correctly, running the playbook/manifest again will make NO changes.
+                    </div>
+                </details>
+            </div>
+        </section>
+
+    </main>
+</body>
+</html>

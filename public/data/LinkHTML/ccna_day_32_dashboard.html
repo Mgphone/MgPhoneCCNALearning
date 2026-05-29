@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 32: IPv6 (Part 2) - NDP, SLAAC & EUI-64</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+
+        /* Header Grid Utils */
+        .ipv6-row { display: flex; width: 100%; border-bottom: 1px solid #334155; }
+        .ipv6-row:last-child { border-bottom: none; }
+        .ipv6-cell { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.75rem; padding: 0.5rem; border-right: 1px solid #334155; font-weight: bold; }
+        .ipv6-cell:last-child { border-right: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 32: IPv6 (Pt 2)
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">NDP, SLAAC, EUI-64 & The IPv6 Header</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Streamlined IPv6 Header -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 hover:border-cyan-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📦</span>
+                <h2 class="text-2xl font-bold text-slate-100">The Streamlined IPv6 Header</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Despite IPv6 addresses being 4x larger than IPv4, the IPv6 header is vastly simplified for faster router processing. It is exactly <strong>40 Bytes</strong> and fixed in size (no IHL field needed).</p>
+            
+            <div class="border border-slate-600 rounded bg-slate-900 overflow-hidden font-mono text-slate-200 mb-4">
+                <!-- Row 1 -->
+                <div class="ipv6-row">
+                    <div class="ipv6-cell bg-slate-800/80 text-cyan-400" style="width: 12.5%;">Version (4)</div>
+                    <div class="ipv6-cell bg-slate-800/80 text-purple-400" style="width: 25%;">Traffic Class (8)</div>
+                    <div class="ipv6-cell bg-slate-800/80 text-yellow-400" style="width: 62.5%;">Flow Label (20)</div>
+                </div>
+                <!-- Row 2 -->
+                <div class="ipv6-row">
+                    <div class="ipv6-cell bg-slate-800/50 text-slate-300" style="width: 50%;">Payload Length (16)</div>
+                    <div class="ipv6-cell bg-slate-800/50 text-emerald-400" style="width: 25%;">Next Header (8)</div>
+                    <div class="ipv6-cell bg-slate-800/50 text-rose-400" style="width: 25%;">Hop Limit (8)</div>
+                </div>
+                <!-- Row 3 & 4 -->
+                <div class="ipv6-row">
+                    <div class="ipv6-cell bg-slate-800/80 text-blue-400" style="width: 100%; height: 3rem;">Source IPv6 Address (128 bits)</div>
+                </div>
+                <div class="ipv6-row">
+                    <div class="ipv6-cell bg-slate-800/50 text-orange-400" style="width: 100%; height: 3rem;">Destination IPv6 Address (128 bits)</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 text-xs text-slate-400">
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><strong class="text-rose-400">Hop Limit:</strong> Replaces IPv4's TTL. Prevents loops.</li>
+                    <li><strong class="text-emerald-400">Next Header:</strong> Replaces IPv4's "Protocol" field (e.g., TCP=6).</li>
+                    <li><strong class="text-purple-400">Traffic Class:</strong> Replaces IPv4's DSCP (QoS).</li>
+                </ul>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><strong class="text-slate-200">Removed:</strong> Header Checksum (Layer 2 & 4 already check for errors!).</li>
+                    <li><strong class="text-slate-200">Removed:</strong> Fragmentation fields (IPv6 routers do <em>not</em> fragment packets. Hosts must determine MTU size beforehand).</li>
+                </ul>
+            </div>
+        </article>
+
+        <!-- 2. The EUI-64 Format -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1 lg:col-span-1 hover:border-emerald-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🧬</span>
+                <h2 class="text-2xl font-bold text-slate-100">EUI-64 Format</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Extended Unique Identifier (EUI-64) is a method for a device to automatically generate the <strong>host portion (last 64 bits)</strong> of its IPv6 address using its own MAC address.</p>
+            
+            <div class="space-y-3 text-sm">
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <p class="font-bold text-emerald-400 mb-1">The 3-Step Process:</p>
+                    <ol class="list-decimal pl-4 text-slate-400 space-y-2 text-xs">
+                        <li>Take the 48-bit MAC address and split it directly in half.<br>
+                        <span class="text-cyan-400 font-mono">0011.22 | 33.4455</span></li>
+                        <li>Insert <strong class="text-rose-400">FFFE</strong> exactly in the middle to make it 64 bits.<br>
+                        <span class="text-cyan-400 font-mono">0011.22<span class="text-rose-400">FF.FE</span>33.4455</span></li>
+                        <li>Invert the <strong>7th bit</strong> (usually turns a '00' into a '02').<br>
+                        <span class="text-emerald-400 font-mono font-bold">0211.22FF.FE33.4455</span></li>
+                    </ol>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. NDP: Neighbor Discovery Protocol -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-1 hover:border-orange-500 transition-colors duration-300 border-l-4 border-l-orange-500">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                📡 NDP (ICMPv6)
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">IPv6 doesn't use ARP (because ARP uses broadcasts). Instead, it uses <strong>Neighbor Discovery Protocol (NDP)</strong>, running on ICMPv6 and Multicast.</p>
+            
+            <ul class="space-y-4 text-sm text-slate-400">
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-orange-400 block text-base">NS & NA (Replaces ARP)</strong>
+                    <p class="text-xs mt-1"><strong class="text-slate-200">Neighbor Solicitation (NS):</strong> "Who has IPv6 address X? Send me your MAC." (Sent to a special Solicited-Node Multicast address).</p>
+                    <p class="text-xs mt-1"><strong class="text-slate-200">Neighbor Advertisement (NA):</strong> "That's me! Here is my MAC."</p>
+                </li>
+                <li class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <strong class="text-cyan-400 block text-base">RS & RA (Router Discovery)</strong>
+                    <p class="text-xs mt-1"><strong class="text-slate-200">Router Solicitation (RS):</strong> A PC boots up and asks: "Are there any routers on this link?"</p>
+                    <p class="text-xs mt-1"><strong class="text-slate-200">Router Advertisement (RA):</strong> The router replies: "I'm here! Here is your /64 subnet prefix and your Default Gateway IP."</p>
+                </li>
+            </ul>
+        </article>
+
+        <!-- 4. SLAAC (Stateless Address Autoconfiguration) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 hover:border-purple-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🪄</span>
+                <h2 class="text-2xl font-bold text-slate-100">SLAAC</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Stateless Address Autoconfiguration allows a device to obtain an IPv6 address <strong>without needing a DHCP server</strong>.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="space-y-2">
+                    <div class="flex items-start gap-2">
+                        <span class="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
+                        <p class="text-slate-400">PC boots up and sends an RS (Router Solicitation) message.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
+                        <p class="text-slate-400">The Router replies with an RA containing the network's <strong class="text-cyan-400">/64 Network Prefix</strong>.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">3</span>
+                        <p class="text-slate-400">The PC takes that Prefix and generates its own <strong class="text-emerald-400">64-bit Interface ID</strong> (either randomly or using EUI-64) to form a full 128-bit address.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-rose-400 mb-2 border-b border-slate-700 pb-1">DAD (Duplicate Address Detection)</h3>
+                    <p class="text-slate-400 text-xs">Because the PC made up its own IP address, it must verify no one else is using it! Before using the IP, the PC sends an NDP <strong>Neighbor Solicitation (NS)</strong> for <em>its own</em> newly created IPv6 address. If nobody replies with an NA, the IP is safe to use.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">The EUI-64 "FFFE" Sandwich</strong>
+                    <p class="text-slate-400">
+                        When you see <code class="text-rose-400 font-bold">FFFE</code> smack in the middle of a massive IPv6 address's host portion, you immediately know it was auto-generated using EUI-64 from a MAC address.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">SLAAC Constraint</strong>
+                    <p class="text-slate-400">
+                        SLAAC <strong class="text-rose-400">ONLY WORKS</strong> if the router advertises a <code class="text-cyan-400 font-bold">/64</code> subnet. If the subnet is /60 or /80, SLAAC breaks, because the host always reserves exactly 64 bits to generate its Interface ID.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ IPv6 Configuration & Verification
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config-if)# ipv6 address 2001:db8:1::/64 eui-64</span>
+                        <span class="text-slate-400 text-xs mt-1">Assigns the network prefix, but tells the router to calculate its own host portion using its MAC address and the EUI-64 rules.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router(config-if)# ipv6 address autoconfig</span>
+                        <span class="text-slate-400 text-xs mt-1">Configures a router interface to act like a PC and use SLAAC to request an IPv6 address from another upstream router.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Router# show ipv6 neighbors</span>
+                        <span class="text-slate-400 text-xs mt-1">The IPv6 equivalent of `show arp`. Lists known IPv6 addresses, their mapped MAC addresses, and their state (e.g., REACH, STALE).</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Router# show ipv6 route</span>
+                        <span class="text-slate-400 text-xs mt-1">Displays the IPv6 routing table. (Remember: `ipv6 unicast-routing` must be enabled globally for this to populate dynamically).</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Hop Limit.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. What is the name of the field in the IPv6 header that replaced the IPv4 TTL (Time To Live) field to prevent routing loops?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Hop Limit.</strong>
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Neighbor Solicitation (NS) and Neighbor Advertisement (NA).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Since IPv6 does not use ARP, which two specific NDP messages are used to resolve an IPv6 address to a MAC address?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Neighbor Solicitation (NS)</strong> and <strong>Neighbor Advertisement (NA)</strong>.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: DAD (Duplicate Address Detection).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. What mechanism does a host use during SLAAC to ensure the IPv6 address it just generated isn't already being used by someone else?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>DAD (Duplicate Address Detection)</strong>. It sends an NS message for its own address.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: FFFE">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. When converting a 48-bit MAC address into a 64-bit Interface ID using EUI-64, what exact 4-character hex sequence is inserted into the middle?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong class="text-rose-400 font-mono">FFFE</strong>
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

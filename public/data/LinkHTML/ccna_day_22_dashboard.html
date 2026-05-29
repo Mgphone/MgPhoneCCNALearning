@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 22: Rapid Spanning Tree Protocol (RSTP)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 22: RSTP Deep Dive
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard (802.1w)</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The Need for Speed: Timers vs Negotiation -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🏎️</span>
+                <h2 class="text-2xl font-bold text-slate-100">Timers vs Negotiation</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Classic STP is painfully slow because it relies on passive timers. RSTP is fast because it relies on active negotiation.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-rose-500">
+                    <h3 class="font-bold text-rose-400 mb-1">Classic STP (The Staring Contest)</h3>
+                    <p class="text-slate-400">Switches sit in silence for 15 seconds (Listening) and another 15 seconds (Learning). They literally just wait for timers to expire before deciding a link is safe to use.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">RSTP (The Handshake)</h3>
+                    <p class="text-slate-400">RSTP switches explicitly ask each other: "Can we form a link without making a loop?" If they agree, the port skips timers entirely and goes <strong>straight to Forwarding</strong>.</p>
+                </div>
+
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-yellow-500">
+                    <h3 class="font-bold text-yellow-400 mb-1">New BPDU Behavior</h3>
+                    <p class="text-slate-400">In 802.1D, only the Root Bridge generates BPDUs. In 802.1w (RSTP), <strong>EVERY switch generates its own BPDUs</strong> every 2 seconds. They act as active keepalives.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Proposal & Agreement Process -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-purple-500 transition-colors duration-300 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🤝</span>
+                <h2 class="text-2xl font-bold text-slate-100">Proposal & Agreement (The Sync)</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">How do two RSTP switches instantly turn a link on without causing a loop? Through the Proposal/Agreement sync process.</p>
+            
+            <div class="space-y-2 text-sm text-slate-400 bg-[#0d1117] p-4 rounded border border-slate-700">
+                <div class="flex gap-4">
+                    <span class="text-rose-400 font-bold w-4">1.</span>
+                    <span class="text-slate-300">A new link comes up. Both switches start in <strong class="text-rose-400">Discarding</strong> state.</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-purple-400 font-bold w-4">2.</span>
+                    <span class="text-slate-300">SW1 (closer to the Root) sends a BPDU with the <strong>Proposal</strong> flag set.</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-yellow-400 font-bold w-4">3.</span>
+                    <span class="text-slate-300">SW2 receives it. To ensure no loops form, SW2 performs a <strong class="text-yellow-400">Sync</strong>: it blocks ALL of its other non-edge ports.</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-emerald-400 font-bold w-4">4.</span>
+                    <span class="text-slate-300">Once SW2 is "safe" (synced), it sends an <strong>Agreement</strong> BPDU back to SW1.</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-emerald-400 font-bold w-4">5.</span>
+                    <span class="text-slate-100 font-bold">Both sides immediately transition the link to Forwarding!</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-slate-500 font-bold w-4">6.</span>
+                    <span class="text-slate-500 text-xs mt-1">SW2 then repeats this process down the line with its downstream neighbors.</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 3. RSTP Link Types -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300 border-l-4 border-l-orange-500 md:col-span-2 lg:col-span-1">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔗</span>
+                <h2 class="text-2xl font-bold text-slate-100">RSTP Link Types</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">For the Proposal/Agreement process to work, RSTP must categorize the physical connection. It relies on the <strong>duplex</strong> of the port.</p>
+            
+            <ul class="space-y-4 text-sm text-slate-400">
+                <li>
+                    <strong class="text-emerald-400 block text-base">Point-to-Point (P2p)</strong>
+                    <p>Any port operating in <strong>Full-Duplex</strong>. RSTP assumes this is a direct switch-to-switch link. <em>Proposal/Agreement is ONLY allowed on P2p links!</em></p>
+                </li>
+                <li>
+                    <strong class="text-rose-400 block text-base">Shared (Shr)</strong>
+                    <p>Any port operating in <strong>Half-Duplex</strong>. RSTP assumes this is connected to a legacy Hub. <em>Proposal/Agreement is disabled. Must rely on slow classic timers.</em></p>
+                </li>
+                <li>
+                    <strong class="text-cyan-400 block text-base">Edge Port (P2p Edge)</strong>
+                    <p>A port configured with PortFast. Transitions to forwarding immediately, skips Proposal/Agreement entirely.</p>
+                </li>
+            </ul>
+        </article>
+
+        <!-- 4. Fast Failure Detection & TC BPDUs -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-1 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⏱️ Fast Failure & Topology Changes
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-rose-400 mb-2">3x BPDU Miss = Dead</h3>
+                    <p class="text-slate-400 mb-2">In classic STP, a switch waits 20 seconds (Max Age) to declare a neighbor dead. In RSTP, if a switch misses <strong>3 consecutive BPDUs (6 seconds)</strong>, it ages out the BPDU information and takes immediate action.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                    <h3 class="font-bold text-yellow-400 mb-2">Topology Change (TC)</h3>
+                    <p class="text-slate-400 mb-2">When a topology changes, switches must flush their MAC tables so traffic isn't sent to a dead link. In RSTP, the switch detecting the change floods TC BPDUs <strong>directly out all its forwarding ports</strong>, clearing MACs instantly.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Full Duplex = The Highway</strong>
+                    <p class="text-slate-400">
+                        RSTP knows that <strong>Full-Duplex (P2p)</strong> means exactly two devices are on the cable. It's safe to negotiate! <strong>Half-Duplex (Shr)</strong> means a hub is there with potentially many devices. It's too dangerous to fast-forward, so it falls back to slow timers.
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Rapid PVST+</strong>
+                    <p class="text-slate-400">
+                        Cisco's default implementation is <em>Rapid Per-VLAN Spanning Tree Plus</em>. It runs a completely separate RSTP instance for every single VLAN.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ RSTP CLI & Verification
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2 relative">
+                        <div class="absolute -left-2 top-0 bottom-0 w-1 bg-emerald-500 rounded"></div>
+                        <span class="text-yellow-300">Switch# show spanning-tree</span>
+                        <span class="text-slate-400 text-xs mt-1">Look at the top line: <strong class="text-emerald-400">"Spanning tree enabled protocol rstp"</strong>. Also look at the 'Type' column on the far right (it will display P2p, Shr, or P2p Edge).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config-if)# spanning-tree link-type point-to-point</span>
+                        <span class="text-slate-400 text-xs mt-1">Manually forces the link type to P2p, overriding the duplex detection. (Rarely needed unless dealing with misconfigured duplex settings).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config-if)# spanning-tree portfast</span>
+                        <span class="text-slate-400 text-xs mt-1">In `show spanning-tree`, this command changes the link type from 'P2p' to <strong class="text-cyan-400">'P2p Edge'</strong>.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Switch(config)# spanning-tree mode rapid-pvst</span>
+                        <span class="text-slate-400 text-xs mt-1">Globally enables RSTP in the Cisco environment.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">RSTP link is slow to come up</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Symptom:</strong> Switch-to-switch link takes 30 seconds to come up despite running RSTP.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> Check <code class="text-cyan-400">show spanning-tree</code>. If the type says <strong class="text-rose-400">"Shr" (Shared)</strong>, the port is operating in half-duplex. Proposal/Agreement is disabled on Shr links. Fix the duplex mismatch to full-duplex!</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 8. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: The Proposal/Agreement process.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. What active negotiation mechanism does RSTP use to bypass the Listening and Learning timers on switch-to-switch links?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        The <strong>Proposal and Agreement</strong> process. Switches explicitly agree the link is loop-free before instantly moving to the Forwarding state.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A point-to-point link.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. If an RSTP port is operating in Full-Duplex, what link type does RSTP automatically assign to it?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A <strong>Point-to-Point (P2p)</strong> link.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: 3 missed BPDUs (6 seconds).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. How long does it take for an RSTP switch to consider a neighbor dead after it stops receiving BPDUs?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>3 missed BPDUs</strong>, which equals <strong>6 seconds</strong> (3 x 2-second hello timer).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Every switch.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. In classic STP, only the Root Bridge generates BPDUs. Which switches generate BPDUs natively in RSTP?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Every switch</strong>. All RSTP switches generate and send their own BPDUs every 2 seconds to act as a keepalive mechanism.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

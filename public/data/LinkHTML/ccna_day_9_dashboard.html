@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 9: Switch Interfaces</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 9: Switch Interfaces
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. Interface Ranges & Descriptions -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🎛️</span>
+                <h2 class="text-2xl font-bold text-slate-100">Bulk Config & Labels</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">Managing a 48-port switch port-by-port is inefficient. Use ranges and descriptions to stay organized.</p>
+            
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Interface Range</h3>
+                    <p class="text-slate-400 mb-2">Allows you to apply the same configuration to multiple interfaces simultaneously.</p>
+                    <code class="text-yellow-300 text-xs block mb-1">Switch(config)# interface range f0/1 - 12</code>
+                    <code class="text-yellow-300 text-xs block">Switch(config)# interface range f0/1 - 5, g0/1 - 2</code>
+                    <p class="text-rose-400 text-xs mt-2 italic font-semibold">⚠️ Syntax Alert: You MUST have spaces around the hyphen.</p>
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Descriptions</h3>
+                    <p class="text-slate-400 mb-2">A local label for the port. It does not affect operation but is crucial for administration and troubleshooting.</p>
+                    <code class="text-yellow-300 text-xs block">Switch(config-if)# description UPLINK TO CORE</code>
+                    <p class="text-slate-400 text-xs mt-2">Viewed via <code class="text-emerald-400">show interfaces description</code>.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Auto-MDIX -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-blue-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔀</span>
+                <h2 class="text-2xl font-bold text-slate-100">Auto-MDIX</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">Automatic Medium-Dependent Interface Crossover.</p>
+            <ul class="space-y-2 text-sm text-slate-400">
+                <li><strong class="text-cyan-400">The Problem:</strong> Historically, connecting Switch-to-Switch required a Crossover cable. Connecting Switch-to-PC required a Straight-through cable.</li>
+                <li><strong class="text-emerald-400">The Solution:</strong> Auto-MDIX detects the required cable connection type and configures the interface pins appropriately.</li>
+                <li><strong class="text-slate-200">Result:</strong> You can use a straight-through cable for <em>everything</em> if Auto-MDIX is enabled (it usually is by default on modern Cisco gear).</li>
+            </ul>
+        </article>
+
+        <!-- 3. The Err-Disable State -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-rose-500 transition-colors duration-300 md:col-span-2 lg:col-span-1">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">⛔</span>
+                <h2 class="text-2xl font-bold text-slate-100">Err-Disable State</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">When the switch detects a severe violation or error on a port, it automatically shuts it down to protect the network.</p>
+            
+            <div class="space-y-3 text-sm">
+                <p class="text-slate-400"><strong>Common Causes:</strong> Port Security violations (plugging in an unauthorized MAC), BPDU Guard (STP loop protection), or severe flapping.</p>
+                <div class="bg-rose-900/20 p-3 rounded border border-rose-500/50">
+                    <strong class="text-rose-400 block mb-1">How to Recover (The "Bounce"):</strong>
+                    <ol class="list-decimal pl-5 text-slate-300 space-y-1">
+                        <li>Fix the underlying issue first!</li>
+                        <li>Enter config-if mode.</li>
+                        <li>Type <code class="text-yellow-300">shutdown</code></li>
+                        <li>Type <code class="text-yellow-300">no shutdown</code></li>
+                    </ol>
+                </div>
+            </div>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="space-y-4 text-sm">
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-1">"Bouncing the Port"</strong>
+                    <span class="text-slate-400">A common IT phrase. It means turning the port off and back on again (<code class="text-cyan-400">shut</code> / <code class="text-cyan-400">no shut</code>). Mandatory for err-disable recovery!</span>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-1">Auto-MDIX = The Universal Adapter</strong>
+                    <span class="text-slate-400">Like a smart plug that automatically flips its positive/negative poles so you don't blow a fuse, regardless of what you plug into it.</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Interface Configuration CLI
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config)# interface range f0/1 - 10 , g0/1</span>
+                        <span class="text-slate-400 text-xs mt-1">Enters interface range mode. Note the spaces around the hyphen and comma separation for different types.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch(config-if)# mdix auto</span>
+                        <span class="text-slate-400 text-xs mt-1">Manually enables Auto-MDIX on the interface.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">Switch# show interfaces status err-disabled</span>
+                        <span class="text-slate-400 text-xs mt-1">Filters the status output to ONLY show ports currently in the err-disabled state and the reason why.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">Switch# show interfaces description</span>
+                        <span class="text-slate-400 text-xs mt-1">Displays a quick list of interfaces, their up/down status, and their configured descriptions.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Status: err-disabled</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Action:</strong> Run <code class="text-cyan-400">show interfaces status err-disabled</code> to find the reason. Fix the cause, then <code class="text-cyan-400">shut</code> and <code class="text-cyan-400">no shut</code> the interface.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Status: up / Protocol: down</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Action:</strong> Layer 1 is fine (cable is plugged in), but Layer 2 is failing. Check for Speed/Duplex mismatches between the two switches.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A port-security violation or BPDU Guard. Fix by running 'shutdown' then 'no shutdown'.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. A port suddenly changes to "err-disabled". What likely caused this, and how do you turn the port back on?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        It was caused by a security violation (like Port Security or BPDU Guard). After fixing the issue, you must <strong>bounce the port</strong> by entering <code class="text-cyan-400">shutdown</code> followed by <code class="text-cyan-400">no shutdown</code>.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: interface range f0/1 - 24">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Write the exact command to configure FastEthernet ports 1 through 24 at the same time.
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">interface range f0/1 - 24</code> (Note the spaces around the hyphen!)
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Auto-MDIX">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. What feature allows a switch to automatically adjust its transmit and receive pins, forgiving you for using a straight-through cable instead of a crossover?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Auto-MDIX</strong> (Automatic Medium-Dependent Interface Crossover).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: show interfaces description">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. Which command provides a clean list of all ports, their status, and the labels configured by the administrator?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">show interfaces description</code>
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

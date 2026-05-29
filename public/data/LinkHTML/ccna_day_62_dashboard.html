@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 62: Software Defined Networking (SDN)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Friendly Styles */
+        @media print {
+            body { background: white !important; color: black !important; padding: 0; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-700 { background: white !important; }
+            .border-slate-700 { border-color: #cbd5e1 !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400 { color: #334155 !important; }
+            .text-white { color: black !important; }
+            .text-emerald-400 { color: #059669 !important; font-weight: bold; }
+            .text-cyan-400 { color: #0284c7 !important; font-weight: bold; }
+            .text-violet-400 { color: #7c3aed !important; font-weight: bold; }
+            .text-amber-400 { color: #d97706 !important; font-weight: bold; }
+            .text-blue-400 { color: #2563eb !important; font-weight: bold; }
+            .no-print { display: none !important; }
+            /* Auto-expand details for print */
+            details { display: block !important; margin-bottom: 1rem; }
+            details > summary { display: none !important; }
+            details > div { display: block !important; border: 1px solid #ccc; padding: 10px; margin-top: 5px; }
+            .shadow-lg { box-shadow: none !important; }
+            .grid { display: block !important; }
+            .card { margin-bottom: 20px !important; break-inside: avoid; border: 1px solid #cbd5e1 !important; }
+            .bg-gradient-to-br { background: none !important; border: 2px solid #4338ca !important; }
+        }
+        
+        .card { transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen">
+
+    <!-- Header -->
+    <header class="mb-8 border-b border-slate-700 pb-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Day 62: SDN & Network Architecture</h1>
+                <p class="text-slate-400 mt-2">Software Defined Networking & APIs <span class="text-xs ml-2 bg-slate-800 px-2 py-1 rounded text-slate-300">CCNA 200-301 Exam Blueprint 6.1 - 6.3</span></p>
+            </div>
+            <button onclick="window.print()" class="no-print mt-4 md:mt-0 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow-lg font-semibold flex items-center gap-2 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                Print Cheat Sheet
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Core Concept: The Three Planes -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg col-span-1 md:col-span-2 lg:col-span-3 border-l-4 border-l-blue-500">
+            <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span class="text-blue-400">✈️</span> The Three Network Planes
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <h3 class="font-bold text-amber-400 mb-2 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Management Plane
+                    </h3>
+                    <p class="text-slate-400 mb-3">Traffic used to <em>access, configure, and manage</em> the device.</p>
+                    <ul class="text-slate-300 space-y-1 list-disc pl-4 marker:text-slate-600">
+                        <li>SSH / Telnet</li>
+                        <li>SNMP, Syslog</li>
+                        <li>REST APIs</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <h3 class="font-bold text-violet-400 mb-2 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                        Control Plane
+                    </h3>
+                    <p class="text-slate-400 mb-3">The "brains". Traffic used to build tables and <em>learn where to send data</em>.</p>
+                    <ul class="text-slate-300 space-y-1 list-disc pl-4 marker:text-slate-600">
+                        <li>Routing Protocols (OSPF, EIGRP, BGP)</li>
+                        <li>STP (Spanning Tree)</li>
+                        <li>ARP (Address Resolution Protocol)</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <h3 class="font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Data (Forwarding) Plane
+                    </h3>
+                    <p class="text-slate-400 mb-3">The "muscle". The actual process of <em>moving packets</em> from input to output.</p>
+                    <ul class="text-slate-300 space-y-1 list-disc pl-4 marker:text-slate-600">
+                        <li>Forwarding frames/packets</li>
+                        <li>Encapsulation/Decapsulation</li>
+                        <li>NAT, ACL Filtering</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Traditional vs SDN -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg lg:col-span-1 border-t-4 border-t-cyan-500">
+            <h2 class="text-xl font-bold text-white mb-4">Traditional vs. SDN</h2>
+            <div class="space-y-4">
+                <div class="border-l-2 border-slate-600 pl-3">
+                    <h3 class="text-cyan-400 font-bold mb-1">Traditional Architecture</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        <strong>Distributed Control Plane:</strong> Every single router and switch runs its own routing protocols (OSPF, STP) to build its own routing/MAC tables. Device-by-device configuration.
+                    </p>
+                </div>
+                <div class="border-l-2 border-emerald-500 pl-3">
+                    <h3 class="text-emerald-400 font-bold mb-1">SDN Architecture</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        <strong>Centralized Control Plane:</strong> The Control Plane is removed from individual devices and placed in a central <strong>SDN Controller</strong>. The controller computes routes and programs the Data Plane of all devices at once.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- API Architecture (North/South) -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg lg:col-span-2 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+                <svg class="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            </div>
+            <h2 class="text-xl font-bold text-white mb-4">API Architecture in SDN</h2>
+            
+            <div class="flex flex-col items-center gap-2 w-full">
+                <!-- Applications -->
+                <div class="w-full md:w-3/4 bg-violet-900/30 border border-violet-500/50 rounded-lg p-3 text-center text-violet-300 font-bold">
+                    Applications (GUI, Scripts, Postman)
+                </div>
+                
+                <!-- NBI -->
+                <div class="flex flex-col items-center my-1">
+                    <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    <span class="text-xs font-bold text-violet-400 uppercase tracking-wider bg-slate-900 px-2 py-1 rounded">Northbound APIs (NBI)</span>
+                    <span class="text-xs text-slate-400">REST API (JSON/XML)</span>
+                    <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 17l-4 4m0 0l-4-4m4 4V3"></path></svg>
+                </div>
+
+                <!-- Controller -->
+                <div class="w-full md:w-3/4 bg-blue-900/40 border border-blue-500 rounded-lg p-4 text-center text-white font-black text-lg shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                    SDN CONTROLLER <br>
+                    <span class="text-xs font-normal text-blue-300">(Centralized Control Plane)</span>
+                </div>
+
+                <!-- SBI -->
+                <div class="flex flex-col items-center my-1">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 17l-4 4m0 0l-4-4m4 4V3"></path></svg>
+                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-slate-900 px-2 py-1 rounded">Southbound APIs (SBI)</span>
+                    <span class="text-xs text-slate-400">NETCONF, RESTCONF, OpenFlow, OpFlex</span>
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                </div>
+
+                <!-- Network Devices -->
+                <div class="w-full flex justify-between gap-2 mt-2">
+                    <div class="flex-1 bg-slate-700 border border-slate-600 rounded p-2 text-center text-xs text-slate-300">Switch (Data Plane)</div>
+                    <div class="flex-1 bg-slate-700 border border-slate-600 rounded p-2 text-center text-xs text-slate-300">Router (Data Plane)</div>
+                    <div class="flex-1 bg-slate-700 border border-slate-600 rounded p-2 text-center text-xs text-slate-300">WLC (Data Plane)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cisco SDN Solutions -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg lg:col-span-2">
+            <h2 class="text-xl font-bold text-white mb-4">Cisco SDN Solutions</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-300">
+                    <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+                        <tr>
+                            <th class="px-4 py-3 rounded-tl-lg">Environment</th>
+                            <th class="px-4 py-3">Solution Name</th>
+                            <th class="px-4 py-3 rounded-tr-lg">Controller / Architecture</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-slate-700">
+                            <td class="px-4 py-3 font-semibold text-amber-400">Enterprise Campus</td>
+                            <td class="px-4 py-3 font-bold text-white">SDA (Software Defined Access)</td>
+                            <td class="px-4 py-3"><strong>DNA Center</strong> (Appliance providing the controller GUI)</td>
+                        </tr>
+                        <tr class="border-b border-slate-700">
+                            <td class="px-4 py-3 font-semibold text-blue-400">Data Center</td>
+                            <td class="px-4 py-3 font-bold text-white">ACI (Application Centric Infrastructure)</td>
+                            <td class="px-4 py-3"><strong>APIC</strong> (Application Policy Infrastructure Controller). Uses Spine-Leaf topology.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-semibold text-emerald-400">WAN</td>
+                            <td class="px-4 py-3 font-bold text-white">Cisco SD-WAN</td>
+                            <td class="px-4 py-3"><strong>vManage</strong> (NMS GUI), <strong>vSmart</strong> (Control plane)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Mnemonics Box -->
+        <section class="card bg-gradient-to-br from-indigo-900 to-purple-900 rounded-xl p-6 border border-indigo-700 shadow-lg lg:col-span-1">
+            <h2 class="text-xl font-bold text-white mb-4">🧠 Memory Tricks & Analogies</h2>
+            <div class="space-y-4">
+                <div class="bg-black/30 p-3 rounded-lg border-l-4 border-violet-500">
+                    <p class="text-sm text-slate-200">
+                        <strong class="text-violet-400">The Taxi Dispatcher Analogy</strong><br>
+                        <strong>Traditional:</strong> Every taxi driver uses their own map to decide routes (Distributed Control).<br>
+                        <strong>SDN:</strong> A central dispatcher (Controller) looks at the whole city's traffic and tells every taxi exactly where to turn (Centralized Control).
+                    </p>
+                </div>
+                <div class="bg-black/30 p-3 rounded-lg border-l-4 border-emerald-500">
+                    <p class="text-sm text-slate-200">
+                        <strong class="text-emerald-400">N.A.S.S.</strong><br>
+                        <strong>N</strong>orthbound connects to <strong>A</strong>pps.<br>
+                        <strong>S</strong>outhbound connects to <strong>S</strong>witches.
+                    </p>
+                </div>
+                <div class="bg-black/30 p-3 rounded-lg border-l-4 border-blue-500">
+                    <p class="text-sm text-slate-200">
+                        <strong class="text-blue-400">Data Formats</strong><br>
+                        <strong>JSON:</strong> Braces <code>{}</code> and Key:Value pairs.<br>
+                        <strong>XML:</strong> Tags <code>&lt;tag&gt;value&lt;/tag&gt;</code> like HTML.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Active Recall Quiz -->
+        <section class="card bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg col-span-1 md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <span>🎯</span> Active Recall: Quick Quiz
+            </h2>
+            <p class="text-slate-400 text-sm mb-4">Test your knowledge. Click on the question to reveal the answer.</p>
+            
+            <div class="space-y-3">
+                <!-- Q1 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        1. Which network plane is responsible for routing protocols like OSPF and EIGRP?
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <strong class="text-violet-400 text-base">The Control Plane.</strong> It acts as the "brains" of the router, learning routes and populating the routing table, which is then used to program the Data Plane.
+                    </div>
+                </details>
+
+                <!-- Q2 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        2. What is the primary difference between Northbound and Southbound APIs in an SDN architecture?
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <ul class="list-disc pl-5 mt-2 space-y-1">
+                            <li><strong class="text-violet-400">Northbound APIs:</strong> Connect the Controller "up" to Applications (using REST APIs).</li>
+                            <li><strong class="text-emerald-400">Southbound APIs:</strong> Connect the Controller "down" to the Network Devices/Data Plane (using OpenFlow, NETCONF, etc.).</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <!-- Q3 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        3. What is the name of the SDN Controller used in Cisco's Enterprise Campus solution (SDA)?
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <strong class="text-amber-400 text-base">Cisco DNA Center.</strong> (Note: APIC is for Data Center/ACI, and vManage is for SD-WAN).
+                    </div>
+                </details>
+
+                <!-- Q4 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        4. Which data plane function actually moves a packet from an ingress interface to an egress interface?
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <strong class="text-emerald-400 text-base">Forwarding.</strong> The data plane handles the actual moving of packets based on the rules and tables provided by the control plane.
+                    </div>
+                </details>
+
+                <!-- Q5 -->
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg cursor-pointer open:bg-slate-800 transition-colors">
+                    <summary class="flex justify-between items-center font-medium p-4 text-slate-200 group-open:text-blue-400 select-none">
+                        5. True or False: In a purely traditional network architecture, a switch does not have a Control Plane, only a Data Plane.
+                        <span class="transition group-open:rotate-180">
+                            <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                        </span>
+                    </summary>
+                    <div class="p-4 pt-0 text-slate-300 text-sm border-t border-slate-700 mt-2 font-mono">
+                        <strong class="text-red-400 text-base">False.</strong> In traditional networks, <em>every</em> router and switch contains its own distributed Control Plane (running STP, MAC learning, etc.). SDN is what abstracts the Control Plane away from the device.
+                    </div>
+                </details>
+            </div>
+        </section>
+
+    </main>
+</body>
+</html>

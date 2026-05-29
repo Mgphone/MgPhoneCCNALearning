@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 58: Wireless Configuration (WLC)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50, .border-orange-500, .border-rose-500, .border-emerald-500 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 58: Wireless Config
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">WLC Interfaces, WLANs & The AP Join Process</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. WLC Interface Types -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2 md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🎛️</span>
+                <h2 class="text-2xl font-bold text-slate-100">WLC Logical Interfaces</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">A Wireless LAN Controller connects to the network via physical ports, but configuration is done on <strong>Logical Interfaces</strong> mapped to VLANs.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <!-- Management Interface -->
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-cyan-500">
+                    <h3 class="font-bold text-cyan-400 mb-1">Management Interface</h3>
+                    <p class="text-slate-400 text-xs">The primary interface for the WLC. Used by admins to access the GUI (HTTPS) and CLI (SSH). It is also the IP address that APs communicate with to establish CAPWAP tunnels.</p>
+                </div>
+                
+                <!-- Dynamic Interface -->
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-emerald-500">
+                    <h3 class="font-bold text-emerald-400 mb-1">Dynamic (VLAN) Interfaces</h3>
+                    <p class="text-slate-400 text-xs">Created by the admin to handle client traffic. If you have an HR WLAN and a Guest WLAN, you create two Dynamic interfaces, mapping them to VLAN 10 and VLAN 20 respectively.</p>
+                </div>
+
+                <!-- Virtual Interface -->
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-purple-500">
+                    <h3 class="font-bold text-purple-400 mb-1">Virtual Interface</h3>
+                    <p class="text-slate-400 text-xs">Used for mobility management (roaming) and Web Authentication portals. It is an unroutable, dummy IP address (commonly configured as <code class="text-slate-200">1.1.1.1</code>).</p>
+                </div>
+
+                <!-- AP-Manager Interface -->
+                <div class="bg-slate-900 p-3 rounded border-l-4 border-slate-500">
+                    <h3 class="font-bold text-slate-300 mb-1">AP-Manager Interface</h3>
+                    <p class="text-slate-400 text-xs">Historically used to terminate CAPWAP tunnels from APs. <em>Note: In modern Cisco WLCs, this function is typically merged directly into the Management Interface.</em></p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. The AP Join Process (CRITICAL EXAM KNOWLEDGE) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-rose-500 transition-colors duration-300 md:col-span-1 border-l-4 border-l-rose-500">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🤝</span>
+                <h2 class="text-2xl font-bold text-slate-100">The AP Join Process</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">When a new Lightweight AP is plugged in, how does it find the WLC? It uses a strict order of operations:</p>
+            
+            <ol class="list-decimal pl-5 text-sm text-slate-400 space-y-3 font-semibold">
+                <li>
+                    <strong class="text-rose-400">Broadcast:</strong> 
+                    <span class="text-slate-300 font-normal block mt-1">The AP sends a local Layer 3 broadcast (255.255.255.255) hoping the WLC is on the same subnet.</span>
+                </li>
+                <li>
+                    <strong class="text-orange-400">DHCP Option 43:</strong> 
+                    <span class="text-slate-300 font-normal block mt-1">When the AP gets its IP address via DHCP, the server provides Option 43, which explicitly lists the WLC's IP address.</span>
+                </li>
+                <li>
+                    <strong class="text-emerald-400">DNS Resolution:</strong> 
+                    <span class="text-slate-300 font-normal block mt-1">The AP queries the DNS server for the specific hostname: <code class="text-emerald-400 font-mono text-xs break-all">CISCO-CAPWAP-CONTROLLER.localdomain</code>.</span>
+                </li>
+            </ol>
+            <p class="text-xs text-slate-500 mt-4 italic">Once the IP is found, the AP sends a CAPWAP Join Request to the WLC (UDP 5246).</p>
+        </article>
+
+        <!-- 3. Creating a WLAN (GUI Steps) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300 md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⚙️ Creating a WLAN in the GUI
+            </h2>
+            <p class="text-slate-300 text-sm mb-4">You are expected to know the sequence of creating a new wireless network (WLAN) in the Cisco WLC web interface.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                <!-- Step 1 -->
+                <div class="bg-slate-900 p-4 rounded border border-slate-700 relative overflow-hidden">
+                    <div class="absolute -right-2 -bottom-2 text-6xl opacity-10 font-bold text-slate-100">1</div>
+                    <h3 class="font-bold text-cyan-400 mb-2 border-b border-slate-700 pb-1">General Tab</h3>
+                    <p class="text-slate-400 text-xs mb-2">Define the core identities:</p>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1">
+                        <li><strong>Profile Name:</strong> Internal admin name.</li>
+                        <li><strong>SSID:</strong> The name broadcasted to users.</li>
+                        <li><strong>WLAN ID:</strong> A unique number (e.g., 1-512).</li>
+                        <li><strong>Status:</strong> Check the box to enable it!</li>
+                    </ul>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="bg-slate-900 p-4 rounded border border-slate-700 relative overflow-hidden">
+                    <div class="absolute -right-2 -bottom-2 text-6xl opacity-10 font-bold text-slate-100">2</div>
+                    <h3 class="font-bold text-emerald-400 mb-2 border-b border-slate-700 pb-1">Interface Mapping</h3>
+                    <p class="text-slate-400 text-xs mb-2">Still on the General tab (or sometimes Interface tab):</p>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1">
+                        <li>Map the WLAN to a <strong>Dynamic Interface</strong>.</li>
+                        <li>This binds the wireless SSID to a specific wired VLAN (e.g., "Guest_SSID" maps to "VLAN20_Interface").</li>
+                    </ul>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-slate-900 p-4 rounded border border-slate-700 relative overflow-hidden">
+                    <div class="absolute -right-2 -bottom-2 text-6xl opacity-10 font-bold text-slate-100">3</div>
+                    <h3 class="font-bold text-rose-400 mb-2 border-b border-slate-700 pb-1">Layer 2 Security</h3>
+                    <p class="text-slate-400 text-xs mb-2">Under the Security > Layer 2 tab:</p>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1">
+                        <li>Select <strong>WPA+WPA2</strong>.</li>
+                        <li>Choose Authentication Key Management (AKM): <strong>PSK</strong> (Personal) or <strong>802.1X</strong> (Enterprise).</li>
+                        <li>Check the <strong>AES</strong> encryption box.</li>
+                    </ul>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="bg-slate-900 p-4 rounded border border-slate-700 relative overflow-hidden">
+                    <div class="absolute -right-2 -bottom-2 text-6xl opacity-10 font-bold text-slate-100">4</div>
+                    <h3 class="font-bold text-purple-400 mb-2 border-b border-slate-700 pb-1">AAA Servers (Enterprise)</h3>
+                    <p class="text-slate-400 text-xs mb-2">If using 802.1X, go to Security > AAA Servers tab:</p>
+                    <ul class="list-disc pl-4 text-slate-300 text-xs space-y-1">
+                        <li>Select your pre-configured <strong>RADIUS server</strong> from the drop-down list.</li>
+                        <li>The WLC will now forward client credentials to ISE/RADIUS for validation.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- 4. Layer 2 vs Layer 3 Security in WLC -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-yellow-400 transition-colors duration-300 md:col-span-1 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                🔒 L2 vs L3 Security
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">The WLC Security tab separates policies into Layer 2 and Layer 3.</p>
+            
+            <div class="space-y-3 text-sm">
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <h3 class="font-bold text-emerald-400 text-xs">Layer 2 Security</h3>
+                    <p class="text-slate-400 text-xs mt-1">Handles wireless encryption and access to the radio waves themselves. <br>(e.g., WPA2/WPA3, PSK, 802.1X, MAC Filtering).</p>
+                </div>
+                <div class="bg-slate-900 p-3 rounded border border-slate-700">
+                    <h3 class="font-bold text-yellow-300 text-xs">Layer 3 Security</h3>
+                    <p class="text-slate-400 text-xs mt-1">Handles security <em>after</em> the device connects to the radio. <br>(e.g., Web Authentication captive portals for Guests, IPSec VPN pass-through).</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg md:col-span-1 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🪝 Brain Hooks
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">AP Join Checklist (B.D.D)</strong>
+                    <p class="text-slate-400 text-xs">
+                        How does an AP find the controller? Think <strong>B.D.D.</strong><br>
+                        1. <strong>B</strong>roadcast (Local)<br>
+                        2. <strong>D</strong>HCP Option 43<br>
+                        3. <strong>D</strong>NS (CISCO-CAPWAP-CONTROLLER)
+                    </p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                    <strong class="text-slate-100 block mb-2 border-b border-slate-600 pb-2">Virtual Interface = Fake IP</strong>
+                    <p class="text-slate-400 text-xs">
+                        The Virtual Interface (usually 1.1.1.1) isn't a real routing endpoint. It's a "fake" IP used by the WLC to intercept guest traffic and redirect it to a Web Login page.
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Troubleshooting / Verification -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-3">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting & WLC Verification
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div class="border-l-4 border-orange-500 pl-4 bg-[#0d1117] p-3 rounded">
+                    <p class="text-slate-200 font-sans font-bold">AP Won't Join Controller</p>
+                    <p class="text-slate-400 mt-1 font-sans"><strong>Check:</strong> Is DHCP working? If the AP gets an IP, did the scope include Option 43? If not, verify the DNS server has an A-record for <code class="text-cyan-400">CISCO-CAPWAP-CONTROLLER</code>.</p>
+                </div>
+                <div class="border-l-4 border-emerald-500 pl-4 bg-[#0d1117] p-3 rounded">
+                    <p class="text-slate-200 font-sans font-bold">WLAN Not Broadcasting</p>
+                    <p class="text-slate-400 mt-1 font-sans"><strong>Check:</strong> Go to the WLANs tab. Look at the "Admin Status". Did you forget to check the <strong>"Enabled"</strong> box on the General tab?</p>
+                </div>
+                <div class="border-l-4 border-cyan-500 pl-4 bg-[#0d1117] p-3 rounded">
+                    <p class="text-slate-200 font-sans font-bold">show ap summary</p>
+                    <p class="text-slate-400 mt-1 font-sans">CLI command on the WLC to verify which APs have successfully built CAPWAP tunnels and joined the controller.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: DHCP Option 43.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Which specific DHCP Option number is configured on a server to hand out the Wireless LAN Controller's IP address to a joining AP?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>DHCP Option 43</strong>.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: The Virtual Interface (often 1.1.1.1).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. Which logical WLC interface is used specifically to support mobility management (roaming) and redirect users to Web Authentication portals?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        The <strong>Virtual Interface</strong> (commonly configured as an unroutable IP like 1.1.1.1).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Layer 2 Security.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. In the WLC GUI, under which security tab (Layer 2 or Layer 3) would you configure WPA2 Enterprise (802.1X) authentication?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Layer 2 Security</strong>. (Layer 3 handles post-connection policies like captive web portals).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A Dynamic Interface.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. To tie a newly created WLAN (SSID) to a specific wired VLAN on the network, what type of logical interface must you map the WLAN to?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        A <strong>Dynamic Interface</strong>. (The admin creates dynamic interfaces and maps them directly to physical VLANs).
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

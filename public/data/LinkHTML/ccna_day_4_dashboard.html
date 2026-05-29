@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 4: Intro to the CLI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 4: Intro to the CLI
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. Cisco IOS Modes -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔑</span>
+                <h2 class="text-2xl font-bold text-slate-100">Cisco IOS Modes</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">The CLI is hierarchical. You must enter higher-privileged modes to make changes.</p>
+            
+            <div class="space-y-4 text-sm font-mono">
+                <!-- User EXEC -->
+                <div class="p-3 border-l-4 border-slate-500 bg-[#0d1117] rounded-r">
+                    <strong class="text-slate-300 font-sans block mb-1">1. User EXEC Mode</strong>
+                    <span class="text-cyan-400">Router></span>
+                    <p class="text-slate-400 font-sans text-xs mt-1">Default mode. View-only (limited `show` commands, `ping`). Cannot make any changes.</p>
+                </div>
+                
+                <!-- Privileged EXEC -->
+                <div class="p-3 border-l-4 border-emerald-500 bg-[#0d1117] rounded-r">
+                    <strong class="text-emerald-400 font-sans block mb-1">2. Privileged EXEC Mode</strong>
+                    <span class="text-cyan-400">Router#</span>
+                    <p class="text-slate-400 font-sans text-xs mt-1">"Enable" mode. Full access to all `show` commands. Save/erase configurations.</p>
+                </div>
+
+                <!-- Global Config -->
+                <div class="p-3 border-l-4 border-rose-500 bg-[#0d1117] rounded-r">
+                    <strong class="text-rose-400 font-sans block mb-1">3. Global Configuration Mode</strong>
+                    <span class="text-cyan-400">Router(config)#</span>
+                    <p class="text-slate-400 font-sans text-xs mt-1">Make device-wide changes (hostnames, banners, passwords).</p>
+                </div>
+
+                <!-- Sub-Config -->
+                <div class="p-3 border-l-4 border-purple-500 bg-[#0d1117] rounded-r">
+                    <strong class="text-purple-400 font-sans block mb-1">4. Sub-Configuration Mode</strong>
+                    <span class="text-cyan-400">Router(config-if)#</span>
+                    <p class="text-slate-400 font-sans text-xs mt-1">Configure specific parts of the device (interfaces, line vty, routing protocols).</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. Access Methods -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-blue-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🔌</span>
+                <h2 class="text-2xl font-bold text-slate-100">Access Methods</h2>
+            </div>
+            <ul class="list-disc pl-5 text-sm text-slate-400 space-y-3">
+                <li><strong class="text-cyan-400">Console Port:</strong> Used for initial configuration. Requires physical access and a console cable (rollover cable). This is known as <strong>Out-of-Band</strong> management.</li>
+                <li><strong class="text-emerald-400">SSH (Secure Shell):</strong> Secure, encrypted remote access over the network. This is <strong>In-Band</strong> management. The modern standard.</li>
+                <li><strong class="text-rose-400">Telnet:</strong> Older remote access method over the network. Sends data in clear text (unencrypted). <em>Never use in production.</em></li>
+            </ul>
+        </article>
+
+        <!-- 3. Memory & Configs -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-orange-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">💾</span>
+                <h2 class="text-2xl font-bold text-slate-100">Memory Types</h2>
+            </div>
+            <ul class="list-disc pl-5 text-sm text-slate-400 space-y-2">
+                <li><strong class="text-orange-400">RAM:</strong> Volatile. Stores the <code class="text-slate-200">running-config</code>. Changes take effect immediately but are lost on reboot.</li>
+                <li><strong class="text-emerald-400">NVRAM:</strong> Non-volatile. Stores the <code class="text-slate-200">startup-config</code>. Loaded into RAM when the device boots.</li>
+                <li><strong class="text-blue-400">Flash:</strong> Stores the Cisco IOS software image (the OS itself). Non-volatile.</li>
+                <li><strong class="text-purple-400">ROM:</strong> Read-Only. Stores the bootstrap program (loads the IOS on startup).</li>
+            </ul>
+        </article>
+
+        <!-- 4. Memorization Aids & Shortcuts -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg lg:col-span-2">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🧠 Shortcuts & Brain Hooks
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-yellow-300 text-lg">?</strong> <strong class="text-slate-100">(Context-Sensitive Help)</strong><br>
+                    <span class="text-slate-400">Type `?` at any time to see available commands. `cl?` shows all commands starting with 'cl'. `clock ?` shows what comes next.</span>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-yellow-300 text-lg">Tab</strong> <strong class="text-slate-100">(Auto-Complete)</strong><br>
+                    <span class="text-slate-400">Type partial command and press Tab. E.g., `con[Tab]` completes to `configure`. If it doesn't complete, it's ambiguous.</span>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100">Cursor Navigation</strong><br>
+                    <span class="text-slate-400">
+                        <strong class="text-cyan-400">Ctrl + A:</strong> Move to start of line.<br>
+                        <strong class="text-cyan-400">Ctrl + E:</strong> Move to end of line.
+                    </span>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700 border-l-4 border-l-rose-500">
+                    <strong class="text-slate-100">The "Panic Button"</strong><br>
+                    <span class="text-slate-400">
+                        <strong class="text-rose-400">Ctrl + Shift + 6:</strong> Aborts annoying DNS lookups, pings, or traceroutes. <em>(Highly tested concept!)</em>
+                    </span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-3">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ Core CLI Navigation Commands
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <div class="flex flex-col border-b border-slate-800 md:border-none pb-2 md:pb-0">
+                        <span class="text-yellow-300">Router> enable</span>
+                        <span class="text-slate-400 text-xs mt-1">Moves from User EXEC to Privileged EXEC mode. (Short: `en`)</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 md:border-none pb-2 md:pb-0">
+                        <span class="text-yellow-300">Router# disable</span>
+                        <span class="text-slate-400 text-xs mt-1">Moves from Privileged EXEC down to User EXEC mode.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 md:border-none pb-2 md:pb-0">
+                        <span class="text-yellow-300">Router# configure terminal</span>
+                        <span class="text-slate-400 text-xs mt-1">Enters Global Configuration mode. (Short: `conf t`)</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 md:border-none pb-2 md:pb-0">
+                        <span class="text-yellow-300">Router(config)# exit</span>
+                        <span class="text-slate-400 text-xs mt-1">Moves down one level (e.g., config to Priv EXEC).</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 md:border-none pb-2 md:pb-0">
+                        <span class="text-yellow-300">Router(config-if)# end</span>
+                        <span class="text-slate-400 text-xs mt-1">Drops you all the way back to Privileged EXEC mode. (Shortcut: `Ctrl+Z`)</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 md:border-none pb-2 md:pb-0">
+                        <span class="text-yellow-300">Router# copy running-config startup-config</span>
+                        <span class="text-slate-400 text-xs mt-1">Saves RAM config to NVRAM so it survives a reboot. (Old way: `write memory` or `wr`)</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 6. Troubleshooting -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-1">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting the CLI
+            </h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Translating "xxxxx"... domain server</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Issue:</strong> You typed a typo (like `enabel`). The router thinks it's a hostname and tries to resolve it via DNS, freezing your console.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> Press <code class="text-cyan-400">Ctrl + Shift + 6</code> to cancel it. To prevent it permanently, use <code class="text-cyan-400">no ip domain-lookup</code> in global config.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">% Incomplete command.</h3>
+                    <p class="text-slate-400 text-xs mt-1"><strong>Issue:</strong> You pressed enter before giving all required parameters.</p>
+                    <p class="text-slate-300 text-xs mt-1"><strong>Fix:</strong> Press Up arrow to retrieve the command, press Space, and type <code class="text-yellow-300">?</code> to see what is missing.</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="space-y-3">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Privileged EXEC mode. Prompt: Router#">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. Which mode are you in, and what does the prompt look like, immediately after typing 'enable'?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        You enter <strong>Privileged EXEC mode</strong>. The prompt changes to end with a hash/pound sign: <code class="text-cyan-400">Router#</code>
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: copy running-config startup-config">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. You just configured a hostname. If you reboot the router now, the configuration will be lost. What command prevents this?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <code class="text-cyan-400">copy running-config startup-config</code> (This saves the volatile RAM config to the non-volatile NVRAM).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Console (Out-of-band)">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. You are taking a brand new Cisco router out of the box. Which access method MUST you use to configure it for the first time?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        The <strong>Console port</strong>. You must use a console cable because the router has no IP addresses assigned yet to support SSH or Telnet (Out-of-band management).
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Ctrl + Shift + 6">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. You mistakenly typed a bad command and the CLI is stuck on "Translating... domain server". What shortcut kills this process?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Ctrl + Shift + 6</strong>. This is the Cisco IOS abort sequence.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 3: OSI Model & TCP/IP Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; }
+            .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-gradient-to-br, .bg-slate-700 { background: white !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-cyan-400, .text-emerald-400, .text-purple-400, .text-orange-400, .text-rose-400, .text-yellow-300, .text-blue-400 { color: black !important; }
+            .border-slate-700, .border-slate-600, .border-purple-500\/50 { border-color: #ccc !important; }
+            .shadow-lg { box-shadow: none !important; }
+            .print-hidden { display: none !important; }
+            
+            /* Expand details for printing */
+            details { border: 1px solid #aaa !important; margin-bottom: 10px; page-break-inside: avoid; }
+            details summary { font-weight: bold; cursor: default; padding: 10px; }
+            details summary::-webkit-details-marker { display: none; }
+            details[open] summary ~ * { display: block; }
+            details::after { content: attr(data-print-answer); display: block; padding: 10px; border-top: 1px dashed #ccc; font-weight: bold; }
+            .hidden-in-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans p-4 md:p-8 min-h-screen selection:bg-cyan-600 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                Day 3: OSI & TCP/IP Models
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium">CCNA 200-301 Mastery Dashboard</p>
+        </div>
+        <button onclick="window.print()" class="print-hidden bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-lg transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+            🖨️ Save PDF
+        </button>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- 1. The OSI Model (7 Layers) -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-cyan-500 transition-colors duration-300 md:col-span-2 lg:col-span-1 md:row-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📚</span>
+                <h2 class="text-2xl font-bold text-slate-100">The OSI Model</h2>
+            </div>
+            <p class="text-slate-300 mb-4 text-sm">A conceptual framework used to understand how networks operate.</p>
+            
+            <div class="space-y-2 text-sm">
+                <div class="p-2 border-l-4 border-rose-500 bg-slate-800/50">
+                    <strong class="text-rose-400">7. Application:</strong> Network services to apps (HTTP, FTP, DNS).
+                </div>
+                <div class="p-2 border-l-4 border-orange-500 bg-slate-800/50">
+                    <strong class="text-orange-400">6. Presentation:</strong> Data formatting, encryption, compression (JPEG, ASCII, TLS).
+                </div>
+                <div class="p-2 border-l-4 border-yellow-500 bg-slate-800/50">
+                    <strong class="text-yellow-400">5. Session:</strong> Establishes, maintains, and terminates connections.
+                </div>
+                <div class="p-2 border-l-4 border-emerald-500 bg-slate-800/50">
+                    <strong class="text-emerald-400">4. Transport:</strong> End-to-end connections, reliability, ports (TCP, UDP).
+                </div>
+                <div class="p-2 border-l-4 border-blue-500 bg-slate-800/50">
+                    <strong class="text-blue-400">3. Network:</strong> Logical addressing, routing (IPv4, IPv6, Routers).
+                </div>
+                <div class="p-2 border-l-4 border-purple-500 bg-slate-800/50">
+                    <strong class="text-purple-400">2. Data Link:</strong> Physical addressing, error detection (MAC, Switches, Ethernet).
+                </div>
+                <div class="p-2 border-l-4 border-slate-500 bg-slate-800/50">
+                    <strong class="text-slate-400">1. Physical:</strong> Media, signal, binary transmission (Cables, Hubs, Bits).
+                </div>
+            </div>
+        </article>
+
+        <!-- 2. TCP/IP Suite -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-blue-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">🌐</span>
+                <h2 class="text-2xl font-bold text-slate-100">TCP/IP Suite</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">The actual protocol stack used on the Internet today. Modern networking uses the <strong>5-Layer Updated TCP/IP Model</strong>.</p>
+            <ul class="list-none text-sm text-slate-400 space-y-3">
+                <li class="flex items-center gap-2">
+                    <span class="bg-rose-500/20 text-rose-400 px-2 py-1 rounded text-xs font-bold">L5 Application</span>
+                    <span class="text-slate-300">Maps to OSI Layers 5, 6, 7.</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-xs font-bold">L4 Transport</span>
+                    <span class="text-slate-300">Maps directly to OSI Layer 4.</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs font-bold">L3 Network</span>
+                    <span class="text-slate-300">Maps directly to OSI Layer 3.</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="bg-purple-500/20 text-purple-400 px-2 py-1 rounded text-xs font-bold">L2 Data Link</span>
+                    <span class="text-slate-300">Maps directly to OSI Layer 2.</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="bg-slate-500/20 text-slate-400 px-2 py-1 rounded text-xs font-bold">L1 Physical</span>
+                    <span class="text-slate-300">Maps directly to OSI Layer 1.</span>
+                </li>
+            </ul>
+        </article>
+
+        <!-- 3. Encapsulation & PDUs -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg hover:border-emerald-500 transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">📦</span>
+                <h2 class="text-2xl font-bold text-slate-100">Encapsulation & PDUs</h2>
+            </div>
+            <p class="text-slate-300 mb-3 text-sm">As data moves down the stack, headers are added. The resulting block of data at each layer is a <strong>Protocol Data Unit (PDU)</strong>.</p>
+            <ul class="list-disc pl-5 text-sm text-slate-400 space-y-2">
+                <li><strong class="text-rose-400">L5-L7 PDU:</strong> Data</li>
+                <li><strong class="text-emerald-400">L4 PDU:</strong> Segment <span class="text-slate-500">(Adds TCP/UDP Header)</span></li>
+                <li><strong class="text-blue-400">L3 PDU:</strong> Packet <span class="text-slate-500">(Adds IP Header)</span></li>
+                <li><strong class="text-purple-400">L2 PDU:</strong> Frame <span class="text-slate-500">(Adds MAC Header & Trailer)</span></li>
+                <li><strong class="text-slate-400">L1 PDU:</strong> Bits <span class="text-slate-500">(Sent over wire)</span></li>
+            </ul>
+        </article>
+
+        <!-- 4. Memorization Aids & Analogies -->
+        <article class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-purple-500/50 shadow-lg lg:col-span-2">
+            <h2 class="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                🧠 Brain Hooks
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100">OSI Bottom-Up (1 to 7)</strong><br>
+                    <span class="text-cyan-400 font-semibold">P</span>lease <span class="text-cyan-400 font-semibold">D</span>o <span class="text-cyan-400 font-semibold">N</span>ot <span class="text-cyan-400 font-semibold">T</span>hrow <span class="text-cyan-400 font-semibold">S</span>ausage <span class="text-cyan-400 font-semibold">P</span>izza <span class="text-cyan-400 font-semibold">A</span>way
+                    <p class="text-slate-400 mt-1 text-xs">(Physical, Data Link, Network, Transport, Session, Presentation, App)</p>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100">OSI Top-Down (7 to 1)</strong><br>
+                    <span class="text-cyan-400 font-semibold">A</span>ll <span class="text-cyan-400 font-semibold">P</span>eople <span class="text-cyan-400 font-semibold">S</span>eem <span class="text-cyan-400 font-semibold">T</span>o <span class="text-cyan-400 font-semibold">N</span>eed <span class="text-cyan-400 font-semibold">D</span>ata <span class="text-cyan-400 font-semibold">P</span>rocessing
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100">PDUs Top-Down (4 to 1)</strong><br>
+                    <span class="text-emerald-400 font-semibold">S</span>ome <span class="text-blue-400 font-semibold">P</span>eople <span class="text-purple-400 font-semibold">F</span>ear <span class="text-slate-400 font-semibold">B</span>irthdays
+                    <p class="text-slate-400 mt-1 text-xs">(Segments, Packets, Frames, Bits)</p>
+                </div>
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <strong class="text-slate-100">The Postal Analogy</strong><br>
+                    <span class="text-slate-400 mt-1 block">L7: Writing the letter.<br>L4: Choosing Certified Mail vs Standard.<br>L3: The Zip Code (IP).<br>L2: The Mail Truck route (MAC).<br>L1: The physical road.</span>
+                </div>
+            </div>
+        </article>
+
+        <!-- 5. OSI Troubleshooting Approaches -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center gap-2">
+                🔧 Troubleshooting
+            </h2>
+            <p class="text-slate-300 text-sm mb-3">The OSI model is highly tested as a troubleshooting framework.</p>
+            <div class="space-y-3">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Bottom-Up</h3>
+                    <p class="text-slate-400 text-xs mt-1">Start at Layer 1. Is the cable plugged in? Is there power? Move up to L2 (MAC/VLANs), then L3 (IP routing). Best for physical outages.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Top-Down</h3>
+                    <p class="text-slate-400 text-xs mt-1">Start at Layer 7. Can you browse the web? If not, check L4 (firewall ports blocked?), then L3 (ping). Best for software issues.</p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-bold text-slate-200 text-sm">Divide & Conquer</h3>
+                    <p class="text-slate-400 text-xs mt-1">Start at Layer 3 (Ping). If Ping works, L1-L3 are fine—move up. If Ping fails, move down to L2/L1.</p>
+                </div>
+            </div>
+        </article>
+        
+        <!-- 6. CLI Command Memorization -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg lg:col-span-1">
+            <h2 class="text-2xl font-bold text-emerald-400 mb-4 flex items-center gap-2">
+                ⌨️ CLI & The OSI Model
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm font-mono text-slate-300">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">ping [ip-address]</span>
+                        <span class="text-slate-400 text-xs mt-1">Tests Layer 3 (Network) connectivity end-to-end.</span>
+                    </div>
+                    <div class="flex flex-col border-b border-slate-800 pb-2">
+                        <span class="text-yellow-300">traceroute [ip-address]</span>
+                        <span class="text-slate-400 text-xs mt-1">Traces the Layer 3 path packet takes via routers.</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-yellow-300">show mac address-table</span>
+                        <span class="text-slate-400 text-xs mt-1">Verifies Layer 2 (Data Link) switch operations.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- 7. Active Recall Quiz -->
+        <article class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-lg md:col-span-2 lg:col-span-2">
+            <h2 class="text-2xl font-bold text-rose-400 mb-4 flex items-center gap-2">
+                ⚡ Quick Quiz (Active Recall)
+            </h2>
+            <p class="text-slate-400 text-sm mb-4 print-hidden">Click questions to reveal answers.</p>
+
+            <div class="space-y-3">
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Segment.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        1. What is the Protocol Data Unit (PDU) for Layer 4 (Transport layer)?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Segment.</strong> (Remember: <u>S</u>ome People Fear Birthdays).
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: A Frame Trailer contains the FCS (Frame Check Sequence) for error detection.">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        2. During encapsulation, which layer is unique because it adds both a Header AND a Trailer to the data?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Layer 2 (Data Link Layer).</strong> It adds the MAC Header and a Trailer containing the FCS (Frame Check Sequence) to detect errors.
+                    </div>
+                </details>
+
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: Layer 3 (Network Layer).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        3. At which OSI layer do Routers primarily operate to determine the best path for traffic?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>Layer 3 (Network Layer).</strong> Routers use logical IP addresses to make routing decisions.
+                    </div>
+                </details>
+                
+                <details class="group bg-slate-900 border border-slate-700 rounded-lg p-4 cursor-pointer hover:border-slate-500 transition-colors" data-print-answer="Answer: The Presentation Layer (Layer 6).">
+                    <summary class="font-semibold text-slate-200 list-none flex justify-between items-center hidden-in-print">
+                        4. Which layer of the OSI model is responsible for data encryption (e.g., TLS) and formatting (e.g., JPEG, ASCII)?
+                        <span class="text-rose-400 transition-transform duration-300 group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="mt-3 text-slate-300 border-l-2 border-emerald-500 pl-4 text-sm hidden-in-print">
+                        <strong>The Presentation Layer (Layer 6).</strong> It ensures the data is in a readable format for the application layer and handles encryption/compression.
+                    </div>
+                </details>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto mt-8 border-t border-slate-700 pt-6 text-center text-slate-500 text-sm print-hidden pb-8">
+        <p>Synthesized for CCNA 200-301 Preparation. Use the print button to generate a clean PDF.</p>
+    </footer>
+
+</body>
+</html>
