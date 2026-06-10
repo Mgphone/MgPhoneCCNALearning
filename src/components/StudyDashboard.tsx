@@ -10,6 +10,7 @@ interface StudyDashboardProps {
   storageKey: string;
   basePath: string;
   title: string;
+  showCourseCredits?: boolean;
 }
 
 export const StudyDashboard: React.FC<StudyDashboardProps> = ({
@@ -17,6 +18,7 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
   storageKey,
   basePath,
   title,
+  showCourseCredits = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTopic, setSelectedTopic] = useState<CcnaTopic | null>(null);
@@ -61,6 +63,29 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
                 Crafted with <span className="text-rose-500">❤️❤️❤️</span> from{" "}
                 <span className="text-cyan-500">mgphone</span>
               </p>
+              <div className="flex items-center justify-center gap-4 text-[9px] font-bold text-slate-700 uppercase tracking-tighter">
+                <a
+                  href="https://youtube.com/playlist?list=PLxbwE86jKRgMpuZuLBivzlM8s2Dk5lXBQ&si=OHizNnJ5TmmM3MIP"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-cyan-500 transition-colors"
+                >
+                  Jeremy's IT Lab
+                </a>
+                {showCourseCredits && (
+                  <>
+                    <span className="w-1 h-1 bg-slate-800 rounded-full" />
+                    <a
+                      href="https://github.com/psaumur/CCNA_Course_Notes/tree/main"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-cyan-500 transition-colors"
+                    >
+                      Course Notes
+                    </a>
+                  </>
+                )}
+              </div>
             </div>
           </footer>
         </>

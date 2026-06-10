@@ -17,6 +17,7 @@ function App() {
               storageKey="ccna_mastery_progress"
               basePath="/data/LinkHTML/"
               title="Review & Course Notes"
+              showCourseCredits={true}
             />
           }
         />
