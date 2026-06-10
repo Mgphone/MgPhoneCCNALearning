@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Study Guide: Configuring Interfaces & Port Security</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Styles */
+body {
+    background-color: #f4f6f8; /* Very light, cool grey for calmness */
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #334155; /* Slate 700 for good legibility */
+}
+
+/* Custom Scrollbar for code blocks */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Chart Container constraints */
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 500px; /* Constrain max width */
+    margin-left: auto;
+    margin-right: auto;
+    height: 30vh;
+    min-height: 250px;
+    max-height: 350px;
+}
+@media (min-width: 768px) {
+    .chart-container { height: 35vh; max-width: 600px; }
+}
+
+/* Navigation Utilities */
+.nav-active {
+    background-color: #0f172a; /* Slate 900 */
+    color: #f8fafc; /* Slate 50 */
+    border-left: 4px solid #38bdf8; /* Light blue accent */
+}
+.nav-inactive {
+    color: #64748b; /* Slate 500 */
+    border-left: 4px solid transparent;
+}
+.nav-inactive:hover {
+    background-color: #e2e8f0; /* Slate 200 */
+    color: #0f172a; /* Slate 900 */
+}
+
+/* View transition */
+.view-section { display: none; opacity: 0; transition: opacity 0.3s ease; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Accordion Animation */
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+}
+.accordion-content.expanded {
+    max-height: 1000px; /* Arbitrary large number */
+}
+
+/* Code Block Styling */
+.cli-block {
+    background-color: #1e293b; /* Slate 800 */
+    color: #e2e8f0; /* Slate 200 */
+    font-family: 'Courier New', Courier, monospace;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    border: 1px solid #334155; /* Slate 700 */
+}
+.cli-prompt { color: #38bdf8; font-weight: bold; } /* Sky 400 */
+.cli-comment { color: #94a3b8; font-style: italic; } /* Slate 400 */
+.cli-keyword { color: #a7f3d0; } /* Emerald 200 */
+
+/* Interactive Elements */
+.tab-btn {
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+.tab-btn.active {
+    color: #0ea5e9; /* Sky 500 */
+    border-bottom-color: #0ea5e9;
+    font-weight: 600;
+}
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+<!-- Chosen Palette: Slate & Sky (Background: #f4f6f8, Text: Slate 700, Primary Accent: Sky 500, Code: Slate 800) -->
+<!-- Application Structure Plan: Dashboard layout. 
+    1. 'Executive Summary & Theory' (Overview, visual breakdown of port states).
+    2. 'Configuration Labs' (Tabbed interface for R1, SW1, SW2 CLI setups).
+    3. 'Command Matrix' (Searchable table for quick reference).
+    4. 'Q&A Assessment' (Interactive accordions for self-testing based on the 5 report questions).
+    This breaks down the highly technical CLI configuration into digestible, task-oriented sections, preventing overwhelming the user with a single long page of code. -->
+<!-- Visualization & Content Choices:
+    1. Port Default States -> Goal: Compare/Inform -> Method: Doughnut Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Visually reinforces the difference between Router (0% up by default) and Switch (100% up by default) interface states, a key CCNA concept. (NO SVG).
+    2. Configuration Walkthrough -> Goal: Process/Organize -> Method: HTML/JS Tabs -> Interaction: Click to switch device context -> Justification: Organizes lengthy CLI scripts by device, preventing scrolling fatigue.
+    3. Lab Q&A -> Goal: Engage/Organize -> Method: JS Accordions -> Interaction: Click to reveal answers -> Justification: Allows active recall before seeing the solution. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-64 flex-shrink-0 flex flex-col z-20 shadow-sm h-auto md:h-full">
+    <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+        <span class="text-2xl">⚙️</span>
+        <div>
+            <h1 class="text-base font-bold text-slate-800 leading-tight">CCNA Study Guide</h1>
+            <p class="text-xs text-sky-600 font-semibold tracking-wide uppercase mt-1">Interfaces & Security</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-2 flex flex-row md:flex-col">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-6 py-4 font-medium transition-colors flex-shrink-0 flex items-center gap-2">
+            <span>📖</span> Theory & Concepts
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-6 py-4 font-medium transition-colors flex-shrink-0 flex items-center gap-2">
+            <span>💻</span> Device Configuration
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-6 py-4 font-medium transition-colors flex-shrink-0 flex items-center gap-2">
+            <span>📝</span> Lab Q&A Assessment
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-6 py-4 font-medium transition-colors flex-shrink-0 flex items-center gap-2">
+            <span>📋</span> Command Matrix
+        </button>
+    </div>
+</nav>
+
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth bg-slate-50/50">
+
+    <!-- Header common to all views -->
+    <header class="mb-8 max-w-5xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">Configuring Interfaces & Port Security</h2>
+        <div class="bg-white border-l-4 border-sky-500 p-5 rounded-r-lg shadow-sm">
+            <p class="text-slate-600 leading-relaxed">
+                This module focuses on practical configuration of router and switch interfaces, expanding beyond basic IP addressing to include physical layer tuning. You will learn to manually set speed/duplex for stable uplinks, use bulk configuration commands, and secure network infrastructure by disabling unused switch ports.
+            </p>
+        </div>
+    </header>
+
+    <!-- VIEW 1: Theory & Concepts -->
+    <div id="view-theory" class="view-section active max-w-5xl mx-auto space-y-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Text Content -->
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Interface Default States</h3>
+                    <p class="text-sm text-slate-600 mb-4">Understanding out-of-the-box behavior is critical for troubleshooting:</p>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex items-start">
+                            <span class="text-sky-500 mr-2">▪</span>
+                            <div><strong>Routers:</strong> All interfaces are <span class="text-red-500 font-semibold">administratively down</span> by default. You must explicitly issue the <code>no shutdown</code> command.</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sky-500 mr-2">▪</span>
+                            <div><strong>Switches:</strong> All interfaces are <span class="text-emerald-500 font-semibold">up</span> by default. For security, explicitly issue the <code>shutdown</code> command on unused ports.</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Auto-Negotiation vs. Manual</h3>
+                    <p class="text-sm text-slate-600 mb-3">By default, Ethernet interfaces negotiate speed (10/100/1000) and duplex (Half/Full) dynamically.</p>
+                    
+                    <div class="bg-slate-50 p-3 rounded-md mb-3 border border-slate-100">
+                        <strong class="text-slate-800 text-sm block mb-1">Uplinks (Router-to-Switch):</strong>
+                        <p class="text-xs text-slate-600">Engineers hardcode <code>speed</code> and <code>duplex</code> settings to prevent negotiation failures that cause flapping.</p>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-md border border-slate-100">
+                        <strong class="text-slate-800 text-sm block mb-1">Edge Ports (to PCs):</strong>
+                        <p class="text-xs text-slate-600">Typically left to auto-negotiate, as end-user hardware varies wildly.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-sky-50 border border-sky-100 p-4 rounded-xl text-sm">
+                    <strong class="text-sky-800 block mb-1">⚠️ CCNA Exam Tip & Packet Tracer Quirk</strong>
+                    <p class="text-sky-700">In real Cisco IOS, manually configuring <code>speed 1000</code> and <code>duplex full</code> displays exactly that in <code>show interfaces status</code>. In Packet Tracer, it sometimes incorrectly displays <code>a-1000</code> and <code>a-full</code> (auto). Always trust the <code>running-config</code>.</p>
+                </div>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                <h3 class="text-xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2 text-center">Default Port States Comparison</h3>
+                <p class="text-xs text-slate-500 text-center mb-6">Percentage of active ports on a fresh boot (assuming cables plugged in).</p>
+                <div class="flex-grow flex items-center justify-center">
+                    <div class="chart-container">
+                        <canvas id="defaultStatesChart"></canvas>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-600 mt-4 text-center bg-slate-50 p-2 rounded border border-slate-100">Because switches default to 100% active, securing unused ports via bulk <code>shutdown</code> is a primary task.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: Device Configuration -->
+    <div id="view-config" class="view-section max-w-5xl mx-auto">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800">Step-by-Step Configuration Guide</h3>
+                <p class="text-sm text-slate-500 mt-1">Select a device to view its specific CLI configuration sequence.</p>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-200 px-6 pt-2 gap-6" id="deviceTabs">
+                <button onclick="switchTab('r1')" id="tab-r1" class="tab-btn active pb-3 text-sm font-medium text-slate-600 hover:text-sky-500">R1 (Router)</button>
+                <button onclick="switchTab('sw1')" id="tab-sw1" class="tab-btn pb-3 text-sm font-medium text-slate-600 hover:text-sky-500">SW1 (Switch 1)</button>
+                <button onclick="switchTab('sw2')" id="tab-sw2" class="tab-btn pb-3 text-sm font-medium text-slate-600 hover:text-sky-500">SW2 (Switch 2)</button>
+            </div>
+
+            <!-- Tab Content R1 -->
+            <div id="content-r1" class="p-6 block">
+                <p class="text-sm text-slate-700 mb-4 font-semibold">Goal: Configure hostname, active uplink to SW1 (with speed/duplex), and document unused ports.</p>
+                <div class="cli-block">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br>
+                    <span class="cli-prompt">R1(config)#</span> hostname R1<br><br>
+                    <span class="cli-comment">! Configure the active interface to SW1</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 172.16.0.254 255.255.0.0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> speed 1000<br>
+                    <span class="cli-prompt">R1(config-if)#</span> duplex full<br>
+                    <span class="cli-prompt">R1(config-if)#</span> description to switch 1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+                    <span class="cli-comment">! Add descriptions to unused ports</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface range g0/1 - 2<br>
+                    <span class="cli-prompt">R1(config-if-range)#</span> description not in use<br>
+                    <span class="cli-prompt">R1(config-if-range)#</span> end<br>
+                    <span class="cli-prompt">R1#</span> copy running-config startup-config
+                </div>
+            </div>
+
+            <!-- Tab Content SW1 -->
+            <div id="content-sw1" class="p-6 hidden">
+                 <p class="text-sm text-slate-700 mb-4 font-semibold">Goal: Set hostname, configure uplinks to R1/SW2, label edge ports, and securely shut down all unused ports using ranges.</p>
+                <div class="cli-block">
+                    <span class="cli-prompt">Switch&gt;</span> enable<br>
+                    <span class="cli-prompt">Switch#</span> configure terminal<br>
+                    <span class="cli-prompt">Switch(config)#</span> hostname SW1<br><br>
+                    <span class="cli-comment">! Configure uplink to R1</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> speed 1000<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> duplex full<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> description to R1<br><br>
+                    <span class="cli-comment">! Configure uplink to SW2</span><br>
+                    <span class="cli-prompt">SW1(config-if)#</span> interface g0/2<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> speed 1000<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> duplex full<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> description to switch 2<br><br>
+                    <span class="cli-comment">! Configure edge ports</span><br>
+                    <span class="cli-prompt">SW1(config-if)#</span> interface range f0/1 - 2<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> description to end hosts<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> exit<br><br>
+                    <span class="cli-comment">! Secure unused ports</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface range f0/3 - 24<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> description not in use<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> shutdown<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> end<br>
+                    <span class="cli-prompt">SW1#</span> write memory
+                </div>
+            </div>
+
+            <!-- Tab Content SW2 -->
+            <div id="content-sw2" class="p-6 hidden">
+                 <p class="text-sm text-slate-700 mb-4 font-semibold">Goal: Similar to SW1, but demonstrates combining different interface types (Gigabit and FastEthernet) in a single range command.</p>
+                <div class="cli-block">
+                    <span class="cli-prompt">Switch&gt;</span> enable<br>
+                    <span class="cli-prompt">Switch#</span> configure terminal<br>
+                    <span class="cli-prompt">Switch(config)#</span> hostname SW2<br><br>
+                    <span class="cli-comment">! Configure uplink to SW1</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> speed 1000<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> duplex full<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> description to switch 1<br><br>
+                    <span class="cli-comment">! Configure edge ports</span><br>
+                    <span class="cli-prompt">SW2(config-if)#</span> interface range f0/1 - 2<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> description to end hosts<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> exit<br><br>
+                    <span class="cli-comment">! Secure unused ports (combining Gigabit and FastEthernet)</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface range g0/2 , f0/3 - 24<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> description not in use<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> shutdown<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> end<br>
+                    <span class="cli-prompt">SW2#</span> write
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: Q&A Assessment -->
+    <div id="view-qa" class="view-section max-w-5xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Lab Task Breakdown</h3>
+            <p class="text-sm text-slate-600">Test your knowledge of the lab requirements. Click to reveal the configuration solutions.</p>
+        </div>
+
+        <!-- Accordion 1 -->
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <button class="w-full text-left px-6 py-4 font-semibold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('qa1', this)">
+                <span>1. Configure the hostname of R1, SW1, and SW2</span>
+                <span class="text-xl text-slate-400 transition-transform duration-300">+</span>
+            </button>
+            <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                <div class="py-4 text-sm text-slate-700">
+                    <p class="mb-2">Enter Global Configuration mode on each respective device and apply the hostname.</p>
+                    <div class="cli-block text-xs">
+                        <span class="cli-prompt">Router(config)#</span> hostname R1<br>
+                        <span class="cli-prompt">Switch(config)#</span> hostname SW1<br>
+                        <span class="cli-prompt">Switch(config)#</span> hostname SW2
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accordion 2 -->
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <button class="w-full text-left px-6 py-4 font-semibold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('qa2', this)">
+                <span>2. Configure the appropriate IP addresses on R1, PC1, PC2, PC3, PC4</span>
+                <span class="text-xl text-slate-400 transition-transform duration-300">+</span>
+            </button>
+            <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                <div class="py-4 text-sm text-slate-700">
+                    <p class="mb-3">The network used in the lab is <code class="bg-slate-200 px-1 rounded">172.16.0.0 /16</code>.</p>
+                    <ul class="space-y-2 ml-2 border-l-2 border-sky-300 pl-4">
+                        <li><strong>R1 (G0/0):</strong> <code>172.16.0.254</code> <code>255.255.0.0</code></li>
+                        <li><strong>PC1:</strong> <code>172.16.0.1</code> <code>255.255.0.0</code> <span class="text-slate-500">(Gateway: 172.16.0.254)</span></li>
+                        <li><strong>PC2:</strong> <code>172.16.0.2</code> <code>255.255.0.0</code> <span class="text-slate-500">(Gateway: 172.16.0.254)</span></li>
+                        <li><strong>PC3:</strong> <code>172.16.0.3</code> <code>255.255.0.0</code> <span class="text-slate-500">(Gateway: 172.16.0.254)</span></li>
+                        <li><strong>PC4:</strong> <code>172.16.0.4</code> <code>255.255.0.0</code> <span class="text-slate-500">(Gateway: 172.16.0.254)</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accordion 3 -->
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <button class="w-full text-left px-6 py-4 font-semibold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('qa3', this)">
+                <span>3. Manually configure the speed and duplex on interfaces connected to other networking devices</span>
+                <span class="text-xl text-slate-400 transition-transform duration-300">+</span>
+            </button>
+            <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                <div class="py-4 text-sm text-slate-700">
+                    <p class="mb-2">We only apply these commands to the Router-to-Switch and Switch-to-Switch uplinks (the Gigabit Ethernet ports).</p>
+                    <div class="cli-block text-xs">
+                        <span class="cli-prompt">R1(config-if)#</span> interface g0/0<br>
+                        <span class="cli-prompt">R1(config-if)#</span> speed 1000<br>
+                        <span class="cli-prompt">R1(config-if)#</span> duplex full<br><br>
+                        <span class="cli-prompt">SW1(config-if)#</span> interface g0/1<br>
+                        <span class="cli-prompt">SW1(config-if)#</span> speed 1000<br>
+                        <span class="cli-prompt">SW1(config-if)#</span> duplex full<br>
+                        <span class="cli-prompt">SW1(config-if)#</span> interface g0/2<br>
+                        <span class="cli-prompt">SW1(config-if)#</span> speed 1000<br>
+                        <span class="cli-prompt">SW1(config-if)#</span> duplex full<br><br>
+                        <span class="cli-prompt">SW2(config-if)#</span> interface g0/1<br>
+                        <span class="cli-prompt">SW2(config-if)#</span> speed 1000<br>
+                        <span class="cli-prompt">SW2(config-if)#</span> duplex full
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accordion 4 -->
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <button class="w-full text-left px-6 py-4 font-semibold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('qa4', this)">
+                <span>4. Configure appropriate descriptions on each interface</span>
+                <span class="text-xl text-slate-400 transition-transform duration-300">+</span>
+            </button>
+            <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                <div class="py-4 text-sm text-slate-700">
+                    <p class="mb-2">You should label uplinks based on their destination, and label edge ports as end hosts. Add "not in use" to unconnected ports.</p>
+                    <div class="cli-block text-xs">
+                        <span class="cli-comment">! Examples:</span><br>
+                        <span class="cli-prompt">R1(config-if)#</span> description to switch 1<br>
+                        <span class="cli-prompt">SW1(config-if)#</span> description to switch 2<br>
+                        <span class="cli-prompt">SW2(config-if)#</span> interface range f0/1 - 2<br>
+                        <span class="cli-prompt">SW2(config-if-range)#</span> description to end hosts
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accordion 5 -->
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <button class="w-full text-left px-6 py-4 font-semibold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none" onclick="toggleAccordion('qa5', this)">
+                <span>5. Disable interfaces which are not connected to other devices</span>
+                <span class="text-xl text-slate-400 transition-transform duration-300">+</span>
+            </button>
+            <div id="qa5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                <div class="py-4 text-sm text-slate-700">
+                    <p class="mb-2">For routers, interfaces are off by default. However, for switches, unused interfaces remain active and pose a security risk. Use the <code>interface range</code> command to efficiently shut them down.</p>
+                    <div class="cli-block text-xs">
+                        <span class="cli-comment">! On SW1</span><br>
+                        <span class="cli-prompt">SW1(config)#</span> interface range f0/3 - 24<br>
+                        <span class="cli-prompt">SW1(config-if-range)#</span> shutdown<br><br>
+                        <span class="cli-comment">! On SW2 (Note the comma to group different port types)</span><br>
+                        <span class="cli-prompt">SW2(config)#</span> interface range g0/2 , f0/3 - 24<br>
+                        <span class="cli-prompt">SW2(config-if-range)#</span> shutdown
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- VIEW 4: Command Reference -->
+    <div id="view-reference" class="view-section max-w-5xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Command Matrix</h3>
+            <p class="text-sm text-slate-600 mb-6">Quick lookup for commands used in this module. Use the search bar to filter.</p>
+            
+            <div class="mb-4">
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search commands, modes, or purposes..." class="w-full md:w-1/2 px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm">
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700 font-semibold">
+                        <tr>
+                            <th class="px-4 py-3">Command</th>
+                            <th class="px-4 py-3">Mode</th>
+                            <th class="px-4 py-3">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-mono text-sky-700">show interfaces status</td>
+                            <td class="px-4 py-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-4 py-3 text-slate-600">(Switches only) Shows a summary of port status, VLAN, duplex, speed, and media type.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-mono text-sky-700">interface range [type] [start]-[end]</td>
+                            <td class="px-4 py-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-4 py-3 text-slate-600">Allows simultaneous configuration of multiple interfaces (e.g., <code class="bg-slate-100 px-1 rounded">interface range f0/1 - 24</code>).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-mono text-sky-700">speed [10/100/1000/auto]</td>
+                            <td class="px-4 py-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-4 py-3 text-slate-600">Manually sets the port speed or sets it to auto-negotiate.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-mono text-sky-700">duplex [half/full/auto]</td>
+                            <td class="px-4 py-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-4 py-3 text-slate-600">Manually sets the port duplex or sets it to auto-negotiate.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-mono text-sky-700">shutdown</td>
+                            <td class="px-4 py-3 text-xs"><span class="bg-slate-100 px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-4 py-3 text-slate-600">Administratively disables the interface.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-4 text-center text-sm text-slate-500">No matching commands found.</div>
+            </div>
+
+            <div class="mt-8 bg-slate-50 p-5 rounded-lg border border-slate-200">
+                <h4 class="font-bold text-slate-800 mb-2">Verification Checklist</h4>
+                <p class="text-sm text-slate-600 mb-2">To verify the interface states on your switches, use <code class="font-mono bg-white px-1 border rounded">show interfaces status</code>.</p>
+                <ul class="list-disc pl-5 text-sm text-slate-700 space-y-1">
+                    <li>Look at the <strong>Name</strong> column to verify your descriptions.</li>
+                    <li>Look at the <strong>Status</strong> column. Unused ports should say <code class="text-red-600 bg-red-50 px-1 rounded">disabled</code>. Active ports should say <code class="text-emerald-600 bg-emerald-50 px-1 rounded">connected</code>.</li>
+                    <li>Verify the <strong>Speed</strong> and <strong>Duplex</strong> columns match your manual configs.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        // Hide all views
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        
+        // Show target view
+        document.getElementById(viewId).classList.add('active');
+
+        // Update nav button styles
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
+        });
+        
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
+
+        // Init chart if theory view is selected
+        if(viewId === 'view-theory') {
+            initChart();
+        }
+    }
+
+    // --- Tab Logic for Configurations ---
+    function switchTab(tabId) {
+        // Hide all contents
+        document.querySelectorAll('#view-config > div > div > div[id^="content-"]').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        
+        // Reset all buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Show selected content and activate button
+        document.getElementById('content-' + tabId).classList.remove('hidden');
+        document.getElementById('content-' + tabId).classList.add('block');
+        document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btn) {
+        const content = document.getElementById(id);
+        const icon = btn.querySelector('span:last-child');
+        
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('expanded');
+            icon.style.transform = 'rotate(45deg)';
+        }
+    }
+
+    // --- Search Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let rowText = tr[i].textContent || tr[i].innerText;
+            if (rowText.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Chart.js Logic ---
+    let chartInstance = null;
+    function initChart() {
+        if (chartInstance) return;
+
+        const ctx = document.getElementById('defaultStatesChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Router Ports (Down)', 'Switch Ports (Up)'],
+                datasets: [{
+                    data: [0, 100], // Representing the default behavior
+                    backgroundColor: ['#ef4444', '#10b981'], // Red, Emerald
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: { family: "'Inter', sans-serif" }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ${context.raw}% Default State`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+    });
+</script>
+</body>
+</html>

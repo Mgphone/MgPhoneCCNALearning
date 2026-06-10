@@ -7,6 +7,7 @@ interface IframeViewerProps {
   onBack: () => void;
   isCompleted: boolean;
   onToggleComplete: () => void;
+  basePath: string;
 }
 
 export const IframeViewer: React.FC<IframeViewerProps> = ({
@@ -14,6 +15,7 @@ export const IframeViewer: React.FC<IframeViewerProps> = ({
   onBack,
   isCompleted,
   onToggleComplete,
+  basePath,
 }) => {
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
@@ -56,7 +58,7 @@ export const IframeViewer: React.FC<IframeViewerProps> = ({
       
       <div className="flex-grow relative overflow-hidden">
         <iframe
-          src={`/data/LinkHTML/${topic.filePath}`}
+          src={`${basePath}${topic.filePath}`}
           className="absolute inset-0 w-full h-full border-none"
           title={topic.title}
         />

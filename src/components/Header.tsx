@@ -1,11 +1,13 @@
 import React from 'react';
-import { Search, GraduationCap } from 'lucide-react';
+import { Search, GraduationCap, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface HeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   completedCount: number;
   totalCount: number;
+  title: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -13,30 +15,39 @@ export const Header: React.FC<HeaderProps> = ({
   setSearchQuery,
   completedCount,
   totalCount,
+  title,
 }) => {
   const progressPercentage = Math.round((completedCount / totalCount) * 100);
 
   return (
     <header className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 py-4 sm:px-6">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-cyan-500 p-2 rounded-lg">
-            <GraduationCap className="text-slate-950 w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              CCNA 200-301 <span className="text-cyan-400">Mastery</span>
-            </h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div className="h-1.5 w-24 bg-slate-800 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-cyan-500 transition-all duration-500" 
-                  style={{ width: `${progressPercentage}%` }}
-                />
+        <div className="flex items-center gap-4">
+          <Link
+            to="/"
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </Link>
+          <div className="flex items-center gap-3">
+            <div className="bg-cyan-500 p-2 rounded-lg">
+              <GraduationCap className="text-slate-950 w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {title}
+              </h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <div className="h-1.5 w-24 bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-cyan-500 transition-all duration-500" 
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {completedCount} / {totalCount} Complete
+                </span>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                {completedCount} / {totalCount} Complete
-              </span>
             </div>
           </div>
         </div>

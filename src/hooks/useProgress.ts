@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
 
-const STORAGE_KEY = 'ccna_mastery_progress';
-
-export const useProgress = () => {
+export const useProgress = (storageKey: string) => {
   const [completedIds, setCompletedIds] = useState<number[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(completedIds));
-  }, [completedIds]);
+    localStorage.setItem(storageKey, JSON.stringify(completedIds));
+  }, [completedIds, storageKey]);
 
   const toggleComplete = (id: number) => {
     setCompletedIds(prev =>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Basic Device Configuration & Security</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.chart-container { position: relative; width: 100%; max-width: 500px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+@media (min-width: 768px) { .chart-container { height: 350px; max-width: 600px; } }
+body { background-color: #faf9f6; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+.hide-view { display: none !important; }
+.flashcard-container { perspective: 1000px; cursor: pointer; }
+.flashcard { transition: transform 0.6s; transform-style: preserve-3d; position: relative; width: 100%; height: 100%; min-height: 250px; }
+.flashcard.flipped { transform: rotateY(180deg); }
+.flashcard-inner { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; display: flex; flex-direction: column; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+.flashcard-front { background-color: #ffffff; }
+.flashcard-back { background-color: #f0f9ff; transform: rotateY(180deg); overflow-y: auto; }
+pre { background-color: #1e293b; color: #f8fafc; padding: 1rem; border-radius: 0.375rem; overflow-x: auto; margin-top: 0.5rem; font-family: monospace; font-size: 0.875rem; }
+.code-inline { background-color: #e2e8f0; color: #0f172a; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.875rem; }
+</style>
+</head>
+<body class="text-stone-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
+
+<!-- Chosen Palette: Warm Neutral & Sky Blue Accent (Background: #faf9f6, Text: Slate/Stone, Accents: Sky-600/700) -->
+<!-- Application Structure Plan: The SPA is structured as a dashboard with a sidebar navigation to switch between logical views: "Concepts & Analysis" (Overview & Visual Data), "Configuration Lab" (Step-by-step device setup), "Command Reference" (Searchable Table), and "Knowledge Check" (Interactive Flashcards). This structure allows users to logically progress from theory to guided practice, reference tools, and finally self-assessment, preventing cognitive overload and enabling non-linear exploration. -->
+<!-- Visualization & Content Choices: 
+1. Concept Blocks -> Goal: Inform -> Method: Interactive Accordions -> Library: Vanilla JS. 
+2. Command Distribution -> Goal: Compare -> Method: Pie Chart -> Library: Chart.js (NO SVG). Justification: Visually breaks down the complexity of commands by execution mode. 
+3. Configuration Lab -> Goal: Change/Process -> Method: Tabbed Code Interface -> Library: Vanilla JS. Justification: Simulates the CLI experience while organizing steps clearly. 
+4. Knowledge Check -> Goal: Engage -> Method: 3D Flip Flashcards -> Library: Vanilla JS + CSS3D. Justification: Promotes active recall and interactive learning. 
+5. Command Table -> Goal: Organize -> Method: Dynamic Filterable Table -> Library: Vanilla JS. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<nav class="bg-slate-900 text-slate-100 w-full md:w-64 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20">
+    <div class="p-6 bg-slate-950 flex items-center gap-3">
+        <span class="text-2xl">⚙️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight">CCNA Study Hub</h1>
+            <p class="text-xs text-slate-400">Basic Device Security</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-2">
+        <button onclick="navigate('view-concepts')" id="btn-view-concepts" class="nav-btn w-full text-left px-4 py-3 rounded-md transition-colors bg-sky-700 text-white font-medium flex items-center gap-2">
+            <span>📚</span> Concepts & Data
+        </button>
+        <button onclick="navigate('view-lab')" id="btn-view-lab" class="nav-btn w-full text-left px-4 py-3 rounded-md transition-colors hover:bg-slate-800 text-slate-300 flex items-center gap-2">
+            <span>💻</span> Config Lab
+        </button>
+        <button onclick="navigate('view-reference')" id="btn-view-reference" class="nav-btn w-full text-left px-4 py-3 rounded-md transition-colors hover:bg-slate-800 text-slate-300 flex items-center gap-2">
+            <span>📋</span> Command Ref
+        </button>
+        <button onclick="navigate('view-quiz')" id="btn-view-quiz" class="nav-btn w-full text-left px-4 py-3 rounded-md transition-colors hover:bg-slate-800 text-slate-300 flex items-center gap-2">
+            <span>🧠</span> Knowledge Check
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 bg-[#faf9f6]">
+
+    <header class="mb-8 max-w-5xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-2">Basic Device Configuration & Security</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-sky-600 pl-4 bg-sky-50 py-2 pr-2 rounded-r-md">
+            This interactive guide covers fundamental steps for initial Cisco device configuration, focusing on securing administrative access. You will learn to assign hostnames, encrypt passwords, and save configurations to NVRAM—critical skills for the CCNA exam and real-world networks.
+        </p>
+    </header>
+
+    <div id="view-concepts" class="view-section max-w-5xl mx-auto space-y-8 animate-fade-in">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2"><span>📊</span> Overview & Architecture</h3>
+            <p class="text-stone-600 mb-6">
+                This section breaks down the core theoretical concepts and visualizes the structure of the commands you will learn. Understanding the "why" behind hostnames and password encryption is critical before jumping into the command line interface.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="space-y-4">
+                    <div class="border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-stone-50">
+                        <h4 class="font-bold text-lg mb-1">🏷️ Hostnames</h4>
+                        <p class="text-sm text-stone-600">Default settings use `Router` or `Switch`. Hostnames allow engineers to logically identify devices in a network topology, essential for management and troubleshooting.</p>
+                    </div>
+                    <div class="border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-stone-50">
+                        <h4 class="font-bold text-lg mb-1">🔑 Passwords vs Secrets</h4>
+                        <p class="text-sm text-stone-600"><span class="code-inline">enable password</span> stores in plain text. <span class="code-inline">enable secret</span> uses a strong hashing algorithm (MD5/SHA) to secure the Privileged EXEC mode password.</p>
+                        <div class="mt-2 text-xs bg-amber-100 text-amber-800 p-2 rounded border border-amber-200">
+                            <strong>Exam Tip:</strong> If both are set, the device <em>always</em> requires the enable secret.
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-stone-50">
+                        <h4 class="font-bold text-lg mb-1">🛡️ Service Password-Encryption</h4>
+                        <p class="text-sm text-stone-600">Applies a weak Type 7 cipher to plain-text passwords in the config file. Prevents casual "shoulder surfing" but is easily cracked. Not a substitute for secrets.</p>
+                    </div>
+                    <div class="border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-stone-50">
+                        <h4 class="font-bold text-lg mb-1">💾 Running vs Startup Config</h4>
+                        <p class="text-sm text-stone-600">The <span class="code-inline">running-config</span> is in active RAM (lost on reboot). The <span class="code-inline">startup-config</span> is saved in NVRAM. Configurations must be explicitly saved.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 border-t border-stone-200 pt-8">
+                <h4 class="text-lg font-bold text-slate-800 mb-4 text-center">Command Distribution by IOS Execution Mode</h4>
+                <div class="chart-container">
+                    <canvas id="modeDistributionChart"></canvas>
+                </div>
+                <p class="text-center text-sm text-stone-500 mt-4">Analysis of commands required for basic security setup.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-lab" class="view-section max-w-5xl mx-auto space-y-6 hide-view animate-fade-in">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2"><span>💻</span> Interactive Configuration Lab</h3>
+            <p class="text-stone-600 mb-6">
+                Explore the step-by-step configuration for routers and switches. Use the interactive tabs below to switch between device types and view the exact Cisco IOS syntax required to secure administrative access.
+            </p>
+
+            <div class="flex gap-2 mb-4 border-b border-stone-200 pb-2">
+                <button onclick="switchTab('router-tab')" id="btn-router-tab" class="px-6 py-2 rounded-t-lg bg-sky-600 text-white font-bold transition-colors">Router (R1)</button>
+                <button onclick="switchTab('switch-tab')" id="btn-switch-tab" class="px-6 py-2 rounded-t-lg bg-stone-200 text-stone-600 hover:bg-stone-300 font-bold transition-colors">Switch (SW1)</button>
+            </div>
+
+            <div id="router-tab" class="tab-content bg-slate-900 rounded-b-lg rounded-tr-lg p-1">
+                <pre class="bg-transparent border-none m-0 shadow-none text-green-400">
+<span class="text-slate-500">! 1. Enter Global Configuration Mode</span>
+Router&gt; enable
+Router# configure terminal
+
+<span class="text-slate-500">! 2. Change the Hostname</span>
+Router(config)# hostname R1
+
+<span class="text-slate-500">! 3. Configure Unencrypted Enable Password</span>
+R1(config)# enable password CCNA
+
+<span class="text-slate-500">! 4. Encrypt All Clear-Text Passwords</span>
+R1(config)# service password-encryption
+
+<span class="text-slate-500">! 5. Configure Secure Enable Secret</span>
+R1(config)# enable secret Cisco
+
+<span class="text-slate-500">! 6. Save Configuration</span>
+R1(config)# end
+R1# copy running-config startup-config
+                </pre>
+            </div>
+
+            <div id="switch-tab" class="tab-content hide-view bg-slate-900 rounded-b-lg rounded-tr-lg p-1">
+                <pre class="bg-transparent border-none m-0 shadow-none text-cyan-400">
+<span class="text-slate-500">! 1. Enter Global Configuration Mode</span>
+Switch&gt; enable
+Switch# configure terminal
+
+<span class="text-slate-500">! 2. Change the Hostname</span>
+Switch(config)# hostname SW1
+
+<span class="text-slate-500">! 3. Configure Unencrypted Enable Password</span>
+SW1(config)# enable password CCNA
+
+<span class="text-slate-500">! 4. Encrypt All Clear-Text Passwords</span>
+SW1(config)# service password-encryption
+
+<span class="text-slate-500">! 5. Configure Secure Enable Secret</span>
+SW1(config)# enable secret Cisco
+
+<span class="text-slate-500">! 6. Save Configuration</span>
+SW1(config)# end
+SW1# write memory
+                </pre>
+            </div>
+            
+            <div class="mt-6 p-4 bg-sky-50 rounded border border-sky-100">
+                <h4 class="font-bold text-sky-800 mb-2">🔍 Verification Step</h4>
+                <p class="text-sm text-stone-700 mb-2">To verify your password security and device settings, view the active configuration file in RAM:</p>
+                <pre class="bg-slate-800 mt-0 mb-2">R1# show running-config</pre>
+                <ul class="list-disc list-inside text-sm text-stone-700 ml-2 space-y-1">
+                    <li>Look near the top of the output to find the <span class="code-inline">hostname</span>.</li>
+                    <li>Check for <span class="code-inline">enable secret 5 [hash]</span> and <span class="code-inline">enable password 7 [hash]</span>.</li>
+                    <li>In Global Config mode, prepend with <span class="code-inline">do</span>: <span class="code-inline">R1(config)# do show running-config</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-reference" class="view-section max-w-5xl mx-auto space-y-6 hide-view animate-fade-in">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2"><span>📋</span> Command Reference Matrix</h3>
+            <p class="text-stone-600 mb-6">
+                This section provides a searchable index of all commands covered. Use the input box below to quickly find specific commands, their execution mode, and their purpose.
+            </p>
+
+            <div class="mb-4">
+                <input type="text" id="cmdSearch" onkeyup="filterTable()" placeholder="Search commands or descriptions..." class="w-full md:w-1/2 px-4 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-stone-200">
+                <table class="min-w-full divide-y divide-stone-200 text-left text-sm">
+                    <thead class="bg-stone-50 text-stone-800 font-semibold">
+                        <tr>
+                            <th class="px-4 py-3">Command</th>
+                            <th class="px-4 py-3">Mode</th>
+                            <th class="px-4 py-3">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cmdTableBody" class="divide-y divide-stone-200 bg-white">
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">enable</td><td class="px-4 py-3 text-xs"><span class="bg-stone-100 px-2 py-1 rounded">User EXEC</span></td><td class="px-4 py-3">Enters Privileged EXEC mode.</td></tr>
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">configure terminal</td><td class="px-4 py-3 text-xs"><span class="bg-stone-200 px-2 py-1 rounded">Privileged EXEC</span></td><td class="px-4 py-3">Enters Global Configuration mode.</td></tr>
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">hostname [name]</td><td class="px-4 py-3 text-xs"><span class="bg-sky-100 px-2 py-1 rounded">Global Config</span></td><td class="px-4 py-3">Sets the device's administrative hostname.</td></tr>
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">enable password [password]</td><td class="px-4 py-3 text-xs"><span class="bg-sky-100 px-2 py-1 rounded">Global Config</span></td><td class="px-4 py-3">Sets an unencrypted password for Privileged EXEC mode.</td></tr>
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">service password-encryption</td><td class="px-4 py-3 text-xs"><span class="bg-sky-100 px-2 py-1 rounded">Global Config</span></td><td class="px-4 py-3">Encrypts all current and future clear-text passwords in the config file.</td></tr>
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">enable secret [password]</td><td class="px-4 py-3 text-xs"><span class="bg-sky-100 px-2 py-1 rounded">Global Config</span></td><td class="px-4 py-3">Sets a securely hashed password for Privileged EXEC mode.</td></tr>
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">copy running-config startup-config</td><td class="px-4 py-3 text-xs"><span class="bg-stone-200 px-2 py-1 rounded">Privileged EXEC</span></td><td class="px-4 py-3">Saves the active config to NVRAM.</td></tr>
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">write memory (or write)</td><td class="px-4 py-3 text-xs"><span class="bg-stone-200 px-2 py-1 rounded">Privileged EXEC</span></td><td class="px-4 py-3">Legacy, quicker command to save the active config to NVRAM.</td></tr>
+                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">show running-config</td><td class="px-4 py-3 text-xs"><span class="bg-stone-200 px-2 py-1 rounded">Privileged EXEC</span></td><td class="px-4 py-3">Views active configuration file in RAM.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-quiz" class="view-section max-w-5xl mx-auto space-y-6 hide-view animate-fade-in pb-12">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2"><span>🧠</span> Knowledge Check Flashcards</h3>
+            <p class="text-stone-600 mb-6">
+                Test your understanding of the material. Click on the question cards to reveal the correct configuration commands and exam tips. Re-click to flip back.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="flashcard-grid">
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    const navButtons = ['btn-view-concepts', 'btn-view-lab', 'btn-view-reference', 'btn-view-quiz'];
+    const views = ['view-concepts', 'view-lab', 'view-reference', 'view-quiz'];
+
+    function navigate(targetViewId) {
+        views.forEach(v => document.getElementById(v).classList.add('hide-view'));
+        navButtons.forEach(b => {
+            const el = document.getElementById(b);
+            el.classList.remove('bg-sky-700', 'text-white');
+            el.classList.add('text-slate-300', 'hover:bg-slate-800');
+        });
+
+        document.getElementById(targetViewId).classList.remove('hide-view');
+        const activeBtnId = 'btn-' + targetViewId;
+        const activeBtn = document.getElementById(activeBtnId);
+        activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+        activeBtn.classList.add('bg-sky-700', 'text-white');
+
+        if(targetViewId === 'view-concepts' && !window.chartRendered) {
+            renderChart();
+            window.chartRendered = true;
+        }
+    }
+
+    function switchTab(tabId) {
+        document.getElementById('router-tab').classList.add('hide-view');
+        document.getElementById('switch-tab').classList.add('hide-view');
+        
+        document.getElementById('btn-router-tab').classList.replace('bg-sky-600', 'bg-stone-200');
+        document.getElementById('btn-router-tab').classList.replace('text-white', 'text-stone-600');
+        document.getElementById('btn-switch-tab').classList.replace('bg-sky-600', 'bg-stone-200');
+        document.getElementById('btn-switch-tab').classList.replace('text-white', 'text-stone-600');
+
+        document.getElementById(tabId).classList.remove('hide-view');
+        
+        const activeBtn = document.getElementById('btn-' + tabId);
+        activeBtn.classList.replace('bg-stone-200', 'bg-sky-600');
+        activeBtn.classList.replace('text-stone-600', 'text-white');
+    }
+
+    function filterTable() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.getElementById("cmdTableBody");
+        const tr = tbody.getElementsByTagName("tr");
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+
+    function renderChart() {
+        const ctx = document.getElementById('modeDistributionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['User EXEC (1)', 'Privileged EXEC (4)', 'Global Config (4)'],
+                datasets: [{
+                    data: [1, 4, 4],
+                    backgroundColor: ['#e2e8f0', '#94a3b8', '#0284c7'],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    function toggleFlashcard(el) {
+        el.querySelector('.flashcard').classList.toggle('flipped');
+    }
+
+    const quizData = [
+        { q: "Change hostnames to R1, SW1", a: "<pre>Router> enable\nRouter# configure terminal\nRouter(config)# hostname R1</pre>" },
+        { q: "Configure unencrypted password 'CCNA'", a: "<pre>R1(config)# enable password CCNA</pre>" },
+        { q: "Exit to user EXEC and test", a: "<pre>R1(config)# exit\nR1# exit\nR1> enable\nPassword: CCNA</pre>" },
+        { q: "View password in running config", a: "<pre>R1# show running-config</pre><p class='text-sm mt-2'>Shows 'enable password CCNA' in plain text.</p>" },
+        { q: "Encrypt current/future passwords", a: "<pre>R1# configure terminal\nR1(config)# service password-encryption</pre>" },
+        { q: "View encrypted password", a: "<pre>R1(config)# do show running-config</pre><p class='text-sm mt-2'>Reads like 'enable password 7 082245...'</p>" },
+        { q: "Configure secure secret 'Cisco'", a: "<pre>R1(config)# enable secret Cisco</pre>" },
+        { q: "Which password to use now?", a: "<p class='font-bold text-sky-800 mb-2'>Answer: Cisco</p><p class='text-sm'>The enable secret takes precedence. The enable password becomes invalid.</p>" },
+        { q: "What are the encryption Types?", a: "<p class='text-sm mb-2'><strong>Type 7:</strong> Weak cipher (service password-encryption)</p><p class='text-sm'><strong>Type 5:</strong> MD5 hash algorithm (enable secret)</p>" },
+        { q: "Save config to NVRAM", a: "<pre>R1(config)# end\nR1# copy running-config startup-config</pre><p class='text-sm mt-2'>Alternatively: write memory (wr)</p>" }
+    ];
+
+    function renderFlashcards() {
+        const grid = document.getElementById('flashcard-grid');
+        quizData.forEach((item, index) => {
+            const cardHTML = `
+                <div class="flashcard-container" onclick="toggleFlashcard(this)">
+                    <div class="flashcard">
+                        <div class="flashcard-inner flashcard-front flex justify-center items-center text-center p-6 bg-stone-50 hover:bg-stone-100 transition-colors">
+                            <span class="absolute top-2 left-3 text-xs font-bold text-stone-400">Q${index + 1}</span>
+                            <h5 class="text-lg font-semibold text-slate-700">${item.q}</h5>
+                            <span class="absolute bottom-3 text-xs text-stone-400">Click to flip 🔄</span>
+                        </div>
+                        <div class="flashcard-inner flashcard-back p-6 flex flex-col justify-center">
+                            <span class="absolute top-2 left-3 text-xs font-bold text-sky-600">Answer</span>
+                            <div class="text-stone-800 w-full">${item.a}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', cardHTML);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        renderChart();
+        window.chartRendered = true;
+        renderFlashcards();
+    });
+
+</script>
+</body>
+</html>
