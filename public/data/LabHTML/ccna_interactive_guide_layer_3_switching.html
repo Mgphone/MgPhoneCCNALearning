@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: Layer 3 Switching</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #ecfeff; color: #0891b2; border-left-color: #0891b2; font-weight: 600; } /* Cyan Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #22d3ee; font-weight: bold; } /* Cyan 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #0891b2 !important; box-shadow: 0 0 15px rgba(8, 145, 178, 0.5); }
+.node-dim { opacity: 0.3; filter: grayscale(100%); transition: all 0.3s; }
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(8, 145, 178, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(8, 145, 178, 0.8); }
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-cyan-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-cyan-500">🔀</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-cyan-400 font-semibold tracking-wide uppercase mt-1">L3 Switching & SVIs</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-cyan-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Concepts & SVIs
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> L3 Flow Tracker
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Layer 3 Switches & SVIs</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-cyan-500 pl-4 bg-cyan-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Upgrade your network's core. Learn how to replace Router-on-a-Stick (ROAS) bottlenecks with wire-speed routing using a Multilayer Switch. You will configure Switch Virtual Interfaces (SVIs), routed ports, and default routes.
+        </p>
+    </header>
+
+    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🧠</span> Evolving from ROAS
+            </h3>
+            <p class="text-slate-700 mb-6 leading-relaxed">
+                While Router-on-a-Stick works, all inter-VLAN traffic must travel up to the router and back down over a single physical link, creating a severe bottleneck. <strong>Layer 3 Switches (Multilayer Switches)</strong> solve this by routing packets internally via hardware ASICs at wire speed.
+            </p>
+
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="w-full md:w-1/2">
+                    <div class="chart-container">
+                        <canvas id="l3Chart"></canvas>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">Key L3 Switch Concepts</h4>
+                        <ul class="text-sm space-y-3 text-slate-700">
+                            <li><strong>SVIs (Switch Virtual Interfaces):</strong> Logical interfaces mapped to specific VLANs (e.g., <code>interface vlan 10</code>). These act as the default gateways for the PCs in those VLANs.</li>
+                            <li><strong>Routed Ports:</strong> By default, L3 switch ports act as Layer 2 access/trunk ports. Using the <code>no switchport</code> command converts a port into a standard Layer 3 router port, allowing direct IP assignment.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-cyan-50 border border-cyan-200 p-4 rounded-xl shadow-sm text-sm">
+                        <h4 class="font-bold text-cyan-900 mb-1">The "Gotcha" Command</h4>
+                        <p class="text-cyan-800">Even if you assign IP addresses to SVIs, a Layer 3 switch <strong>will not route packets</strong> out of the box. You must explicitly tell the switch to behave like a router globally by issuing the <code class="font-bold bg-white px-1 rounded border border-cyan-300">ip routing</code> command.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🔍</span> Layer 3 Routing Flow Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how a Multilayer Switch (SW2) handles inter-VLAN routing internally without needing to pass traffic up to a dedicated router, drastically reducing path latency.</p>
+
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playL3Step(1)" id="btn-l3-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. PC1 Sends (VLAN 10)</button>
+                <button onclick="playL3Step(2)" id="btn-l3-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. SW2 Internal Routing</button>
+                <button onclick="playL3Step(3)" id="btn-l3-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. SW2 Delivers (VLAN 20)</button>
+                <button onclick="playL3Step(4)" id="btn-l3-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. External Internet Ping</button>
+            </div>
+
+            <div class="bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <div id="node-internet" class="w-24 h-24 rounded-full bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-lg mb-8 border-4 border-slate-600 z-10 shadow-lg transition-all">Cloud<span class="text-[10px] font-mono">1.1.1.1</span></div>
+                
+                <div class="flex w-full justify-center gap-12 mb-12 relative">
+                    <div id="node-r1" class="w-24 h-24 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">R1<span class="text-[10px] font-mono">Edge</span></div>
+                    <div id="node-sw2" class="w-32 h-24 rounded-lg bg-cyan-700 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-cyan-400 z-10 shadow-lg relative transition-all">SW2<span class="text-[10px] font-mono mt-1">L3 Switch</span><div class="absolute -bottom-3 text-[9px] bg-cyan-900 px-1 rounded">SVI 10 | SVI 20</div></div>
+                    <div id="node-sw1" class="w-32 h-16 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-slate-500 z-10 shadow-lg mt-4 transition-all">SW1<span class="text-[10px] font-mono">L2 Access</span></div>
+                </div>
+
+                <div class="flex w-full justify-end pr-16 gap-8 mt-4">
+                    <div id="node-pc1" class="w-16 h-16 rounded-lg bg-slate-600 text-white flex flex-col items-center justify-center border-2 border-slate-400 z-10 shadow-md transition-all">
+                        <span class="font-bold">PC1</span><span class="text-[10px] text-cyan-300 font-mono">VLAN 10</span>
+                    </div>
+                    <div id="node-pc3" class="w-16 h-16 rounded-lg bg-slate-600 text-white flex flex-col items-center justify-center border-2 border-slate-400 z-10 shadow-md transition-all">
+                        <span class="font-bold">PC3</span><span class="text-[10px] text-emerald-300 font-mono">VLAN 20</span>
+                    </div>
+                </div>
+                
+                <div id="l3-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/90 border border-slate-600 p-4 rounded-lg backdrop-blur-sm transition-all shadow-xl">
+                    Click step 1 to begin the Layer 3 simulation.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-config" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-cyan-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the specific commands to strip ROAS, build SVIs, and configure routed ports.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-cyan-600 border-b-2 border-cyan-600 transition-colors">Router 1 (R1)</button>
+                <button onclick="switchDeviceTab('sw2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Multilayer Switch (SW2)</button>
+            </div>
+
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Remove the old ROAS subinterfaces and convert the physical interface back to a standard Layer 3 point-to-point link.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Remove the old ROAS subinterfaces</span><br>
+                    <span class="cli-prompt">R1(config)#</span> no interface g0/0.10<br>
+                    <span class="cli-prompt">R1(config)#</span> no interface g0/0.20<br>
+                    <span class="cli-prompt">R1(config)#</span> no interface g0/0.30<br><br>
+
+                    <span class="cli-comment">! Configure physical interface for Point-to-Point routing</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 10.0.0.194 255.255.255.192<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br>
+                </div>
+                <div class="bg-cyan-50 p-3 mt-4 border border-cyan-200 rounded text-cyan-800 text-sm">
+                    <strong>Note:</strong> R1 already has default/static routes configured pointing out to the internet and back to SW2's subnets as part of the pre-lab state.
+                </div>
+            </div>
+
+            <div id="config-sw2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Convert the uplink port to a routed port, enable global routing, configure default route to R1, and build SVIs for inter-VLAN routing.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW2&gt;</span> enable<br>
+                    <span class="cli-prompt">SW2#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! 1. Convert uplink (to R1) to a Layer 3 Routed Port</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface g1/0/2<br>
+                    <span class="cli-comment">! (Wipe any residual trunk configs if necessary: default interface g1/0/2)</span><br>
+                    <span class="cli-prompt">SW2(config-if)#</span> no switchport<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> ip address 10.0.0.193 255.255.255.192<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 2. Enable Global IP Routing and set Default Route to R1</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> ip routing<br>
+                    <span class="cli-prompt">SW2(config)#</span> ip route 0.0.0.0 0.0.0.0 10.0.0.194<br><br>
+
+                    <span class="cli-comment">! 3. Configure SVIs for inter-VLAN routing</span><br>
+                    <span class="cli-comment">! VLAN 10 (Engineering)</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface vlan 10<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> ip address 10.0.0.62 255.255.255.192<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! VLAN 20 (HR)</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface vlan 20<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> ip address 10.0.0.126 255.255.255.192<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! VLAN 30 (Sales)</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface vlan 30<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> ip address 10.0.0.190 255.255.255.192<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> no shutdown<br>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('svi_qa1', this)">
+                            <span class="pr-6">1. Replace the ROAS configuration on R1-SW2 with a point-to-point Layer 3 connection. Configure a default route on SW2.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>You must strip the subinterfaces off R1 and convert SW2's port to Layer 3 using <code>no switchport</code>.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-comment">! On R1:</span><br>
+                                <span class="cli-prompt">R1(config)#</span> no interface g0/0.10<br>
+                                <span class="cli-prompt">R1(config)#</span> no interface g0/0.20<br>
+                                <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ip address 10.0.0.194 255.255.255.192<br><br>
+                                <span class="cli-comment">! On SW2:</span><br>
+                                <span class="cli-prompt">SW2(config)#</span> interface g1/0/2<br>
+                                <span class="cli-prompt">SW2(config-if)#</span> no switchport<br>
+                                <span class="cli-prompt">SW2(config-if)#</span> ip address 10.0.0.193 255.255.255.192<br>
+                                <span class="cli-prompt">SW2(config)#</span> ip routing<br>
+                                <span class="cli-prompt">SW2(config)#</span> ip route 0.0.0.0 0.0.0.0 10.0.0.194
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('svi_qa2', this)">
+                            <span>2. Configure SVIs on SW2, one for each VLAN. Assign the last usable IP address.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>We use the <code>interface vlan [id]</code> command to create the SVI. Before it goes <code>up/up</code>, the VLAN must exist in the switch database, and at least one active physical port (access or trunk) must be passing traffic for that VLAN.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW2(config)#</span> interface vlan 10<br>
+                                <span class="cli-prompt">SW2(config-if)#</span> ip address 10.0.0.62 255.255.255.192<br>
+                                <span class="cli-prompt">SW2(config-if)#</span> no shutdown<br>
+                                <span class="cli-comment">... repeat for interface vlan 20 (.126) and 30 (.190)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('svi_qa3', this)">
+                            <span>3. Test inter-VLAN connectivity by pinging between VLANs.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Open PC1 (VLAN 10 on SW1) command prompt and ping PC3 (VLAN 20 on SW2) at `10.0.0.65`.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">PC1&gt;</span> ping 10.0.0.65<br>
+                                <span class="cli-comment">Reply from 10.0.0.65: bytes=32 time&lt;1ms TTL=127</span>
+                            </div>
+                            <p class="text-cyan-700 font-semibold mt-2">Notice the traffic never hits R1. SW2 routes it directly between SVIs and sends it down its local access port to PC3.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('svi_qa4', this)">
+                            <span class="pr-6">4. Test connectivity to the Internet by pinging 1.1.1.1</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>From PC1, ping the simulated internet address.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">PC1&gt;</span> ping 1.1.1.1<br>
+                                <span class="cli-comment">Reply from 1.1.1.1: bytes=32 time=2ms TTL=126</span>
+                            </div>
+                            <p class="text-emerald-600 font-bold">Success! PC1 hits its gateway (SW2 SVI 10). SW2 uses its default route to send the packet out the Layer 3 routed port to R1. R1 forwards it to the Internet.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">ip routing</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enables IPv4 routing on a Multilayer switch. Crucial for SVI routing.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">no switchport</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Converts a Layer 2 switchport into a Layer 3 routed port.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">interface vlan [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates and enters configuration mode for a Switch Virtual Interface (SVI).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">ip route 0.0.0.0 0.0.0.0 [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures a default static route.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">default interface [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Wipes all configurations on a port, resetting it to factory defaults.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">no interface [type] [number].[sub_id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Deletes a virtual subinterface (used here to remove ROAS).</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of Multilayer switching and SVI operations.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('l3Chart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['ROAS (Router Bottleneck)', 'L3 Switch (Internal SVI)'],
+                datasets: [{
+                    label: 'Inter-VLAN Logical Hops (Latency Indicator)',
+                    data: [3, 1], // PC -> SW -> R1 -> SW -> PC vs PC -> SW(routes internally) -> PC
+                    backgroundColor: ['#94a3b8', '#06b6d4'], // Slate, Cyan
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 4, 
+                        ticks: { stepSize: 1 },
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'Hops/Path Length', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-cyan-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-cyan-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'view-theory') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-cyan-600', 'border-cyan-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-cyan-600', 'border-cyan-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Layer 3 Flow Simulator Logic ---
+    function playL3Step(stepIndex) {
+        const allNodes = ['node-r1', 'node-sw1', 'node-sw2', 'node-pc1', 'node-pc3', 'node-internet'];
+        const desc = document.getElementById('l3-desc');
+        
+        allNodes.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.classList.remove('node-highlight', 'node-dim');
+        });
+        
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-l3-'+i);
+            if(btn) {
+                btn.classList.remove('bg-cyan-600', 'text-white', 'border-cyan-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-l3-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-cyan-600', 'text-white', 'border-cyan-600');
+        }
+
+        if (stepIndex === 1) {
+            ['node-pc1', 'node-sw1', 'node-sw2'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc3', 'node-r1', 'node-internet'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-cyan-400 font-bold'>Step 1:</span> PC1 (VLAN 10 on SW1) sends a packet destined for PC3 (VLAN 20). The packet goes to PC1's Default Gateway (SW2's SVI 10) via the trunk link.";
+        } else if (stepIndex === 2) {
+            ['node-sw2'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc1', 'node-pc3', 'node-sw1', 'node-r1', 'node-internet'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-cyan-400 font-bold'>Step 2:</span> SW2 receives the packet on SVI 10. Because <code>ip routing</code> is enabled, its internal routing engine checks the routing table, finds the directly connected SVI 20 network, and routes the packet internally at wire speed.";
+        } else if (stepIndex === 3) {
+            ['node-sw2', 'node-pc3'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc1', 'node-sw1', 'node-r1', 'node-internet'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-cyan-400 font-bold'>Step 3:</span> SW2 switches the packet out its local access port assigned to VLAN 20 directly to PC3. Notice that R1 is completely bypassed, eliminating the ROAS bottleneck!";
+        } else if (stepIndex === 4) {
+            ['node-pc1', 'node-sw1', 'node-sw2', 'node-r1', 'node-internet'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc3'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-cyan-400 font-bold'>Step 4:</span> If PC1 pings the Internet (1.1.1.1), SW2 receives it on SVI 10, uses its <code>0.0.0.0 0.0.0.0</code> default route to forward it out the Layer 3 routed port to R1. R1 then routes it to the cloud.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('l3_switching_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What command is required to enable Layer 3 routing on a Multilayer switch?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>ip routing</code><br><br>Without it, SVIs will not route packets between each other." },
+            { q: "What is an SVI?", a: "<strong>Switch Virtual Interface</strong><br><br>A logical Layer 3 interface on a switch associated with a VLAN. It acts as the default gateway for hosts in that VLAN." },
+            { q: "What command converts a Layer 2 switchport into a Layer 3 routed port?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>no switchport</code><br><br>This allows you to assign an IP address directly to the physical port." },
+            { q: "What is the primary advantage of a Layer 3 Switch over Router-on-a-Stick?", a: "<strong>Performance.</strong><br><br>L3 switches route inter-VLAN traffic internally at hardware wire-speed, eliminating the ROAS physical link bottleneck." },
+            { q: "What two conditions must be met for an SVI to go 'up/up'?", a: "1. The VLAN must exist in the switch's local database.<br>2. At least one physical port (access or trunk) assigned to that VLAN must be active (up/up)." },
+            { q: "How do you configure a default static route?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>ip route 0.0.0.0 0.0.0.0 [next-hop IP]</code>" }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-cyan-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-cyan-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-cyan-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('l3_switching_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playL3Step(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

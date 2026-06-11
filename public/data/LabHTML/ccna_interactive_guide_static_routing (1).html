@@ -104,6 +104,9 @@ body {
         <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
             <span class="text-xl">📝</span> Lab Tasks & Q&A
         </button>
+        <button onclick="navigate('view-troubleshoot', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">🔧</span> Troubleshooting
+        </button>
         <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
             <span class="text-xl">📋</span> Command Matrix
         </button>
@@ -358,10 +361,10 @@ body {
     <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
             <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <span class="text-amber-500">📝</span> Lab Tasks & Q&A
+                <span class="text-amber-500">📝</span> Lab 1 Tasks (Configuration)
             </h3>
             <p class="text-slate-600 mb-6 leading-relaxed">
-                Below are the specific solutions to the video's lab instructions. Check off the steps as you complete them to save your progress! Click to expand the answers.
+                Below are the specific solutions to the initial lab instructions. Check off the steps as you complete them to save your progress! Click to expand the answers.
             </p>
 
             <div class="space-y-4">
@@ -432,7 +435,108 @@ body {
         </div>
     </div>
 
-    <!-- VIEW 5: Command Reference -->
+    <!-- VIEW 5: Troubleshooting -->
+    <div id="view-troubleshoot" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-red-500">🔧</span> Lab 2 Tasks (Troubleshooting)
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                <strong>Scenario:</strong> PC1 and PC2 are unable to ping each other. There is exactly one distinct misconfiguration on each of the three routers preventing communication. Use the accordions below to follow the troubleshooting logic, find the errors, and apply the fixes.
+            </p>
+
+            <div class="space-y-4">
+                <!-- TS 1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-red-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('ts1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-red-600 rounded border-slate-300 focus:ring-red-500" onclick="event.stopPropagation(); saveProgress('static_d11_ts1', this)">
+                            <span class="pr-6">1. Find and Fix the Misconfiguration on R1</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="ts1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Diagnosis:</strong> By running <code>show ip route</code>, we can see the static route for the 192.168.3.0/24 network has an incorrect Next-Hop IP.</p>
+                            <ul class="list-disc ml-5 text-red-600">
+                                <li><strong>Incorrect Route:</strong> <code>ip route 192.168.3.0 255.255.255.0 192.168.12.3</code> (Points to .3 instead of R2's .2)</li>
+                            </ul>
+                            
+                            <h5 class="font-bold text-slate-800 mt-4">The Fix:</h5>
+                            <p>You must explicitly remove the bad route using the <code>no</code> command before adding the correct one.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> no ip route 192.168.3.0 255.255.255.0 192.168.12.3<br>
+                                <span class="cli-prompt">R1(config)#</span> ip route 192.168.3.0 255.255.255.0 192.168.12.2
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TS 2 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-red-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('ts2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-red-600 rounded border-slate-300 focus:ring-red-500" onclick="event.stopPropagation(); saveProgress('static_d11_ts2', this)">
+                            <span>2. Find and Fix the Misconfiguration on R2</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="ts2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Diagnosis:</strong> Checking <code>show ip route</code> reveals that the route to PC2's network is pointing out the wrong interface. It is pointing out <code>g0/0</code> (back towards R1) instead of <code>g0/1</code> (towards R3).</p>
+                            <ul class="list-disc ml-5 text-red-600">
+                                <li><strong>Incorrect Route:</strong> <code>ip route 192.168.3.0 255.255.255.0 g0/0</code></li>
+                            </ul>
+
+                            <div class="bg-red-50 border-l-4 border-red-500 p-3 mt-4 text-red-900 rounded text-xs shadow-sm">
+                                <strong>CCNA Concept: Load Balancing</strong><br>
+                                If you add the correct route WITHOUT removing the incorrect route, R2 will place <em>both</em> routes in the routing table. It will attempt to load-balance, sending half the traffic the wrong way. You MUST delete the wrong route to ensure reliable communication.
+                            </div>
+                            
+                            <h5 class="font-bold text-slate-800 mt-4">The Fix:</h5>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R2(config)#</span> no ip route 192.168.3.0 255.255.255.0 g0/0<br>
+                                <span class="cli-prompt">R2(config)#</span> ip route 192.168.3.0 255.255.255.0 g0/1
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TS 3 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-red-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('ts3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-red-600 rounded border-slate-300 focus:ring-red-500" onclick="event.stopPropagation(); saveProgress('static_d11_ts3', this)">
+                            <span>3. Find and Fix the Misconfiguration on R3</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="ts3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Diagnosis:</strong> By running <code>show ip interface brief</code>, we can see the IP address assigned to R3's uplink interface to R2 is on the wrong subnet.</p>
+                            <ul class="list-disc ml-5 text-red-600">
+                                <li><strong>Incorrect IP:</strong> <code>192.168.13.3</code> (Should be 192.168.23.3)</li>
+                            </ul>
+
+                            <div class="bg-amber-50 border-l-4 border-amber-500 p-3 mt-4 text-amber-800 rounded text-xs shadow-sm">
+                                <strong>CCNA Concept: Overwriting IPs</strong><br>
+                                Unlike static routes, you do not need to use the <code>no ip address</code> command to remove an old IP address from an interface. Simply assigning a new IP address over the interface will automatically overwrite the old one.
+                            </div>
+                            
+                            <h5 class="font-bold text-slate-800 mt-4">The Fix:</h5>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R3(config)#</span> interface g0/0<br>
+                                <span class="cli-prompt">R3(config-if)#</span> ip address 192.168.23.3 255.255.255.0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 6: Command Reference -->
     <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
             <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
@@ -479,6 +583,11 @@ body {
                             <td class="px-6 py-4"><span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded border border-amber-200">Privileged EXEC</span></td>
                             <td class="px-6 py-4 text-slate-600">Displays interface IP assignments and link status (Layer 1 / Layer 2).</td>
                         </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">show running-config | include ip route</td>
+                            <td class="px-6 py-4"><span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded border border-amber-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Filters the running configuration to only show the configured static routes.</td>
+                        </tr>
                     </tbody>
                 </table>
                 <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
@@ -486,7 +595,7 @@ body {
         </div>
     </div>
 
-    <!-- VIEW 6: Flashcards -->
+    <!-- VIEW 7: Flashcards -->
     <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
             <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
@@ -588,7 +697,6 @@ body {
     // --- Accordion Logic ---
     function toggleAccordion(id, btnElement) {
         const content = document.getElementById(id);
-        // Fix: Safely target the exact span icon at the end of the button, avoiding the question text
         const icon = btnElement.lastElementChild;
         
         if (content.classList.contains('open')) {
@@ -704,7 +812,7 @@ body {
             { q: "What does an 'S' code mean in the routing table?", a: "<strong>Static route</strong><br><br>A route manually configured by an administrator." },
             { q: "What happens if you use an exit interface for a static route on a multi-access network (Ethernet)?", a: "It can cause <strong>excessive ARP requests</strong>. The router will ARP for every destination IP. Use a Next-Hop IP instead." },
             { q: "What command removes a static route?", a: "<code class='bg-white border px-1 rounded text-slate-800'>no ip route [network] [mask] [next-hop/exit-int]</code>" },
-            { q: "What happens if a PC does not have a default gateway configured?", a: "The PC will not know where to send packets destined for a different subnet, and communication to remote networks will immediately fail." }
+            { q: "What happens if you configure two static routes to the same destination without removing the old one?", a: "The router places both in the routing table and attempts to <strong>load-balance</strong> traffic between them, potentially causing communication issues." }
         ];
 
         const grid = document.getElementById('flashcard-grid');

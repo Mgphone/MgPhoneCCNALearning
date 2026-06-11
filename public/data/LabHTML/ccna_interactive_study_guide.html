@@ -1,231 +1,543 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CCNA Basic Device Configuration & Security</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-.chart-container { position: relative; width: 100%; max-width: 500px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
-@media (min-width: 768px) { .chart-container { height: 350px; max-width: 600px; } }
-body { background-color: #faf9f6; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-.hide-view { display: none !important; }
-.flashcard-container { perspective: 1000px; cursor: pointer; }
-.flashcard { transition: transform 0.6s; transform-style: preserve-3d; position: relative; width: 100%; height: 100%; min-height: 250px; }
-.flashcard.flipped { transform: rotateY(180deg); }
-.flashcard-inner { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; display: flex; flex-direction: column; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-.flashcard-front { background-color: #ffffff; }
-.flashcard-back { background-color: #f0f9ff; transform: rotateY(180deg); overflow-y: auto; }
-pre { background-color: #1e293b; color: #f8fafc; padding: 1rem; border-radius: 0.375rem; overflow-x: auto; margin-top: 0.5rem; font-family: monospace; font-size: 0.875rem; }
-.code-inline { background-color: #e2e8f0; color: #0f172a; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.875rem; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: Basic Device Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #faf9f6; /* Warm neutral background */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #292524; /* Stone 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 500px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #eff6ff; color: #0284c7; border-left-color: #0284c7; font-weight: 600; }
+        .nav-inactive { color: #78716c; }
+        .nav-inactive:hover { background-color: #f5f5f4; color: #44403c; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.open { max-height: 1200px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-block {
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            border: 1px solid #1e293b;
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2);
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #38bdf8; font-weight: bold; } /* Sky 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f5f5f4; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+    </style>
 </head>
-<body class="text-stone-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-sky-200">
 
-<!-- Chosen Palette: Warm Neutral & Sky Blue Accent (Background: #faf9f6, Text: Slate/Stone, Accents: Sky-600/700) -->
-<!-- Application Structure Plan: The SPA is structured as a dashboard with a sidebar navigation to switch between logical views: "Concepts & Analysis" (Overview & Visual Data), "Configuration Lab" (Step-by-step device setup), "Command Reference" (Searchable Table), and "Knowledge Check" (Interactive Flashcards). This structure allows users to logically progress from theory to guided practice, reference tools, and finally self-assessment, preventing cognitive overload and enabling non-linear exploration. -->
-<!-- Visualization & Content Choices: 
-1. Concept Blocks -> Goal: Inform -> Method: Interactive Accordions -> Library: Vanilla JS. 
-2. Command Distribution -> Goal: Compare -> Method: Pie Chart -> Library: Chart.js (NO SVG). Justification: Visually breaks down the complexity of commands by execution mode. 
-3. Configuration Lab -> Goal: Change/Process -> Method: Tabbed Code Interface -> Library: Vanilla JS. Justification: Simulates the CLI experience while organizing steps clearly. 
-4. Knowledge Check -> Goal: Engage -> Method: 3D Flip Flashcards -> Library: Vanilla JS + CSS3D. Justification: Promotes active recall and interactive learning. 
-5. Command Table -> Goal: Organize -> Method: Dynamic Filterable Table -> Library: Vanilla JS. -->
-<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-
-<nav class="bg-slate-900 text-slate-100 w-full md:w-64 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20">
-    <div class="p-6 bg-slate-950 flex items-center gap-3">
-        <span class="text-2xl">⚙️</span>
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-stone-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col z-20 shadow-sm transition-all">
+    <div class="p-6 border-b border-stone-100 flex items-center gap-3">
+        <span class="text-3xl text-sky-600">⚙️</span>
         <div>
-            <h1 class="text-lg font-bold leading-tight">CCNA Study Hub</h1>
-            <p class="text-xs text-slate-400">Basic Device Security</p>
+            <h1 class="text-lg font-bold leading-tight text-stone-800">CCNA Mastery</h1>
+            <p class="text-xs text-sky-600 font-semibold uppercase tracking-wider mt-1">Basic Configuration</p>
         </div>
     </div>
-    <div class="flex-1 overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-2">
-        <button onclick="navigate('view-concepts')" id="btn-view-concepts" class="nav-btn w-full text-left px-4 py-3 rounded-md transition-colors bg-sky-700 text-white font-medium flex items-center gap-2">
-            <span>📚</span> Concepts & Data
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📖</span> Core Concepts
         </button>
-        <button onclick="navigate('view-lab')" id="btn-view-lab" class="nav-btn w-full text-left px-4 py-3 rounded-md transition-colors hover:bg-slate-800 text-slate-300 flex items-center gap-2">
-            <span>💻</span> Config Lab
+        <button onclick="navigate('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">💻</span> Device Configs
         </button>
-        <button onclick="navigate('view-reference')" id="btn-view-reference" class="nav-btn w-full text-left px-4 py-3 rounded-md transition-colors hover:bg-slate-800 text-slate-300 flex items-center gap-2">
-            <span>📋</span> Command Ref
+        <button onclick="navigate('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
         </button>
-        <button onclick="navigate('view-quiz')" id="btn-view-quiz" class="nav-btn w-full text-left px-4 py-3 rounded-md transition-colors hover:bg-slate-800 text-slate-300 flex items-center gap-2">
-            <span>🧠</span> Knowledge Check
+        <button onclick="navigate('tab-commands', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">🎴</span> Flashcards
         </button>
     </div>
 </nav>
 
-<main class="flex-1 overflow-y-auto p-4 md:p-8 bg-[#faf9f6]">
-
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    
     <header class="mb-8 max-w-5xl mx-auto">
-        <h2 class="text-3xl font-extrabold text-slate-800 mb-2">Basic Device Configuration & Security</h2>
-        <p class="text-lg text-slate-600 border-l-4 border-sky-600 pl-4 bg-sky-50 py-2 pr-2 rounded-r-md">
-            This interactive guide covers fundamental steps for initial Cisco device configuration, focusing on securing administrative access. You will learn to assign hostnames, encrypt passwords, and save configurations to NVRAM—critical skills for the CCNA exam and real-world networks.
-        </p>
+        <h2 class="text-3xl font-extrabold text-stone-800 mb-3 tracking-tight">Basic Device Configuration & Security</h2>
+        <div class="border-l-4 border-sky-500 pl-4 bg-white p-4 rounded-r-xl shadow-sm border border-stone-100">
+            <p class="text-lg text-stone-600 leading-relaxed">
+                This module covers the fundamental steps for initial Cisco device configuration, focusing on securing administrative access. You will learn how to assign logical hostnames, configure and encrypt privileged EXEC mode passwords, and safely save your configurations to NVRAM.
+            </p>
+        </div>
     </header>
 
-    <div id="view-concepts" class="view-section max-w-5xl mx-auto space-y-8 animate-fade-in">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2"><span>📊</span> Overview & Architecture</h3>
-            <p class="text-stone-600 mb-6">
-                This section breaks down the core theoretical concepts and visualizes the structure of the commands you will learn. Understanding the "why" behind hostnames and password encryption is critical before jumping into the command line interface.
+    <!-- TAB 1: Core Concepts -->
+    <div id="tab-concepts" class="tab-content active max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-stone-200">
+            <h3 class="text-2xl font-bold text-stone-800 mb-2 border-b border-stone-100 pb-2">Theory & Mechanics</h3>
+            <p class="text-stone-600 mb-8 leading-relaxed">
+                When you first boot up a Cisco router or switch, it uses default settings (e.g., the hostname <code>Router</code> or <code>Switch</code>) and has no security for administrative access. Anyone with physical console access can manipulate the device.
             </p>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="space-y-4">
-                    <div class="border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-stone-50">
-                        <h4 class="font-bold text-lg mb-1">🏷️ Hostnames</h4>
-                        <p class="text-sm text-stone-600">Default settings use `Router` or `Switch`. Hostnames allow engineers to logically identify devices in a network topology, essential for management and troubleshooting.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-4">
+                <div class="space-y-6">
+                    <div class="bg-stone-50 p-5 rounded-xl border border-stone-200">
+                        <h4 class="font-bold text-lg text-stone-800 mb-3 flex items-center gap-2"><span class="text-sky-500">🔑</span> Enable Password vs. Enable Secret</h4>
+                        <ul class="space-y-3 text-sm text-stone-700">
+                            <li>
+                                <strong>Enable Password:</strong> Secures Privileged EXEC mode but stores the password in <em>plain text</em> within the configuration file by default.
+                            </li>
+                            <li>
+                                <strong>Enable Secret:</strong> Serves the same purpose but uses a strong hashing algorithm (MD5, SHA-256) to securely obscure the password in the config file.
+                            </li>
+                        </ul>
                     </div>
-                    <div class="border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-stone-50">
-                        <h4 class="font-bold text-lg mb-1">🔑 Passwords vs Secrets</h4>
-                        <p class="text-sm text-stone-600"><span class="code-inline">enable password</span> stores in plain text. <span class="code-inline">enable secret</span> uses a strong hashing algorithm (MD5/SHA) to secure the Privileged EXEC mode password.</p>
-                        <div class="mt-2 text-xs bg-amber-100 text-amber-800 p-2 rounded border border-amber-200">
-                            <strong>Exam Tip:</strong> If both are set, the device <em>always</em> requires the enable secret.
+                    
+                    <div class="bg-sky-50 border border-sky-100 p-5 rounded-xl">
+                        <h4 class="font-bold text-lg text-sky-900 mb-2 flex items-center gap-2"><span>🛡️</span> Service Password-Encryption</h4>
+                        <p class="text-sm text-sky-800 mb-2">This command applies a weak proprietary cipher (<strong>Type 7</strong>) to any plain-text passwords stored in the configuration file. It prevents casual "shoulder surfing" but is easily cracked. It should <strong>not</strong> be a substitute for the <code>enable secret</code>.</p>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 p-5 rounded-xl">
+                        <h4 class="font-bold text-lg text-amber-900 mb-2 flex items-center gap-2"><span>⚠️</span> CCNA Exam Tip</h4>
+                        <p class="text-sm text-amber-800">If both <code>enable password</code> and <code>enable secret</code> are configured on a Cisco device, the device will <strong>always</strong> require the <code>enable secret</code>. The <code>enable password</code> effectively becomes invalid.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-stone-200 rounded-xl shadow-sm flex flex-col">
+                    <h4 class="text-center font-bold text-stone-800 mb-2">Command Distribution by Mode</h4>
+                    <p class="text-xs text-center text-stone-500 mb-4">Analysis of where the core security configuration commands are executed.</p>
+                    
+                    <div class="chart-container flex-grow flex items-center justify-center">
+                        <canvas id="modeChart"></canvas>
+                    </div>
+                    
+                    <p class="text-xs text-center text-stone-500 mt-4 bg-stone-50 p-3 rounded-lg border border-stone-100">
+                        Most configuration changes occur in <strong>Global Config</strong> mode, while viewing and saving occur in <strong>Privileged EXEC</strong> mode.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Configuration Lab -->
+    <div id="tab-config" class="tab-content max-w-5xl mx-auto space-y-8">
+         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-stone-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Device Configuration Lab</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Review the exact Cisco IOS commands required to secure administrative access. The logic is identical for both routers and switches.
+            </p>
+
+            <!-- Device Tabs -->
+            <div class="flex border-b border-slate-200 gap-4 mb-6 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active pb-3 text-sm font-bold text-sky-600 border-b-2 border-sky-600 transition-colors">Router (R1)</button>
+                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn pb-3 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Switch (SW1)</button>
+            </div>
+
+            <!-- R1 Config -->
+            <div id="config-r1" class="device-config block">
+                <div class="cli-block">
+                    <span class="cli-comment">! 1. Enter Global Configuration Mode</span><br>
+                    <span class="cli-prompt">Router&gt;</span> enable<br>
+                    <span class="cli-prompt">Router#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! 2. Change the Hostname</span><br>
+                    <span class="cli-prompt">Router(config)#</span> hostname R1<br><br>
+
+                    <span class="cli-comment">! 3. Configure Unencrypted Enable Password</span><br>
+                    <span class="cli-prompt">R1(config)#</span> enable password CCNA<br><br>
+
+                    <span class="cli-comment">! 4. Encrypt All Clear-Text Passwords</span><br>
+                    <span class="cli-prompt">R1(config)#</span> service password-encryption<br><br>
+
+                    <span class="cli-comment">! 5. Configure Secure Enable Secret</span><br>
+                    <span class="cli-prompt">R1(config)#</span> enable secret Cisco<br><br>
+
+                    <span class="cli-comment">! 6. Save Configuration to NVRAM</span><br>
+                    <span class="cli-prompt">R1(config)#</span> end<br>
+                    <span class="cli-prompt">R1#</span> copy running-config startup-config
+                </div>
+            </div>
+
+            <!-- SW1 Config -->
+            <div id="config-sw1" class="device-config hidden">
+                <div class="cli-block">
+                    <span class="cli-comment">! 1. Enter Global Configuration Mode</span><br>
+                    <span class="cli-prompt">Switch&gt;</span> enable<br>
+                    <span class="cli-prompt">Switch#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! 2. Change the Hostname</span><br>
+                    <span class="cli-prompt">Switch(config)#</span> hostname SW1<br><br>
+
+                    <span class="cli-comment">! 3. Configure Unencrypted Enable Password</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> enable password CCNA<br><br>
+
+                    <span class="cli-comment">! 4. Encrypt All Clear-Text Passwords</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> service password-encryption<br><br>
+
+                    <span class="cli-comment">! 5. Configure Secure Enable Secret</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> enable secret Cisco<br><br>
+
+                    <span class="cli-comment">! 6. Save Configuration to NVRAM</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> end<br>
+                    <span class="cli-prompt">SW1#</span> write memory
+                </div>
+            </div>
+            
+            <div class="mt-8 bg-slate-50 border border-slate-200 rounded-xl p-5">
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span>🔍</span> Verification Step</h4>
+                <p class="text-sm text-slate-600 mb-3">To verify your password security and device settings, you should view the active configuration file in RAM:</p>
+                <div class="cli-block mb-3">
+                    <span class="cli-prompt">R1#</span> show running-config
+                </div>
+                <ul class="text-sm text-slate-700 list-disc pl-5 space-y-1 mt-3">
+                    <li>Look near the top of the output to find the <code>hostname</code>.</li>
+                    <li>Check for <code>enable secret 5 [hash]</code> and <code>enable password 7 [hash]</code>.</li>
+                    <li>If you are in Global Configuration mode, prepend the command with <code>do</code> (e.g., <code>do show running-config</code>).</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TAB 3: Lab Tasks & Q&A -->
+    <div id="tab-qa" class="tab-content max-w-5xl mx-auto space-y-8">
+         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Lab Task Q&A</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Below are the expert solutions to the lab tasks from the video. Check off the steps as you complete them to save your progress! Click on a question to expand its answer.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa1', this)">
+                            <span class="pr-6">1. Change the hostnames of the router and switch to the appropriate names (R1, SW1)</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>To change the hostname, use the 'hostname' command in global configuration mode.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">Router&gt;</span> enable<br>
+                                <span class="cli-prompt">Router#</span> configure terminal<br>
+                                <span class="cli-prompt">Router(config)#</span> hostname R1<br><br>
+                                <span class="cli-prompt">Switch&gt;</span> enable<br>
+                                <span class="cli-prompt">Switch#</span> configure terminal<br>
+                                <span class="cli-prompt">Switch(config)#</span> hostname SW1
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="space-y-4">
-                    <div class="border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-stone-50">
-                        <h4 class="font-bold text-lg mb-1">🛡️ Service Password-Encryption</h4>
-                        <p class="text-sm text-stone-600">Applies a weak Type 7 cipher to plain-text passwords in the config file. Prevents casual "shoulder surfing" but is easily cracked. Not a substitute for secrets.</p>
-                    </div>
-                    <div class="border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-stone-50">
-                        <h4 class="font-bold text-lg mb-1">💾 Running vs Startup Config</h4>
-                        <p class="text-sm text-stone-600">The <span class="code-inline">running-config</span> is in active RAM (lost on reboot). The <span class="code-inline">startup-config</span> is saved in NVRAM. Configurations must be explicitly saved.</p>
-                    </div>
-                </div>
-            </div>
 
-            <div class="mt-8 border-t border-stone-200 pt-8">
-                <h4 class="text-lg font-bold text-slate-800 mb-4 text-center">Command Distribution by IOS Execution Mode</h4>
-                <div class="chart-container">
-                    <canvas id="modeDistributionChart"></canvas>
+                <!-- Q2 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa2', this)">
+                            <span>2. Configure an unencrypted enable password of 'CCNA' on both devices</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>This command protects Privileged EXEC mode but stores the password in plain text.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">R1(config)#</span> enable password CCNA<br>
+                                <span class="cli-prompt">SW1(config)#</span> enable password CCNA
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-center text-sm text-stone-500 mt-4">Analysis of commands required for basic security setup.</p>
+
+                <!-- Q3 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa3', this)">
+                            <span>3. Exit back to user EXEC mode and test the password</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>You can use <code>exit</code> successively or <code>disable</code> to drop down out of Privileged EXEC mode.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">R1(config)#</span> exit<br>
+                                <span class="cli-prompt">R1#</span> exit<br>
+                                <span class="cli-prompt">R1&gt;</span> enable<br>
+                                Password: CCNA
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa4', this)">
+                            <span>4. View the password in the running configuration</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>You must be in Privileged EXEC mode to issue standard show commands.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">R1#</span> show running-config
+                            </div>
+                            <p class="text-xs text-slate-500 italic mt-2">*You will see the line <code>enable password CCNA</code> stored in plain, readable text near the top of the output.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-5', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa5', this)">
+                            <span>5. Ensure that the current password, and all future passwords, are encrypted</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>This applies a proprietary cipher to any plain-text passwords currently in the config and automatically encrypts any new plain-text passwords you create later.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">R1#</span> configure terminal<br>
+                                <span class="cli-prompt">R1(config)#</span> service password-encryption
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q6 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-6', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa6', this)">
+                            <span>6. View the password in the running configuration</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-6" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>You can drop back to Privileged EXEC mode, or use the <code>do</code> command to run the check directly from Global Config mode.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">R1(config)#</span> do show running-config
+                            </div>
+                            <p class="text-xs text-slate-500 italic mt-2">*The password will now read something like <code>enable password 7 0822455D0A16</code>, masking the text "CCNA".</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q7 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-7', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa7', this)">
+                            <span>7. Configure a more secure, encrypted enable password of 'Cisco' on both devices</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-7" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>The <code>enable secret</code> command uses a strong hashing algorithm (MD5/SHA) and is the Cisco standard best practice.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">R1(config)#</span> enable secret Cisco<br>
+                                <span class="cli-prompt">SW1(config)#</span> enable secret Cisco
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q8 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-8', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa8', this)">
+                            <span class="pr-6">8. Exit back to user EXEC mode and then return to privileged EXEC mode. Which password do you have to use?</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-8" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <div class="bg-sky-50 border-l-4 border-sky-500 p-4 text-sky-900 rounded">
+                                <strong>Answer:</strong> You <strong>MUST</strong> use the newly configured <code>enable secret</code> password, which is <strong>Cisco</strong>. The <code>enable password</code> ("CCNA") is effectively invalid when a secret exists.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q9 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-9', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa9', this)">
+                            <span class="pr-6">9. View passwords in running config. What encryption type numbers are used?</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-9" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>When you run <code>show running-config</code>, observe the numbers immediately following the password commands.</p>
+                            <ul class="list-disc pl-5 space-y-2">
+                                <li><strong>Encrypted 'enable password':</strong> Type <strong>7</strong> (Indicated by <code>enable password 7 ...</code>. This is the weak proprietary cipher applied by <code>service password-encryption</code>).</li>
+                                <li><strong>Encrypted 'enable secret':</strong> Type <strong>5</strong> (Indicated by <code>enable secret 5 ...</code>. This represents a stronger MD5 hash algorithm).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q10 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-10', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('basic_qa10', this)">
+                            <span>10. Save the running configuration to the startup configuration.</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-10" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>You must do this from Privileged EXEC mode. If you reboot without doing this, all changes are lost.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">R1(config)#</span> end<br>
+                                <span class="cli-prompt">R1#</span> copy running-config startup-config
+                            </div>
+                            <p class="text-xs text-slate-500 italic mt-2">*Alternatively, you can use the legacy command <code>write memory</code> or just <code>wr</code>.</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <div id="view-lab" class="view-section max-w-5xl mx-auto space-y-6 hide-view animate-fade-in">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2"><span>💻</span> Interactive Configuration Lab</h3>
-            <p class="text-stone-600 mb-6">
-                Explore the step-by-step configuration for routers and switches. Use the interactive tabs below to switch between device types and view the exact Cisco IOS syntax required to secure administrative access.
+    <!-- TAB 4: Command Matrix -->
+    <div id="tab-commands" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Command Reference Index</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Quick lookup for Cisco IOS commands related to basic device management. Use the input box to filter.
             </p>
 
-            <div class="flex gap-2 mb-4 border-b border-stone-200 pb-2">
-                <button onclick="switchTab('router-tab')" id="btn-router-tab" class="px-6 py-2 rounded-t-lg bg-sky-600 text-white font-bold transition-colors">Router (R1)</button>
-                <button onclick="switchTab('switch-tab')" id="btn-switch-tab" class="px-6 py-2 rounded-t-lg bg-stone-200 text-stone-600 hover:bg-stone-300 font-bold transition-colors">Switch (SW1)</button>
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterTable()" placeholder="Search commands, modes, or descriptions..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition-shadow text-sm">
             </div>
 
-            <div id="router-tab" class="tab-content bg-slate-900 rounded-b-lg rounded-tr-lg p-1">
-                <pre class="bg-transparent border-none m-0 shadow-none text-green-400">
-<span class="text-slate-500">! 1. Enter Global Configuration Mode</span>
-Router&gt; enable
-Router# configure terminal
-
-<span class="text-slate-500">! 2. Change the Hostname</span>
-Router(config)# hostname R1
-
-<span class="text-slate-500">! 3. Configure Unencrypted Enable Password</span>
-R1(config)# enable password CCNA
-
-<span class="text-slate-500">! 4. Encrypt All Clear-Text Passwords</span>
-R1(config)# service password-encryption
-
-<span class="text-slate-500">! 5. Configure Secure Enable Secret</span>
-R1(config)# enable secret Cisco
-
-<span class="text-slate-500">! 6. Save Configuration</span>
-R1(config)# end
-R1# copy running-config startup-config
-                </pre>
-            </div>
-
-            <div id="switch-tab" class="tab-content hide-view bg-slate-900 rounded-b-lg rounded-tr-lg p-1">
-                <pre class="bg-transparent border-none m-0 shadow-none text-cyan-400">
-<span class="text-slate-500">! 1. Enter Global Configuration Mode</span>
-Switch&gt; enable
-Switch# configure terminal
-
-<span class="text-slate-500">! 2. Change the Hostname</span>
-Switch(config)# hostname SW1
-
-<span class="text-slate-500">! 3. Configure Unencrypted Enable Password</span>
-SW1(config)# enable password CCNA
-
-<span class="text-slate-500">! 4. Encrypt All Clear-Text Passwords</span>
-SW1(config)# service password-encryption
-
-<span class="text-slate-500">! 5. Configure Secure Enable Secret</span>
-SW1(config)# enable secret Cisco
-
-<span class="text-slate-500">! 6. Save Configuration</span>
-SW1(config)# end
-SW1# write memory
-                </pre>
-            </div>
-            
-            <div class="mt-6 p-4 bg-sky-50 rounded border border-sky-100">
-                <h4 class="font-bold text-sky-800 mb-2">🔍 Verification Step</h4>
-                <p class="text-sm text-stone-700 mb-2">To verify your password security and device settings, view the active configuration file in RAM:</p>
-                <pre class="bg-slate-800 mt-0 mb-2">R1# show running-config</pre>
-                <ul class="list-disc list-inside text-sm text-stone-700 ml-2 space-y-1">
-                    <li>Look near the top of the output to find the <span class="code-inline">hostname</span>.</li>
-                    <li>Check for <span class="code-inline">enable secret 5 [hash]</span> and <span class="code-inline">enable password 7 [hash]</span>.</li>
-                    <li>In Global Config mode, prepend with <span class="code-inline">do</span>: <span class="code-inline">R1(config)# do show running-config</span></li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-reference" class="view-section max-w-5xl mx-auto space-y-6 hide-view animate-fade-in">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2"><span>📋</span> Command Reference Matrix</h3>
-            <p class="text-stone-600 mb-6">
-                This section provides a searchable index of all commands covered. Use the input box below to quickly find specific commands, their execution mode, and their purpose.
-            </p>
-
-            <div class="mb-4">
-                <input type="text" id="cmdSearch" onkeyup="filterTable()" placeholder="Search commands or descriptions..." class="w-full md:w-1/2 px-4 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-            </div>
-
-            <div class="overflow-x-auto rounded-lg border border-stone-200">
-                <table class="min-w-full divide-y divide-stone-200 text-left text-sm">
-                    <thead class="bg-stone-50 text-stone-800 font-semibold">
+            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700 font-semibold">
                         <tr>
-                            <th class="px-4 py-3">Command</th>
-                            <th class="px-4 py-3">Mode</th>
-                            <th class="px-4 py-3">Purpose</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Command</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Mode</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Purpose</th>
                         </tr>
                     </thead>
-                    <tbody id="cmdTableBody" class="divide-y divide-stone-200 bg-white">
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">enable</td><td class="px-4 py-3 text-xs"><span class="bg-stone-100 px-2 py-1 rounded">User EXEC</span></td><td class="px-4 py-3">Enters Privileged EXEC mode.</td></tr>
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">configure terminal</td><td class="px-4 py-3 text-xs"><span class="bg-stone-200 px-2 py-1 rounded">Privileged EXEC</span></td><td class="px-4 py-3">Enters Global Configuration mode.</td></tr>
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">hostname [name]</td><td class="px-4 py-3 text-xs"><span class="bg-sky-100 px-2 py-1 rounded">Global Config</span></td><td class="px-4 py-3">Sets the device's administrative hostname.</td></tr>
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">enable password [password]</td><td class="px-4 py-3 text-xs"><span class="bg-sky-100 px-2 py-1 rounded">Global Config</span></td><td class="px-4 py-3">Sets an unencrypted password for Privileged EXEC mode.</td></tr>
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">service password-encryption</td><td class="px-4 py-3 text-xs"><span class="bg-sky-100 px-2 py-1 rounded">Global Config</span></td><td class="px-4 py-3">Encrypts all current and future clear-text passwords in the config file.</td></tr>
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">enable secret [password]</td><td class="px-4 py-3 text-xs"><span class="bg-sky-100 px-2 py-1 rounded">Global Config</span></td><td class="px-4 py-3">Sets a securely hashed password for Privileged EXEC mode.</td></tr>
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">copy running-config startup-config</td><td class="px-4 py-3 text-xs"><span class="bg-stone-200 px-2 py-1 rounded">Privileged EXEC</span></td><td class="px-4 py-3">Saves the active config to NVRAM.</td></tr>
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">write memory (or write)</td><td class="px-4 py-3 text-xs"><span class="bg-stone-200 px-2 py-1 rounded">Privileged EXEC</span></td><td class="px-4 py-3">Legacy, quicker command to save the active config to NVRAM.</td></tr>
-                        <tr><td class="px-4 py-3 font-mono text-sky-700 bg-sky-50/30">show running-config</td><td class="px-4 py-3 text-xs"><span class="bg-stone-200 px-2 py-1 rounded">Privileged EXEC</span></td><td class="px-4 py-3">Views active configuration file in RAM.</td></tr>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">enable</td>
+                            <td class="px-6 py-4"><span class="bg-stone-100 px-2 py-1 rounded text-xs border border-stone-200 text-stone-600">User EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enters Privileged EXEC mode.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">configure terminal</td>
+                            <td class="px-6 py-4"><span class="bg-stone-100 px-2 py-1 rounded text-xs border border-stone-200 text-stone-600">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enters Global Configuration mode.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">hostname [name]</td>
+                            <td class="px-6 py-4"><span class="bg-sky-50 px-2 py-1 rounded text-xs border border-sky-200 text-sky-800">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets the device's administrative hostname.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">enable password [pass]</td>
+                            <td class="px-6 py-4"><span class="bg-sky-50 px-2 py-1 rounded text-xs border border-sky-200 text-sky-800">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets an unencrypted password for Privileged EXEC mode.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">service password-encryption</td>
+                            <td class="px-6 py-4"><span class="bg-sky-50 px-2 py-1 rounded text-xs border border-sky-200 text-sky-800">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Encrypts all current and future clear-text passwords (Type 7).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">enable secret [pass]</td>
+                            <td class="px-6 py-4"><span class="bg-sky-50 px-2 py-1 rounded text-xs border border-sky-200 text-sky-800">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets a securely hashed password for Privileged EXEC mode (Type 5).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">copy running-config startup-config</td>
+                            <td class="px-6 py-4"><span class="bg-stone-100 px-2 py-1 rounded text-xs border border-stone-200 text-stone-600">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Saves the active config in RAM to NVRAM.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">show running-config</td>
+                            <td class="px-6 py-4"><span class="bg-stone-100 px-2 py-1 rounded text-xs border border-stone-200 text-stone-600">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Views the active configuration file currently loaded in RAM.</td>
+                        </tr>
                     </tbody>
                 </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500 bg-white">No matching commands found.</div>
             </div>
         </div>
     </div>
 
-    <div id="view-quiz" class="view-section max-w-5xl mx-auto space-y-6 hide-view animate-fade-in pb-12">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2"><span>🧠</span> Knowledge Check Flashcards</h3>
-            <p class="text-stone-600 mb-6">
-                Test your understanding of the material. Click on the question cards to reveal the correct configuration commands and exam tips. Re-click to flip back.
+    <!-- TAB 5: Flashcards -->
+    <div id="tab-flashcards" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Active Recall Flashcards</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of device security and configuration modes.
             </p>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="flashcard-grid">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
             </div>
         </div>
     </div>
@@ -233,129 +545,209 @@ SW1# write memory
 </main>
 
 <script>
-    const navButtons = ['btn-view-concepts', 'btn-view-lab', 'btn-view-reference', 'btn-view-quiz'];
-    const views = ['view-concepts', 'view-lab', 'view-reference', 'view-quiz'];
-
-    function navigate(targetViewId) {
-        views.forEach(v => document.getElementById(v).classList.add('hide-view'));
-        navButtons.forEach(b => {
-            const el = document.getElementById(b);
-            el.classList.remove('bg-sky-700', 'text-white');
-            el.classList.add('text-slate-300', 'hover:bg-slate-800');
-        });
-
-        document.getElementById(targetViewId).classList.remove('hide-view');
-        const activeBtnId = 'btn-' + targetViewId;
-        const activeBtn = document.getElementById(activeBtnId);
-        activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800');
-        activeBtn.classList.add('bg-sky-700', 'text-white');
-
-        if(targetViewId === 'view-concepts' && !window.chartRendered) {
-            renderChart();
-            window.chartRendered = true;
-        }
-    }
-
-    function switchTab(tabId) {
-        document.getElementById('router-tab').classList.add('hide-view');
-        document.getElementById('switch-tab').classList.add('hide-view');
-        
-        document.getElementById('btn-router-tab').classList.replace('bg-sky-600', 'bg-stone-200');
-        document.getElementById('btn-router-tab').classList.replace('text-white', 'text-stone-600');
-        document.getElementById('btn-switch-tab').classList.replace('bg-sky-600', 'bg-stone-200');
-        document.getElementById('btn-switch-tab').classList.replace('text-white', 'text-stone-600');
-
-        document.getElementById(tabId).classList.remove('hide-view');
-        
-        const activeBtn = document.getElementById('btn-' + tabId);
-        activeBtn.classList.replace('bg-stone-200', 'bg-sky-600');
-        activeBtn.classList.replace('text-stone-600', 'text-white');
-    }
-
-    function filterTable() {
-        const input = document.getElementById("cmdSearch");
-        const filter = input.value.toUpperCase();
-        const tbody = document.getElementById("cmdTableBody");
-        const tr = tbody.getElementsByTagName("tr");
-
-        for (let i = 0; i < tr.length; i++) {
-            let txtValue = tr[i].textContent || tr[i].innerText;
-            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
-        }
-    }
-
+    // --- Chart.js Logic ---
+    let chartRendered = false;
     function renderChart() {
-        const ctx = document.getElementById('modeDistributionChart').getContext('2d');
+        if(chartRendered) return;
+        const ctx = document.getElementById('modeChart').getContext('2d');
         new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
-                labels: ['User EXEC (1)', 'Privileged EXEC (4)', 'Global Config (4)'],
+                labels: ['User EXEC (1)', 'Privileged EXEC (3)', 'Global Config (4)'],
                 datasets: [{
-                    data: [1, 4, 4],
-                    backgroundColor: ['#e2e8f0', '#94a3b8', '#0284c7'],
-                    borderColor: '#ffffff',
-                    borderWidth: 2
+                    data: [1, 3, 4], 
+                    backgroundColor: ['#e2e8f0', '#94a3b8', '#0284c7'], // Slate 200, Slate 400, Sky 600
+                    borderWidth: 0,
+                    hoverOffset: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '65%',
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { family: "'Inter', sans-serif" } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label} Commands`;
+                            }
+                        },
+                        padding: 12,
+                        cornerRadius: 8
+                    }
                 }
             }
         });
+        chartRendered = true;
     }
 
-    function toggleFlashcard(el) {
-        el.querySelector('.flashcard').classList.toggle('flipped');
+    // --- Navigation Logic ---
+    function navigate(tabId, btnElement) {
+        // Hide all views
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active state from all buttons
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
+        });
+
+        // Show target view & set button active
+        document.getElementById(tabId).classList.add('active');
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
+
+        // Render chart if Concepts tab is opened
+        if(tabId === 'tab-concepts') {
+            renderChart();
+        }
     }
 
-    const quizData = [
-        { q: "Change hostnames to R1, SW1", a: "<pre>Router> enable\nRouter# configure terminal\nRouter(config)# hostname R1</pre>" },
-        { q: "Configure unencrypted password 'CCNA'", a: "<pre>R1(config)# enable password CCNA</pre>" },
-        { q: "Exit to user EXEC and test", a: "<pre>R1(config)# exit\nR1# exit\nR1> enable\nPassword: CCNA</pre>" },
-        { q: "View password in running config", a: "<pre>R1# show running-config</pre><p class='text-sm mt-2'>Shows 'enable password CCNA' in plain text.</p>" },
-        { q: "Encrypt current/future passwords", a: "<pre>R1# configure terminal\nR1(config)# service password-encryption</pre>" },
-        { q: "View encrypted password", a: "<pre>R1(config)# do show running-config</pre><p class='text-sm mt-2'>Reads like 'enable password 7 082245...'</p>" },
-        { q: "Configure secure secret 'Cisco'", a: "<pre>R1(config)# enable secret Cisco</pre>" },
-        { q: "Which password to use now?", a: "<p class='font-bold text-sky-800 mb-2'>Answer: Cisco</p><p class='text-sm'>The enable secret takes precedence. The enable password becomes invalid.</p>" },
-        { q: "What are the encryption Types?", a: "<p class='text-sm mb-2'><strong>Type 7:</strong> Weak cipher (service password-encryption)</p><p class='text-sm'><strong>Type 5:</strong> MD5 hash algorithm (enable secret)</p>" },
-        { q: "Save config to NVRAM", a: "<pre>R1(config)# end\nR1# copy running-config startup-config</pre><p class='text-sm mt-2'>Alternatively: write memory (wr)</p>" }
-    ];
+    // --- Device Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-config').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-sky-600', 'border-sky-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
 
-    function renderFlashcards() {
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-sky-600', 'border-sky-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.querySelector('span:last-child');
+        
+        if (content.classList.contains('open')) {
+            content.classList.remove('open');
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('open');
+            icon.style.transform = 'rotate(45deg)';
+        }
+    }
+
+    // --- Command Filter Logic ---
+    function filterTable() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-block').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick').match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('basic_config_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is the difference between enable password and enable secret?", a: "<code>enable password</code> stores the password in clear text. <br><br><code>enable secret</code> uses a strong hash to encrypt the password." },
+            { q: "What happens if BOTH an enable password and enable secret are configured?", a: "The router will <strong>always</strong> require the <code>enable secret</code>. The enable password becomes invalid/ignored." },
+            { q: "What does the command <code>service password-encryption</code> do?", a: "It applies a weak <strong>Type 7</strong> cipher to all clear-text passwords currently in the config file and automatically encrypts future clear-text passwords." },
+            { q: "Where does the <code>running-config</code> live?", a: "It lives in <strong>RAM</strong> and is lost if the device loses power or reboots." },
+            { q: "Where does the <code>startup-config</code> live?", a: "It is saved in <strong>NVRAM</strong> (Non-Volatile RAM) and persists across reboots." },
+            { q: "What command copies the running configuration to the startup configuration?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>copy running-config startup-config</code><br><br>Legacy shortcut: <code>write memory</code> or <code>wr</code>" }
+        ];
+
         const grid = document.getElementById('flashcard-grid');
-        quizData.forEach((item, index) => {
-            const cardHTML = `
-                <div class="flashcard-container" onclick="toggleFlashcard(this)">
-                    <div class="flashcard">
-                        <div class="flashcard-inner flashcard-front flex justify-center items-center text-center p-6 bg-stone-50 hover:bg-stone-100 transition-colors">
-                            <span class="absolute top-2 left-3 text-xs font-bold text-stone-400">Q${index + 1}</span>
-                            <h5 class="text-lg font-semibold text-slate-700">${item.q}</h5>
-                            <span class="absolute bottom-3 text-xs text-stone-400">Click to flip 🔄</span>
-                        </div>
-                        <div class="flashcard-inner flashcard-back p-6 flex flex-col justify-center">
-                            <span class="absolute top-2 left-3 text-xs font-bold text-sky-600">Answer</span>
-                            <div class="text-stone-800 w-full">${item.a}</div>
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-sky-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-sky-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-sky-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            grid.insertAdjacentHTML('beforeend', cardHTML);
-        });
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
     }
 
+    function saveProgress(id, cb) {
+        localStorage.setItem('basic_config_progress_' + id, cb.checked);
+    }
+
+    // Initialize on load
     document.addEventListener("DOMContentLoaded", () => {
         renderChart();
-        window.chartRendered = true;
-        renderFlashcards();
+        initFeatures();
     });
-
 </script>
 </body>
 </html>

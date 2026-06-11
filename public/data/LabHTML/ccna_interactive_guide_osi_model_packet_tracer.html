@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: OSI Model & Simulation Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 background */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 500px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #f5f3ff; color: #6d28d9; border-left-color: #6d28d9; font-weight: 600; } /* Violet theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.open { max-height: 1200px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-block {
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            border: 1px solid #1e293b;
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2);
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #a78bfa; font-weight: bold; } /* Violet 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom OSI Layer stack animation */
+        .osi-layer { transition: all 0.3s ease; }
+        .osi-active { background-color: #8b5cf6; color: white; border-color: #7c3aed; box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.4); transform: scale(1.02); z-index: 10;}
+        .osi-inactive { background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-violet-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col z-20 shadow-sm transition-all">
+    <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+        <span class="text-3xl text-violet-600">📚</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-slate-800">CCNA Mastery</h1>
+            <p class="text-xs text-violet-600 font-semibold uppercase tracking-wider mt-1">OSI Model Analysis</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📖</span> Core Concepts
+        </button>
+        <button onclick="switchTab('tab-analyzer', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">🔬</span> Traffic Analyzer
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-commands', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">⌨️</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    
+    <header class="mb-8 max-w-5xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">The OSI Model & Simulation Mode</h2>
+        <div class="border-l-4 border-violet-500 pl-4 bg-white p-4 rounded-r-xl shadow-sm border border-slate-100">
+            <p class="text-lg text-slate-600 leading-relaxed">
+                Network traffic is encapsulated layer by layer. This module explores how to use Packet Tracer's powerful "Simulation Mode" to intercept packets in transit and inspect their Protocol Data Units (PDUs) across the 7 layers of the OSI model.
+            </p>
+        </div>
+    </header>
+
+    <!-- TAB 1: Core Concepts -->
+    <div id="tab-concepts" class="tab-content active max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Encapsulation & The OSI Model</h3>
+            <p class="text-slate-600 mb-8 leading-relaxed">
+                When a device sends data, it is encapsulated with headers as it moves down the OSI model. Different protocols operate at different layers, containing specific addressing information required to move the data across the network.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-4">
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start gap-4 shadow-sm hover:shadow transition-shadow">
+                        <div class="bg-white p-2 border border-slate-300 rounded text-violet-700 font-bold text-sm w-12 text-center shadow-sm flex-shrink-0">L2</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Layer 2: Data Link</h4>
+                            <p class="text-sm text-slate-600 mt-1">Protocols like <strong>STP</strong> (Spanning Tree Protocol) operate here. The PDU is a <strong>Frame</strong>, containing MAC addresses and Ethernet headers (IEEE 802.3).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start gap-4 shadow-sm hover:shadow transition-shadow">
+                        <div class="bg-white p-2 border border-slate-300 rounded text-violet-700 font-bold text-sm w-12 text-center shadow-sm flex-shrink-0">L3</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Layer 3: Network</h4>
+                            <p class="text-sm text-slate-600 mt-1">Protocols like <strong>OSPF</strong> and IPv4/IPv6 operate here. The PDU is a <strong>Packet</strong>, containing logical Source and Destination IP addresses.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start gap-4 shadow-sm hover:shadow transition-shadow">
+                        <div class="bg-white p-2 border border-slate-300 rounded text-violet-700 font-bold text-sm w-12 text-center shadow-sm flex-shrink-0">L7</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Layer 7: Application</h4>
+                            <p class="text-sm text-slate-600 mt-1">Protocols like <strong>DHCP</strong> or HTTP operate here. They rely on the lower layers (like UDP/TCP at Layer 4) for transport.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Protocol Stack Depth Comparison</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Visualizing how many OSI layers different protocols utilize when inspected in Simulation Mode.</p>
+                    
+                    <div class="chart-container flex-grow flex items-center justify-center">
+                        <canvas id="layerChart"></canvas>
+                    </div>
+                    
+                    <p class="text-xs text-center text-slate-500 mt-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        Notice how Application layer protocols (like DHCP) require a full stack of headers (L1-L4, L7) to successfully transmit data, whereas L2 protocols (STP) only need L1 and L2.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="bg-violet-50 border border-violet-200 p-5 rounded-xl mt-4">
+                <h4 class="font-bold text-lg text-violet-900 mb-2 flex items-center gap-2"><span>💡</span> Packet Tracer Quirk: Layers 5 & 6</h4>
+                <p class="text-sm text-violet-800">When inspecting Layer 7 traffic (like DHCP) in Packet Tracer, you will notice that Layers 5 (Session) and 6 (Presentation) are empty. This is because modern networking uses the <strong>TCP/IP Model</strong>, which combines layers 5, 6, and 7 into a single unified "Application Layer".</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Traffic Analyzer -->
+    <div id="tab-analyzer" class="tab-content max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+             <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Interactive PDU Analyzer</h3>
+            <p class="text-slate-600 mb-8 leading-relaxed">
+                This tool simulates the "PDU Information" window in Packet Tracer's Simulation Mode. Select a protocol to see how it encapsulates data across the OSI layers.
+            </p>
+
+            <div class="flex flex-wrap gap-3 mb-8 bg-slate-50 p-3 rounded-xl border border-slate-200 justify-center">
+                <button onclick="analyzeProtocol('stp')" id="btn-stp" class="px-6 py-2 text-sm font-bold rounded-lg border-2 border-violet-600 text-violet-700 bg-white hover:bg-violet-50 transition-all">STP (Spanning Tree)</button>
+                <button onclick="analyzeProtocol('ospf')" id="btn-ospf" class="px-6 py-2 text-sm font-bold rounded-lg border-2 border-transparent text-slate-600 bg-white hover:bg-slate-100 hover:border-slate-300 transition-all shadow-sm">OSPF (Routing)</button>
+                <button onclick="analyzeProtocol('dhcp')" id="btn-dhcp" class="px-6 py-2 text-sm font-bold rounded-lg border-2 border-transparent text-slate-600 bg-white hover:bg-slate-100 hover:border-slate-300 transition-all shadow-sm">DHCP (IP Allocation)</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- OSI Stack Visualizer -->
+                <div class="bg-slate-900 rounded-2xl p-6 shadow-inner border border-slate-800 flex flex-col-reverse gap-2 relative">
+                    <div id="layer-1" class="osi-layer osi-active p-3 rounded border text-center font-bold text-sm">Layer 1: Physical (Ports/Cables)</div>
+                    <div id="layer-2" class="osi-layer osi-active p-3 rounded border text-center font-bold text-sm">Layer 2: Data Link (MAC / Ethernet)</div>
+                    <div id="layer-3" class="osi-layer osi-inactive p-3 rounded border text-center font-bold text-sm">Layer 3: Network (IP Addresses)</div>
+                    <div id="layer-4" class="osi-layer osi-inactive p-3 rounded border text-center font-bold text-sm">Layer 4: Transport (TCP / UDP)</div>
+                    <div id="layer-5" class="osi-layer osi-inactive p-3 rounded border text-center font-bold text-sm text-slate-500 opacity-50">Layer 5: Session (TCP/IP App Layer)</div>
+                    <div id="layer-6" class="osi-layer osi-inactive p-3 rounded border text-center font-bold text-sm text-slate-500 opacity-50">Layer 6: Presentation (TCP/IP App Layer)</div>
+                    <div id="layer-7" class="osi-layer osi-inactive p-3 rounded border text-center font-bold text-sm">Layer 7: Application (DHCP/HTTP)</div>
+                </div>
+
+                <!-- Analysis Description -->
+                <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col">
+                    <h4 id="analysis-title" class="font-bold text-xl text-violet-700 mb-3 border-b pb-2">Protocol: STP</h4>
+                    <div id="analysis-desc" class="text-sm text-slate-700 space-y-3 leading-relaxed flex-grow">
+                        <p><strong>Spanning Tree Protocol (STP)</strong> operates purely at Layer 2 to prevent switching loops.</p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li><strong>Layer 2:</strong> Encapsulates into an IEEE 802.3 Ethernet Frame header with a destination MAC address.</li>
+                            <li><strong>Layer 1:</strong> Sent out physical switch ports (e.g., FastEthernet0/1).</li>
+                        </ul>
+                        <p class="italic text-slate-500 mt-4 text-xs">Note: It does not have an IP header (L3), as it is strictly switch-to-switch communication.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TAB 3: Lab Tasks & Q&A -->
+    <div id="tab-qa" class="tab-content max-w-5xl mx-auto space-y-8">
+         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Lab Task Breakdown</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Below are the expert solutions to the lab tasks from the video. Check off the steps as you complete them to save your progress! Click on a question to expand its answer.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('osi_qa1', this)">
+                            <span class="pr-6">1. Use 'simulation mode' to analyze the various traffic being sent throughout the network. What layers are being used?</span>
+                        </div>
+                        <span class="text-2xl text-violet-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-4">
+                            <p>To analyze traffic, click the <strong>Simulation</strong> tab in the bottom right corner of Packet Tracer, then click "Play" or use the step-forward button. Click on the colored envelopes (PDUs) to inspect them.</p>
+                            
+                            <ul class="space-y-4">
+                                <li class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                                    <strong class="text-violet-700 block mb-1">STP (Spanning Tree Protocol)</strong>
+                                    Uses <strong>Layers 1 & 2</strong>. It encapsulates data into an IEEE 802.3 Ethernet frame to prevent Layer 2 loops. It does not use IP addresses.
+                                </li>
+                                <li class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                                    <strong class="text-violet-700 block mb-1">OSPF (Open Shortest Path First)</strong>
+                                    Uses <strong>Layers 1, 2, & 3</strong>. It is a routing protocol, so it encapsulates data into an IP packet with Source and Destination IP addresses to map network paths.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('osi_qa2', this)">
+                            <span>2. Release and renew PC1's IP address to generate Layer 7 traffic. Analyze it.</span>
+                        </div>
+                        <span class="text-2xl text-violet-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-4">
+                            <p>To generate this traffic, open PC1's Desktop tab, open the Command Prompt, and issue the following commands:</p>
+                            <div class="cli-block text-xs py-2 px-3">
+                                <span class="cli-prompt">C:\&gt;</span> ipconfig /release<br>
+                                <span class="cli-prompt">C:\&gt;</span> ipconfig /renew
+                            </div>
+                            <p>This generates <strong>DHCP</strong> (Dynamic Host Configuration Protocol) traffic.</p>
+                            
+                            <div class="bg-violet-50 p-4 border border-violet-200 rounded shadow-sm">
+                                <strong class="text-violet-800 block mb-2">DHCP Analysis:</strong>
+                                <ul class="list-disc pl-5 space-y-1 text-violet-900">
+                                    <li><strong>Layer 7 (Application):</strong> Contains the actual DHCP request data.</li>
+                                    <li><strong>Layers 5 & 6:</strong> Empty (Merged into L7 by the TCP/IP model).</li>
+                                    <li><strong>Layer 4 (Transport):</strong> Encapsulated into a <strong>UDP Segment</strong>.</li>
+                                    <li><strong>Layer 3 (Network):</strong> Encapsulated into an IP Packet.</li>
+                                    <li><strong>Layer 2 (Data Link):</strong> Encapsulated into an Ethernet Frame.</li>
+                                    <li><strong>Layer 1 (Physical):</strong> Sent out the FastEthernet port.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: Command Matrix -->
+    <div id="tab-commands" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Command Reference Index</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Quick lookup for the Windows PC commands used to manage IP addressing in this lab. Use the search box to filter.
+            </p>
+
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterTable()" placeholder="Search commands or descriptions..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-shadow text-sm">
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700 font-semibold">
+                        <tr>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Command</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Device/Mode</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">ipconfig</td>
+                            <td class="px-6 py-4"><span class="bg-slate-200 px-2 py-1 rounded text-xs border border-slate-300 text-slate-700 font-bold">Windows PC CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the current IP address, subnet mask, and default gateway configuration.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">ipconfig /all</td>
+                            <td class="px-6 py-4"><span class="bg-slate-200 px-2 py-1 rounded text-xs border border-slate-300 text-slate-700 font-bold">Windows PC CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays detailed network info, including the Physical (MAC) address and DHCP server info.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">ipconfig /release</td>
+                            <td class="px-6 py-4"><span class="bg-slate-200 px-2 py-1 rounded text-xs border border-slate-300 text-slate-700 font-bold">Windows PC CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Releases the current dynamically assigned IP address back to the DHCP server.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">ipconfig /renew</td>
+                            <td class="px-6 py-4"><span class="bg-slate-200 px-2 py-1 rounded text-xs border border-slate-300 text-slate-700 font-bold">Windows PC CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Requests a new IP address from the DHCP server, generating Layer 7 DHCP traffic.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500 bg-white">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: Flashcards -->
+    <div id="tab-flashcards" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Active Recall Flashcards</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of the OSI model layers and PDUs.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function renderChart() {
+        if(chartRendered) return;
+        const ctx = document.getElementById('layerChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['STP (Spanning Tree)', 'OSPF (Routing)', 'DHCP (IP Config)'],
+                datasets: [{
+                    label: 'OSI Layers Utilized',
+                    data: [2, 3, 7], 
+                    backgroundColor: ['#8b5cf6', '#6366f1', '#ec4899'], // Violet, Indigo, Pink
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Horizontal
+                scales: {
+                    x: { 
+                        beginAtZero: true,
+                        max: 7,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { stepSize: 1 },
+                        title: { display: true, text: 'OSI Layer Depth', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    y: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` Utilizes ${context.raw} Layers`;
+                            }
+                        },
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(tabId, btnElement) {
+        // Hide all views
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active state from all buttons
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
+        });
+
+        // Show target view & set button active
+        document.getElementById(tabId).classList.add('active');
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
+
+        // Render chart if Concepts tab is opened
+        if(tabId === 'tab-concepts') {
+            renderChart();
+        }
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.querySelector('span:last-child');
+        
+        if (content.classList.contains('open')) {
+            content.classList.remove('open');
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('open');
+            icon.style.transform = 'rotate(45deg)';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterTable() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Interactive Analyzer Logic ---
+    const protocolData = {
+        stp: {
+            title: "Protocol: STP (Spanning Tree)",
+            desc: "<p><strong>Spanning Tree Protocol (STP)</strong> operates purely at Layer 2 to prevent switching loops.</p><ul class='list-disc pl-5 space-y-1 mt-2'><li><strong>Layer 2:</strong> Encapsulates into an IEEE 802.3 Ethernet Frame header with a destination MAC address.</li><li><strong>Layer 1:</strong> Sent out physical switch ports (e.g., FastEthernet0/1).</li></ul><p class='italic text-slate-500 mt-4 text-xs'>Note: It does not have an IP header (L3), as it is strictly switch-to-switch communication.</p>",
+            layers: [1, 2]
+        },
+        ospf: {
+            title: "Protocol: OSPF (Routing)",
+            desc: "<p><strong>Open Shortest Path First (OSPF)</strong> is a routing protocol that operates at Layer 3 to share network path information.</p><ul class='list-disc pl-5 space-y-1 mt-2'><li><strong>Layer 3:</strong> Encapsulates into an IP Packet with Source and Destination IP addresses.</li><li><strong>Layer 2:</strong> Encapsulated in a Frame for the local link.</li><li><strong>Layer 1:</strong> Physical transmission.</li></ul><p class='italic text-slate-500 mt-4 text-xs'>Note: OSPF runs directly over IP, it does not use a Layer 4 protocol like TCP or UDP.</p>",
+            layers: [1, 2, 3]
+        },
+        dhcp: {
+            title: "Protocol: DHCP (IP Allocation)",
+            desc: "<p><strong>Dynamic Host Configuration Protocol (DHCP)</strong> provides automatic IP addressing and operates at the Application Layer (Layer 7).</p><ul class='list-disc pl-5 space-y-1 mt-2 text-xs'><li><strong>Layer 7:</strong> DHCP request data.</li><li><strong>Layer 4:</strong> UDP Segment (Ports 67/68).</li><li><strong>Layer 3:</strong> IP Packet (Broadcast 255.255.255.255 initially).</li><li><strong>Layer 2:</strong> Ethernet Frame (Broadcast FFFF.FFFF.FFFF).</li><li><strong>Layer 1:</strong> Physical transmission.</li></ul><p class='italic text-slate-500 mt-2 text-xs'>Note: Layers 5 and 6 are empty in Packet Tracer because the TCP/IP model merges them into the Application layer.</p>",
+            layers: [1, 2, 3, 4, 7]
+        }
+    };
+
+    function analyzeProtocol(proto) {
+        // Reset buttons
+        document.querySelectorAll('#btn-stp, #btn-ospf, #btn-dhcp').forEach(btn => {
+            btn.classList.remove('border-violet-600', 'text-violet-700', 'bg-violet-50');
+            btn.classList.add('border-transparent', 'text-slate-600', 'bg-white');
+        });
+        
+        // Active button
+        const activeBtn = document.getElementById('btn-' + proto);
+        activeBtn.classList.remove('border-transparent', 'text-slate-600', 'bg-white');
+        activeBtn.classList.add('border-violet-600', 'text-violet-700', 'bg-white');
+
+        const data = protocolData[proto];
+        document.getElementById('analysis-title').innerText = data.title;
+        document.getElementById('analysis-desc').innerHTML = data.desc;
+
+        // Reset Layers
+        for(let i=1; i<=7; i++) {
+            const layerEl = document.getElementById('layer-' + i);
+            layerEl.classList.remove('osi-active');
+            layerEl.classList.add('osi-inactive');
+            // Re-dim 5 and 6
+            if(i===5 || i===6) {
+                layerEl.classList.add('text-slate-500', 'opacity-50');
+            }
+        }
+
+        // Activate Layers
+        data.layers.forEach(lNum => {
+            const layerEl = document.getElementById('layer-' + lNum);
+            layerEl.classList.remove('osi-inactive', 'text-slate-500', 'opacity-50');
+            layerEl.classList.add('osi-active');
+        });
+    }
+
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-block').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('osi_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What layer does STP (Spanning Tree Protocol) operate at?", a: "<strong>Layer 2 (Data Link)</strong><br><br>It prevents loops in Ethernet networks." },
+            { q: "What layer does OSPF operate at?", a: "<strong>Layer 3 (Network)</strong><br><br>It routes packets based on IP addresses." },
+            { q: "What layer does DHCP operate at?", a: "<strong>Layer 7 (Application)</strong><br><br>It handles dynamic IP address allocation for hosts." },
+            { q: "What is the PDU (Protocol Data Unit) for Layer 4?", a: "<strong>Segment</strong><br><br>Used by TCP and UDP protocols." },
+            { q: "What is the PDU for Layer 3?", a: "<strong>Packet</strong><br><br>Contains logical IP addressing." },
+            { q: "What is the PDU for Layer 2?", a: "<strong>Frame</strong><br><br>Contains physical MAC addressing." },
+            { q: "Why are Layers 5 and 6 often empty in Packet Tracer?", a: "Because modern networks use the <strong>TCP/IP Model</strong>, which collapses the top three OSI layers (Application, Presentation, Session) into a single Application layer." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-violet-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-violet-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-violet-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('osi_progress_' + id, cb.checked);
+    }
+
+    // Initialize on load
+    document.addEventListener("DOMContentLoaded", () => {
+        renderChart();
+        analyzeProtocol('stp'); // Init Analyzer
+        initFeatures();
+    });
+</script>
+</body>
+</html>

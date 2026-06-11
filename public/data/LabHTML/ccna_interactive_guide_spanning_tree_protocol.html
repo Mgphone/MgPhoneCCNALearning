@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: Spanning Tree Protocol</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600; } /* Blue Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #60a5fa; font-weight: bold; } /* Blue 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #2563eb !important; box-shadow: 0 0 15px rgba(37, 99, 235, 0.5); background-color: #1d4ed8 !important;}
+.node-dim { opacity: 0.5; transition: all 0.3s; }
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.8); }
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-blue-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-blue-500">🌳</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-blue-400 font-semibold tracking-wide uppercase mt-1">Spanning Tree</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-blue-600 text-white shadow-md">
+            <span class="text-xl">📊</span> STP Concepts
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Topology Analyzer
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Analyzing Spanning Tree Protocol (STP)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-blue-500 pl-4 bg-blue-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Master Layer 2 loop prevention. Learn how switches mathematically elect a Root Bridge, calculate the shortest path (Root Ports), and strategically block redundant links (Non-Designated Ports) to create a loop-free topology.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">🧠</span> The STP Election Process
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">1. Elect the Root Bridge</h4>
+                        <p class="text-sm text-slate-700 mb-2">The switch with the lowest <strong>Bridge ID (Priority + MAC Address)</strong> wins. Priority defaults to 32768. If priorities tie, the lowest MAC address breaks the tie.</p>
+                        <p class="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded inline-block">Rule: All ports on a Root Bridge become Designated Ports (Forwarding).</p>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">2. Find Root Ports (RP)</h4>
+                        <p class="text-sm text-slate-700 mb-2">Every non-root switch selects ONE port with the lowest <strong>Path Cost</strong> to the Root Bridge. Common costs: FastEthernet = 19, GigabitEthernet = 4.</p>
+                        <p class="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded inline-block">Tiebreakers: Lowest Neighbor Bridge ID &rarr; Lowest Neighbor Port ID.</p>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">3. Determine Designated & Blocking Ports</h4>
+                        <p class="text-sm text-slate-700">For every remaining link between switches, only one end can forward traffic (Designated Port). The switch with the lowest Root Path Cost claims the Designated Port. The losing side becomes Non-Designated (Blocking).</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center justify-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Spanning Tree Path Cost to Root</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Total cumulative cost for each switch to reach the Root Bridge (SW3).</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="costChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100">
+                        SW2 prefers traveling through SW4 via Gigabit (Cost 4+4=8) rather than traversing its direct FastEthernet link to SW3 (Cost 19).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">🔍</span> STP Topology Analyzer
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Click on any switch below to analyze its STP port roles, states, and the logic used to determine them based on the video's network diagram.</p>
+
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Interactive Diagram (No SVG) -->
+                <div class="w-full lg:w-1/2 bg-slate-900 rounded-xl p-8 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[400px] relative">
+                    
+                    <div class="grid grid-cols-2 gap-x-20 gap-y-16 relative">
+                        
+                        <!-- SW1 (Top Left) -->
+                        <button onclick="analyzeSwitch('sw1')" id="node-sw1" class="w-24 h-24 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center border-2 border-slate-500 shadow-lg transition-all hover:bg-slate-600 z-10 relative">
+                            SW1
+                            <span class="text-[10px] font-mono font-normal mt-1">Cost: 19</span>
+                            <div class="absolute -right-10 top-1/2 text-[10px] text-slate-400 bg-slate-800 px-1 rounded">F0/4</div>
+                            <div class="absolute -bottom-6 text-[10px] text-slate-400 bg-slate-800 px-1 rounded">F0/1,2</div>
+                        </button>
+
+                        <!-- SW3 (Top Right - Root) -->
+                        <button onclick="analyzeSwitch('sw3')" id="node-sw3" class="w-24 h-24 rounded-lg bg-emerald-700 text-white font-bold flex flex-col items-center justify-center border-4 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all hover:bg-emerald-600 z-10 relative">
+                            SW3
+                            <span class="text-[10px] font-mono font-normal mt-1">Root Bridge</span>
+                            <div class="absolute -left-10 top-1/2 text-[10px] text-slate-400 bg-slate-800 px-1 rounded">F0/1</div>
+                            <div class="absolute -bottom-6 text-[10px] text-slate-400 bg-slate-800 px-1 rounded">G0/1</div>
+                        </button>
+
+                        <!-- SW2 (Bottom Left) -->
+                        <button onclick="analyzeSwitch('sw2')" id="node-sw2" class="w-24 h-24 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center border-2 border-slate-500 shadow-lg transition-all hover:bg-slate-600 z-10 relative">
+                            SW2
+                            <span class="text-[10px] font-mono font-normal mt-1">Cost: 8</span>
+                            <div class="absolute -top-6 text-[10px] text-slate-400 bg-slate-800 px-1 rounded">F0/1,2</div>
+                            <div class="absolute -right-10 top-1/2 text-[10px] text-slate-400 bg-slate-800 px-1 rounded">G0/1</div>
+                        </button>
+
+                        <!-- SW4 (Bottom Right) -->
+                        <button onclick="analyzeSwitch('sw4')" id="node-sw4" class="w-24 h-24 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center border-2 border-slate-500 shadow-lg transition-all hover:bg-slate-600 z-10 relative">
+                            SW4
+                            <span class="text-[10px] font-mono font-normal mt-1">Cost: 4</span>
+                            <div class="absolute -top-6 text-[10px] text-slate-400 bg-slate-800 px-1 rounded">G0/2</div>
+                            <div class="absolute -left-10 top-1/2 text-[10px] text-slate-400 bg-slate-800 px-1 rounded">G0/1</div>
+                        </button>
+
+                        <!-- Abstract Lines using CSS absolute positioning behind nodes -->
+                        <div class="absolute top-12 left-12 w-full h-[2px] bg-slate-600 -z-10"></div> <!-- SW1 to SW3 (F0/4 - F0/1) -->
+                        <div class="absolute bottom-12 left-12 w-full h-[2px] bg-slate-600 -z-10"></div> <!-- SW2 to SW4 (G0/1 - G0/1) -->
+                        <div class="absolute left-12 top-12 h-full w-[2px] bg-slate-600 -z-10"></div> <!-- SW1 to SW2 (F0/1 - F0/1) -->
+                        <div class="absolute right-12 top-12 h-full w-[2px] bg-slate-600 -z-10"></div> <!-- SW3 to SW4 (G0/1 - G0/2) -->
+                        
+                        <!-- Diagonal SW2 to SW3 (F0/3 to F0/3) -->
+                        <div class="absolute top-1/2 left-1/2 w-[140%] h-[2px] bg-slate-600 -z-10 transform -translate-x-1/2 -translate-y-1/2 -rotate-45"></div>
+
+                    </div>
+                    
+                    <p class="absolute bottom-4 text-xs text-slate-500 italic mt-4">Lines represent physical connections. Not to scale.</p>
+                </div>
+
+                <!-- Analysis Results Panel -->
+                <div class="w-full lg:w-1/2 bg-blue-50 rounded-xl p-6 border border-blue-200 shadow-sm flex flex-col">
+                    <h4 id="analyzer-title" class="text-xl font-bold text-blue-800 mb-4 border-b border-blue-200 pb-2">Select a Switch</h4>
+                    <div id="analyzer-content" class="text-sm text-blue-900 space-y-4">
+                        <p>Click on any of the switches in the diagram to view a breakdown of its Root Cost calculations and Port Role logic.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">📝</span> Lab Tasks & Port Calculations
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress! Click on an accordion to reveal the exact mathematical logic used to determine the spanning tree topology.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Task 1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('stp_qa1', this)">
+                            <span class="pr-6">1. Turn off Link Lights in Packet Tracer. Which switch is the Root Bridge?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p><strong>To turn off link lights:</strong> Navigate to <code>Options > Preferences</code> and uncheck "Show Link Lights". This forces you to use the CLI rather than relying on visual green/amber dots.</p>
+                            <div class="bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded text-emerald-900 mt-2">
+                                <strong>Answer: SW3 is the Root Bridge.</strong><br>
+                                By checking the configuration or using <code>show spanning-tree</code>, you discover SW3 has a lower Bridge Priority configured (24576 + SysID 1 = 24577) than the default 32769 used by the other switches.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 2 (SW3) -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('stp_qa2', this)">
+                            <span>2. Identify the role of each port on SW3.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Because SW3 is the Root Bridge, it does not have a Root Port. The rule states that all active ports on a Root Bridge must be Designated Ports.</p>
+                            <ul class="font-mono text-xs space-y-1 bg-white p-3 rounded border border-slate-200 shadow-sm inline-block">
+                                <li><span class="text-blue-600 font-bold">F0/1:</span> Designated (Forwarding)</li>
+                                <li><span class="text-blue-600 font-bold">F0/2:</span> Designated (Forwarding)</li>
+                                <li><span class="text-blue-600 font-bold">F0/3:</span> Designated (Forwarding)</li>
+                                <li><span class="text-blue-600 font-bold">G0/1:</span> Designated (Forwarding)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 3 (SW4) -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('stp_qa3', this)">
+                            <span>3. Identify the role of each port on SW4.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <ul class="font-mono text-xs space-y-2 bg-white p-3 rounded border border-slate-200 shadow-sm">
+                                <li><span class="text-emerald-600 font-bold">G0/2:</span> Root Port (Forwarding)<br>
+                                <span class="font-sans text-slate-500">Logic: Connects directly to SW3 via Gigabit. Path Cost = 4. Lowest cost to root.</span></li>
+                                
+                                <li><span class="text-blue-600 font-bold">G0/1:</span> Designated (Forwarding)<br>
+                                <span class="font-sans text-slate-500">Logic: Connects to SW2. SW4's cost to root is 4. SW2's cost is 8. SW4 has the lower cost, so it claims the Designated Port for this segment.</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 4 (SW2) -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('stp_qa4', this)">
+                            <span class="pr-6">4. Identify the role of each port on SW2.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <ul class="font-mono text-xs space-y-3 bg-white p-3 rounded border border-slate-200 shadow-sm">
+                                <li><span class="text-emerald-600 font-bold">G0/1:</span> Root Port (Forwarding)<br>
+                                <span class="font-sans text-slate-500">Logic: Even though F0/3 goes directly to the Root Bridge, FastEthernet costs 19. Taking the Gigabit path through SW4 costs 4+4=8. 8 is lower than 19.</span></li>
+                                
+                                <li><span class="text-blue-600 font-bold">F0/1 & F0/2:</span> Designated (Forwarding)<br>
+                                <span class="font-sans text-slate-500">Logic: Connect to SW1. SW2's cost to root is 8. SW1's cost is 19. SW2 wins and claims Designated for these segments.</span></li>
+
+                                <li><span class="text-red-500 font-bold">F0/3:</span> Non-Designated / Alternate (Blocking)<br>
+                                <span class="font-sans text-slate-500">Logic: Connects directly to SW3. Since SW3 is root, SW3 claims the Designated port. SW2 puts this redundant link in Blocking state to stop a loop.</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 5 (SW1) -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa5', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('stp_qa5', this)">
+                            <span class="pr-6">5. Identify the role of each port on SW1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <ul class="font-mono text-xs space-y-3 bg-white p-3 rounded border border-slate-200 shadow-sm">
+                                <li><span class="text-emerald-600 font-bold">F0/4:</span> Root Port (Forwarding)<br>
+                                <span class="font-sans text-slate-500">Logic: Both F0/3 and F0/4 connect directly to SW3 (Cost 19). Tiebreaker #1: Lowest neighbor bridge ID (Tie, both SW3). Tiebreaker #2: Lowest neighbor port ID. SW3's F0/1 is lower than its F0/2. Since SW1's F0/4 connects to SW3's F0/1, it becomes the Root Port.</span></li>
+                                
+                                <li><span class="text-red-500 font-bold">F0/3:</span> Non-Designated / Alternate (Blocking)<br>
+                                <span class="font-sans text-slate-500">Logic: Lost the tiebreaker to F0/4. Redundant link to root is blocked.</span></li>
+
+                                <li><span class="text-red-500 font-bold">F0/1 & F0/2:</span> Non-Designated / Alternate (Blocking)<br>
+                                <span class="font-sans text-slate-500">Logic: Connect to SW2. SW1 cost = 19. SW2 cost = 8. SW2 wins Designated role. SW1 must block.</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">show spanning-tree</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays STP status, root bridge info, and the role/state/cost of every local interface.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">show spanning-tree vlan [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Filters the standard spanning-tree output to only show details for a specific VLAN (PVST+).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">show spanning-tree detail</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Provides verbose information, including the total calculated Path Cost to the Root.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">show spanning-tree summary</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Shows a high-level count of how many ports are in Blocking, Listening, Learning, and Forwarding states.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+            
+            <div class="mt-8 bg-slate-50 p-6 rounded-lg border border-slate-200 text-sm">
+                <h4 class="font-bold text-slate-800 mb-3">Understanding the Output</h4>
+                <div class="cli-window text-xs">
+                    <span class="cli-comment">SW1# show spanning-tree</span><br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment">Interface&nbsp;&nbsp;&nbsp;&nbsp;Role Sts Cost&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Prio.Nbr Type</span><br>
+                    <span class="cli-comment">------------------- ---- --- --------- -------- --------------------------------</span><br>
+                    Fa0/1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Altn BLK 19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;128.1&nbsp;&nbsp;&nbsp;&nbsp;P2p<br>
+                    Fa0/4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Root FWD 19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;128.4&nbsp;&nbsp;&nbsp;&nbsp;P2p
+                </div>
+                <p class="mt-3 text-slate-600"><strong>Note:</strong> Packet Tracer uses "Altn" (Alternate) instead of "Non-Designated", but they both mean the port is in a Blocking (BLK) state.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your memory of STP costs and election tiebreakers.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('costChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['SW3 (Root)', 'SW4', 'SW2', 'SW1'],
+                datasets: [
+                    {
+                        label: 'Path Cost to Root',
+                        data: [0, 4, 8, 19],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'], // Emerald, Blue, Amber, Red
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 20, 
+                        ticks: { stepSize: 4 },
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'Cumulative Cost', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` Path Cost: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-blue-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-blue-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'view-theory') { initChart(); }
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- STP Topology Logic ---
+    const switchLogic = {
+        sw3: {
+            title: "SW3 (Root Bridge)",
+            desc: "SW3 won the election because it has the lowest Bridge Priority (24577). Because it is the Root Bridge, it has no Root Ports. All active ports become <strong>Designated Ports (Forwarding)</strong>.",
+            code: "F0/1: Designated (FWD)\nF0/2: Designated (FWD)\nF0/3: Designated (FWD)\nG0/1: Designated (FWD)"
+        },
+        sw4: {
+            title: "SW4 (Cost: 4)",
+            desc: "SW4 connects directly to SW3 via Gigabit (Cost 4). G0/2 is the <strong>Root Port</strong>. SW4 connects to SW2 via G0/1. Since SW4's cost to root (4) is lower than SW2's (8), SW4 claims the <strong>Designated Port</strong> for that segment.",
+            code: "G0/2: Root Port (FWD)     [Cost: 4]\nG0/1: Designated (FWD)    [Faces SW2]"
+        },
+        sw2: {
+            title: "SW2 (Cost: 8)",
+            desc: "SW2's direct path to SW3 is FastEthernet (Cost 19). Traveling through SW4 via Gigabit costs 4+4=8. Therefore, G0/1 is the <strong>Root Port</strong>. SW2 beats SW1's cost (8 vs 19), so it claims Designated for the F0/1 and F0/2 links. The redundant direct link (F0/3) is put in Blocking.",
+            code: "G0/1: Root Port (FWD)     [Cost: 8 via SW4]\nF0/1: Designated (FWD)    [Faces SW1]\nF0/2: Designated (FWD)    [Faces SW1]\nF0/3: Alternate (BLK)     [Blocked redundant link to SW3]"
+        },
+        sw1: {
+            title: "SW1 (Cost: 19)",
+            desc: "SW1's lowest cost to root is 19 via F0/3 or F0/4. Tiebreakers apply: Both connect to SW3, but SW3's F0/1 port ID is lower than F0/2. Therefore, F0/4 (connected to F0/1) becomes the <strong>Root Port</strong>. All other ports lose their segment elections and become Blocking.",
+            code: "F0/4: Root Port (FWD)     [Wins neighbor port ID tiebreaker]\nF0/3: Alternate (BLK)     [Lost tiebreaker]\nF0/1: Alternate (BLK)     [Lost cost election to SW2]\nF0/2: Alternate (BLK)     [Lost cost election to SW2]"
+        }
+    };
+
+    function analyzeSwitch(swId) {
+        // Reset node highlights
+        document.querySelectorAll('.topo-node').forEach(node => {
+            node.classList.remove('active');
+            node.classList.add('opacity-50'); // dim all
+        });
+        
+        // Highlight active
+        const activeNode = document.getElementById('node-' + swId);
+        activeNode.classList.remove('opacity-50');
+        activeNode.classList.add('active');
+
+        // Update Panel
+        const data = switchLogic[swId];
+        const panel = document.getElementById('analyzer-content');
+        document.getElementById('analyzer-title').innerText = data.title;
+        
+        panel.innerHTML = `
+            <p>${data.desc}</p>
+            <div class="bg-white p-4 rounded-lg border border-blue-200 font-mono text-xs text-slate-800 whitespace-pre-wrap shadow-sm">${data.code}</div>
+        `;
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('stp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Render Flashcards
+        const flashcards = [
+            { q: "What two components make up the Bridge ID (BID)?", a: "<strong>1. Bridge Priority</strong> (Default 32768, plus extended system ID/VLAN)<br><strong>2. MAC Address</strong> (Used as tiebreaker, lowest wins)" },
+            { q: "What is the STP cost of a FastEthernet (100 Mbps) link?", a: "<strong>19</strong>" },
+            { q: "What is the STP cost of a GigabitEthernet (1 Gbps) link?", a: "<strong>4</strong>" },
+            { q: "If a non-root switch has two links to the root bridge with identical costs, what is the first tiebreaker used to select the Root Port?", a: "<strong>Lowest Neighbor Bridge ID.</strong><br><br>If both links connect to the <em>same</em> neighbor switch, it proceeds to tiebreaker #2: Lowest Neighbor Port ID." },
+            { q: "What does the abbreviation 'Altn' mean in the `show spanning-tree` output?", a: "<strong>Alternate Port.</strong><br><br>This indicates a Non-Designated port that has been placed in a Blocking (BLK) state to prevent a loop." },
+            { q: "Why would you turn off link lights in Packet Tracer when studying STP?", a: "Packet Tracer visually uses green/amber dots to show Forwarding/Blocking states. Turning them off forces you to manually calculate the topology and verify using CLI <code>show</code> commands, mimicking real-world exams." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-blue-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <div class="absolute w-full h-full bg-blue-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-blue-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('stp_progress_' + id, cb.checked);
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        analyzeSwitch('sw3'); // Initialize topology panel
+    });
+</script>
+</body>
+</html>

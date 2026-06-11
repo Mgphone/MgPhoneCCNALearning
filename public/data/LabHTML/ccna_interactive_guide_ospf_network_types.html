@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: OSPF Configuration (Part 3)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.tab-content.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #faf5ff; color: #7e22ce; border-left-color: #7e22ce; font-weight: 600; } /* Purple Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #c084fc; font-weight: bold; } /* Purple 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #9333ea !important; box-shadow: 0 0 15px rgba(147, 51, 234, 0.5); }
+.node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+.node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(147, 51, 234, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(147, 51, 234, 0.8); }
+}
+
+@keyframes flowTraffic {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 0%; }
+}
+.traffic-flow {
+    background: linear-gradient(90deg, rgba(147,51,234,1) 0%, rgba(243,232,255,1) 50%, rgba(147,51,234,1) 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1s linear infinite;
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-purple-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-purple-500">🕸️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-purple-400 font-semibold tracking-wide uppercase mt-1">OSPF Config (3)</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-purple-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Network Types & LSA
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Troubleshooting Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">OSPF Network Types & Troubleshooting</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-purple-500 pl-4 bg-purple-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Dive deeper into OSPF topology mechanics. Learn the critical differences between Broadcast and Point-to-Point networks, how mismatched timers prevent adjacencies, and explore the core LSA types that build the OSPF database.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🧠</span> Advanced OSPF Mechanics
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">OSPF Network Types</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-purple-700">Broadcast (Default for Ethernet)</strong>
+                                <span>Designed for multi-access segments (like switches). It <strong>requires</strong> the election of a Designated Router (DR) and Backup Designated Router (BDR) to reduce LSA flooding. Default Timers: 10s Hello, 40s Dead.</span>
+                            </li>
+                            <li class="flex flex-col pb-2">
+                                <strong class="text-purple-700">Point-to-Point (Default for Serial/HDLC)</strong>
+                                <span>Designed for direct router-to-router links. It <strong>does not</strong> elect a DR/BDR because there are only two devices on the link. Default Timers: 10s Hello, 40s Dead.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-red-900 mb-1 flex items-center gap-2"><span>⚠️</span> Adjacency Killers</h4>
+                        <p class="text-sm text-red-800 mb-2">Two OSPF routers will <strong>refuse</strong> to become neighbors if their <code>Hello</code> and <code>Dead</code> timers do not match exactly. Furthermore, if the <em>Network Types</em> mismatch (e.g., Broadcast vs. P2P), the routers might form an adjacency but will fail to successfully install routes in the routing table due to database inconsistencies.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Link State Database (LSDB) Overview</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">The core LSA types found in a standard CCNA Single-Area OSPF configuration.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="lsaChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-purple-50 p-3 rounded border border-purple-200 text-purple-900 shadow-sm">
+                        Use <code>show ip ospf database</code> to view these. Type 1 represents routers, Type 2 represents the DR's multi-access network, and Type 5 represents external routes (like an injected default route).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🔍</span> OSPF Troubleshooting Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">The lab features a pre-configured network with several intentional misconfigurations. Click through the steps to diagnose and repair the OSPF domain.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playOspfStep(1)" id="btn-ospf-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Serial Link Config</button>
+                <button onclick="playOspfStep(2)" id="btn-ospf-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Network Type Mismatch</button>
+                <button onclick="playOspfStep(3)" id="btn-ospf-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Timer Mismatch</button>
+                <button onclick="playOspfStep(4)" id="btn-ospf-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Type 5 LSA Fix</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Topology -->
+                <div class="relative w-full max-w-lg h-72 mx-auto mt-4">
+                    
+                    <div id="node-r1" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-full bg-slate-700 text-white font-bold flex items-center justify-center text-sm border-4 border-slate-500 z-10 transition-all shadow-lg">R1</div>
+                    <div id="node-r2" class="absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-slate-700 text-white font-bold flex items-center justify-center text-sm border-4 border-slate-500 z-10 transition-all shadow-lg">R2</div>
+                    <div id="node-r3" class="absolute top-12 right-1/3 transform translate-x-1/2 w-16 h-16 rounded-full bg-slate-700 text-white font-bold flex items-center justify-center text-sm border-4 border-slate-500 z-10 transition-all shadow-lg">R3</div>
+                    <div id="node-r4" class="absolute bottom-12 right-1/3 transform translate-x-1/2 w-16 h-16 rounded-full bg-slate-700 text-white font-bold flex items-center justify-center text-sm border-4 border-slate-500 z-10 transition-all shadow-lg">R4</div>
+                    <div id="node-r5" class="absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-full bg-slate-700 text-white font-bold flex items-center justify-center text-sm border-4 border-slate-500 z-10 transition-all shadow-lg">R5</div>
+                    <div id="node-isp" class="absolute -top-4 right-0 transform -translate-y-1/2 w-16 h-12 rounded bg-slate-800 text-white font-bold flex items-center justify-center text-xs border-2 border-slate-600 z-10 transition-all opacity-50">ISP</div>
+
+                    <!-- Links -->
+                    <!-- R1-R2 Serial -->
+                    <div id="link-r1-r2" class="absolute top-1/2 left-8 w-[100px] h-1 bg-red-500 origin-left transition-all z-0 flex items-center justify-center"><span class="text-[10px] bg-slate-800 px-1 text-slate-300 font-mono -translate-y-4">s0/0/0</span></div>
+                    
+                    <!-- R2-R3 Eth -->
+                    <div id="link-r2-r3" class="absolute top-[35%] left-[30%] w-[120px] h-1 bg-green-500 origin-bottom-left -rotate-30 transition-all z-0"></div>
+                    <!-- R2-R4 Eth -->
+                    <div id="link-r2-r4" class="absolute bottom-[35%] left-[30%] w-[120px] h-1 bg-green-500 origin-top-left rotate-30 transition-all z-0"></div>
+                    
+                    <!-- R3-R4 Eth (Mismatch) -->
+                    <div id="link-r3-r4" class="absolute top-1/2 right-[25%] transform -translate-y-1/2 w-[90px] h-1 bg-amber-500 rotate-90 transition-all z-0 border border-dashed border-amber-300"></div>
+
+                    <!-- R2-R5 Eth -->
+                    <div id="link-r2-r5" class="absolute top-1/2 left-[30%] w-[250px] h-1 bg-slate-600 transition-all z-0 opacity-30"></div>
+                    <!-- R4-R5 Eth -->
+                    <div id="link-r4-r5" class="absolute bottom-[35%] right-[10%] w-[120px] h-1 bg-red-500 origin-bottom-right -rotate-30 transition-all z-0 opacity-30"></div>
+                    
+                    <!-- R5 to ISP -->
+                    <div id="link-r5-isp" class="absolute top-8 right-8 w-1 h-12 bg-slate-600 transition-all z-0 opacity-50"></div>
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="ospf-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to begin diagnosing the OSPF topology.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-purple-500">💻</span> Troubleshooting CLI Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands used to repair the broken network adjacencies.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-purple-600 border-b-2 border-purple-600 transition-colors">R1 & R2 (Serial Link)</button>
+                <button onclick="switchDeviceTab('r3', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R3 (Network Type)</button>
+                <button onclick="switchDeviceTab('r5', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R5 (Timers & Route)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Establish IP connectivity over the serial link, set the DCE clock rate, and enable OSPF.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! On R1 (Verified as the DCE end via `show controllers s0/0/0`)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface s0/0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 192.168.12.1 255.255.255.252<br>
+                    <span class="cli-prompt">R1(config-if)#</span> clock rate 128000<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip ospf 1 area 0<br><br>
+
+                    <span class="cli-comment">! On R2 (DTE end, no clock rate required)</span><br>
+                    <span class="cli-prompt">R2(config)#</span> interface s0/0/0<br>
+                    <span class="cli-prompt">R2(config-if)#</span> ip address 192.168.12.2 255.255.255.252<br>
+                    <span class="cli-prompt">R2(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">R2(config-if)#</span> ip ospf 1 area 0<br>
+                </div>
+                <div class="bg-purple-50 p-3 mt-4 border border-purple-200 rounded text-purple-800 text-sm">
+                    <strong>Note:</strong> Serial connections use HDLC encapsulation by default. OSPF automatically detects this and assigns a network type of <code>POINT_TO_POINT</code>.
+                </div>
+            </div>
+
+            <!-- R3 Tab -->
+            <div id="config-r3" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Fix the network type mismatch. R3's Gigabit interface was manually (and incorrectly) set to point-to-point, conflicting with R4's default broadcast type.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! Verify the problem on R3</span><br>
+                    <span class="cli-prompt">R3#</span> show ip ospf interface g0/1<br>
+                    <span class="cli-comment">GigabitEthernet0/1 is up, line protocol is up</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;Internet Address 10.0.34.3/24, Area 0</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;Process ID 3, Router ID 3.3.3.3, <span class="text-red-400 font-bold">Network Type POINT_TO_POINT</span></span><br><br>
+
+                    <span class="cli-comment">! Remove the bad configuration to revert to default Broadcast</span><br>
+                    <span class="cli-prompt">R3(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R3(config-if)#</span> no ip ospf network point-to-point<br><br>
+
+                    <span class="cli-comment">! Verify R4 now receives the routes successfully</span><br>
+                    <span class="cli-prompt">R4#</span> show ip route<br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment">O    10.0.2.0/24 [110/2] via 10.0.34.3, 00:00:12, GigabitEthernet0/1</span>
+                </div>
+            </div>
+
+            <!-- R5 Tab -->
+            <div id="config-r5" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Fix mismatched timers preventing adjacency, and add the missing default route required for the ASBR injection.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! 1. Fix the mismatched timers on G0/0</span><br>
+                    <span class="cli-prompt">R5#</span> show ip ospf interface g0/0<br>
+                    <span class="cli-comment">&nbsp;&nbsp;Timer intervals configured, <span class="text-red-400 font-bold">Hello 5, Dead 20</span></span><br><br>
+                    
+                    <span class="cli-prompt">R5(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R5(config-if)#</span> no ip ospf hello-interval<br>
+                    <span class="cli-prompt">R5(config-if)#</span> no ip ospf dead-interval<br>
+                    <span class="cli-comment">%OSPF-5-ADJCHG: Process 1, Nbr 2.2.2.2 on GigabitEthernet0/0 from LOADING to FULL</span><br><br>
+
+                    <span class="cli-comment">! 2. R5 has 'default-information originate' but lacks a static route. Add it.</span><br>
+                    <span class="cli-prompt">R5(config)#</span> ip route 0.0.0.0 0.0.0.0 203.0.113.2<br><br>
+
+                    <span class="cli-comment">! Now R5 will generate a Type 5 LSA and share it with the OSPF domain!</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TAB 4: Lab Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete the troubleshooting tasks.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('acc-1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('ospf3_qa1', this)">
+                            <span class="pr-6">1. Configure the serial connection between R1 and R2 and enable OSPF.</span>
+                        </div>
+                        <span class="text-2xl text-purple-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Verify which side is DCE using <code>show controllers s0/0/0</code>. Set the <code>clock rate 128000</code> on the DCE side (R1). Apply the IP addresses and use <code>ip ospf 1 area 0</code> directly on the interface to enable routing.</p>
+                            <p class="font-bold text-purple-700">OSPF Note: Serial links automatically use the Point-to-Point network type, meaning no DR or BDR is elected.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('acc-2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('ospf3_qa2', this)">
+                            <span>2. R4 has an adjacency with R3, but isn't learning routes. Why?</span>
+                        </div>
+                        <span class="text-2xl text-purple-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Diagnosis: Network Type Mismatch.</strong></p>
+                            <p>By running <code>show ip ospf interface</code> on both routers, we see R4 is using the default <strong>BROADCAST</strong> type for Ethernet, while R3 was manually forced to <strong>POINT_TO_POINT</strong>.</p>
+                            <p>Because their Hello timers happen to match (10s), the adjacency forms. However, because their network types differ, they expect different LSA structures (Broadcast expects a Type 2 Network LSA from a DR; P2P does not). This inconsistency prevents routes from being installed in the routing table. Removing the P2P command on R3 fixes it.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('acc-3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('ospf3_qa3', this)">
+                            <span>3. R2 and R4 won't become neighbors with R5. Fix the issue.</span>
+                        </div>
+                        <span class="text-2xl text-purple-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p><strong>Diagnosis: Timer Mismatch.</strong></p>
+                            <p>Checking R5 with <code>show ip ospf interface g0/0</code> reveals its timers were manually changed to Hello 5, Dead 20. OSPF has a strict rule: Hello and Dead intervals <strong>MUST</strong> match for an adjacency to form. Using <code>no ip ospf hello-interval</code> and <code>no ip ospf dead-interval</code> on R5 reverts them to the default 10/40, instantly bringing the neighbors up.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('acc-4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('ospf3_qa4', this)">
+                            <span class="pr-6">4. PCs cannot reach the external server (8.8.8.8) despite default-information originate.</span>
+                        </div>
+                        <span class="text-2xl text-purple-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Diagnosis: Missing actual default route.</strong></p>
+                            <p>R5 has the <code>default-information originate</code> command configured under its OSPF process. However, this command only injects a default route if the router <em>actually has a default route in its own routing table</em>. Because R5 lacked a static default route to the ISP, it had nothing to advertise.</p>
+                            <p>Adding <code>ip route 0.0.0.0 0.0.0.0 [isp-ip]</code> to R5 triggers OSPF to generate a Type 5 AS-External LSA and flood it to the rest of the network.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">clock rate [speed]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets the clock rate for a serial connection. Must be applied on the DCE end.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">ip ospf network [type]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Overrides the default OSPF network type (e.g., changing Ethernet to point-to-point).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">ip ospf hello-interval [sec]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Changes the timer for sending Hello packets. Must match neighbor exactly.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">show controllers [interface]</td>
+                            <td class="px-6 py-4"><span class="bg-purple-50 text-purple-800 text-xs px-2 py-1 rounded border border-purple-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Examines physical hardware details. Used to verify if a serial link is DCE or DTE.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">show ip ospf database</td>
+                            <td class="px-6 py-4"><span class="bg-purple-50 text-purple-800 text-xs px-2 py-1 rounded border border-purple-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the Link State Database (LSDB) showing Type 1, 2, and 5 LSAs.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">show ip ospf interface [id]</td>
+                            <td class="px-6 py-4"><span class="bg-purple-50 text-purple-800 text-xs px-2 py-1 rounded border border-purple-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Vital troubleshooting command. Shows Network Type, Timers, and DR/BDR roles.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of OSPF network types and LSA structures.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('lsaChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Type 1 (Router LSA)', 'Type 2 (Network LSA)', 'Type 5 (AS External LSA)'],
+                datasets: [
+                    {
+                        label: 'LSA Distribution Example',
+                        data: [5, 3, 1], // Example counts: 5 routers, 3 broadcast segments, 1 default route
+                        backgroundColor: ['#9333ea', '#d946ef', '#cbd5e1'], // Purple, Fuchsia, Slate
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-purple-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-purple-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playOspfStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-purple-600', 'border-purple-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-purple-600', 'border-purple-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- OSPF Tracker Logic ---
+    function playOspfStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-ospf-'+i);
+            if(btn) {
+                btn.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-ospf-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-purple-600', 'text-white', 'border-purple-600');
+        }
+
+        const l12 = document.getElementById('link-r1-r2');
+        const l23 = document.getElementById('link-r2-r3');
+        const l24 = document.getElementById('link-r2-r4');
+        const l34 = document.getElementById('link-r3-r4');
+        const l25 = document.getElementById('link-r2-r5');
+        const l45 = document.getElementById('link-r4-r5');
+        const lisp = document.getElementById('link-r5-isp');
+        
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        const r3 = document.getElementById('node-r3');
+        const r4 = document.getElementById('node-r4');
+        const r5 = document.getElementById('node-r5');
+        const isp = document.getElementById('node-isp');
+        
+        const desc = document.getElementById('ospf-desc');
+
+        // Reset visual classes
+        [r1, r2, r3, r4, r5, isp].forEach(r => {
+            r.classList.remove('node-highlight', 'node-dim', 'node-error', 'bg-emerald-600', 'border-emerald-400');
+            r.classList.add('bg-slate-700', 'border-slate-500');
+        });
+        
+        [l12, l23, l24, l34, l25, l45, lisp].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|bg-slate-600|bg-red-500|bg-amber-500|bg-green-500|opacity-30/g, '').trim() + " bg-slate-600 opacity-30";
+            l.classList.remove('border-dashed', 'border-amber-300');
+        });
+
+        if (stepIndex === 1) {
+            r1.classList.add('node-highlight', 'bg-blue-600', 'border-blue-400'); 
+            r2.classList.add('node-highlight', 'bg-blue-600', 'border-blue-400');
+            r1.classList.remove('bg-slate-700', 'border-slate-500');
+            r2.classList.remove('bg-slate-700', 'border-slate-500');
+            
+            l12.classList.replace('bg-slate-600', 'bg-green-500');
+            l12.classList.remove('opacity-30');
+            
+            desc.innerHTML = "<span class='text-purple-400 font-bold'>Step 1 (Serial Link Config):</span> R1 is the DCE (requires <code>clock rate 128000</code>). R2 is the DTE. Serial links default to HDLC encapsulation, which OSPF natively detects as a <strong>Point-to-Point</strong> network type. No DR or BDR is elected here.";
+        } else if (stepIndex === 2) {
+            r3.classList.add('node-error'); 
+            r4.classList.add('node-highlight', 'bg-blue-600', 'border-blue-400');
+            r4.classList.remove('bg-slate-700', 'border-slate-500');
+
+            l34.classList.replace('bg-slate-600', 'bg-amber-500');
+            l34.classList.add('border-dashed', 'border-amber-300');
+            l34.classList.remove('opacity-30');
+            
+            desc.innerHTML = "<span class='text-amber-400 font-bold'>Step 2 (Network Type Mismatch):</span> R4 uses the default Broadcast type for Ethernet. R3 was forced to Point-to-Point. Because their Hello timers (10s) match, they form an adjacency (Full). But the topology breaks because R4 expects a Type 2 LSA (from a DR), while R3 doesn't send one. Removing P2P from R3 fixes the routes.";
+        } else if (stepIndex === 3) {
+            r5.classList.add('node-error');
+            r2.classList.add('node-highlight', 'bg-blue-600', 'border-blue-400');
+            r4.classList.add('node-highlight', 'bg-blue-600', 'border-blue-400');
+            r2.classList.remove('bg-slate-700', 'border-slate-500');
+            r4.classList.remove('bg-slate-700', 'border-slate-500');
+
+            l25.classList.replace('bg-slate-600', 'bg-red-500');
+            l45.classList.replace('bg-slate-600', 'bg-red-500');
+            l25.classList.remove('opacity-30');
+            l45.classList.remove('opacity-30');
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 3 (Timer Mismatch):</span> R5's timers were manually changed to Hello 5 / Dead 20. OSPF strictly requires matching timers to form an adjacency. The links remain disconnected until we issue <code>no ip ospf hello-interval</code> to restore the default 10/40s.";
+        } else if (stepIndex === 4) {
+            [r1, r2, r3, r4, r5].forEach(r => {
+                r.classList.add('node-highlight', 'bg-blue-600', 'border-blue-400');
+                r.classList.remove('bg-slate-700', 'border-slate-500', 'node-error');
+            });
+            isp.classList.remove('opacity-50');
+
+            [l12, l23, l24, l34, l25, l45].forEach(l => {
+                l.classList.replace('bg-slate-600', 'bg-green-500');
+                l.classList.remove('opacity-30', 'bg-red-500', 'bg-amber-500', 'border-dashed');
+            });
+            
+            lisp.classList.replace('bg-slate-600', 'traffic-flow');
+            lisp.classList.remove('opacity-30');
+
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Step 4 (Type 5 LSA Fix):</span> R5 had <code>default-information originate</code> configured, but wasn't advertising the route. Why? Because it lacked a static route to the ISP! Once we add <code>ip route 0.0.0.0 0.0.0.0 [ISP]</code>, R5 generates a Type 5 AS-External LSA and the whole network gains internet access.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ospf3_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is the default OSPF network type for Ethernet interfaces?", a: "<strong>Broadcast</strong><br><br>It assumes a multi-access network (like a switch) and requires a DR/BDR election." },
+            { q: "What is the default OSPF network type for Serial interfaces (HDLC/PPP)?", a: "<strong>Point-to-Point</strong><br><br>It assumes a direct connection between only two routers, skipping the DR/BDR election entirely." },
+            { q: "What happens if OSPF Hello or Dead timers do not match between two routers?", a: "The routers will <strong>refuse to form an OSPF adjacency</strong>. They will be stuck in INIT or DOWN state." },
+            { q: "What happens if the OSPF Network Types do not match (e.g., Broadcast vs Point-to-Point)?", a: "Because default timers are identical (10/40), they <em>will</em> form a Full adjacency. However, the <strong>routes will not install correctly</strong> because the LSA database logic conflicts." },
+            { q: "What does an OSPF Type 5 LSA represent?", a: "<strong>AS External Routes</strong><br><br>Routes injected into the OSPF domain from an outside source, such as a static default route." },
+            { q: "How do you check if a serial interface is providing the clock rate (DCE)?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>show controllers [interface]</code>" }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-purple-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-purple-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-purple-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ospf3_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playOspfStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

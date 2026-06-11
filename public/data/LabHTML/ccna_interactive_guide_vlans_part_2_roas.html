@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: VLANs Part 2 (ROAS)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #fdf4ff; color: #c026d3; border-left-color: #c026d3; font-weight: 600; } /* Fuchsia Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #e879f9; font-weight: bold; } /* Fuchsia 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #c026d3 !important; box-shadow: 0 0 15px rgba(192, 38, 211, 0.5); }
+.node-dim { opacity: 0.3; filter: grayscale(100%); transition: all 0.3s; }
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(192, 38, 211, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(192, 38, 211, 0.8); }
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-fuchsia-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-fuchsia-500">🥢</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-fuchsia-400 font-semibold tracking-wide uppercase mt-1">VLANs Part 2 (ROAS)</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-fuchsia-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Concepts & Trunking
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> ROAS Flow Tracker
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Router on a Stick (ROAS) & Trunking</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-fuchsia-500 pl-4 bg-fuchsia-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Scale your network by learning how to route multiple VLANs over a single physical link. This module covers 802.1Q trunking, Native VLANs, and deploying virtual Subinterfaces on a Cisco router.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">🧠</span> The Problem with Legacy Routing
+            </h3>
+            <p class="text-slate-700 mb-6 leading-relaxed">
+                In VLANs Part 1, we used a separate physical cable from the switch to the router for *every* VLAN. If a company scales to 50 VLANs, a router would need 50 physical interfaces, which is impossible and expensive. The solution is <strong>802.1Q Trunking</strong> and <strong>Router-on-a-Stick</strong>.
+            </p>
+
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="w-full md:w-1/2">
+                    <div class="chart-container">
+                        <canvas id="roasChart"></canvas>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">How ROAS Works</h4>
+                        <ul class="text-sm space-y-3 text-slate-700">
+                            <li><strong>Subinterfaces:</strong> Instead of physical ports, we divide one router port (e.g., <code>G0/0</code>) into multiple virtual interfaces (e.g., <code>G0/0.10</code>).</li>
+                            <li><strong>802.1Q Encapsulation:</strong> The switch tags frames with their VLAN ID. The router reads the tag, routes the packet internally, re-tags it for the destination VLAN, and sends it back down the "stick".</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-fuchsia-50 border border-fuchsia-200 p-4 rounded-xl shadow-sm text-sm">
+                        <h4 class="font-bold text-fuchsia-900 mb-1">Trunking Security</h4>
+                        <p class="text-fuchsia-800 mb-2">By default, trunks allow all VLANs. Best practice is to manually specify an <strong>allowed list</strong> to prune unnecessary traffic.</p>
+                        <p class="text-fuchsia-800">You should also change the <strong>Native VLAN</strong> (untagged traffic) from the default VLAN 1 to a completely unused, "dead" VLAN (e.g., VLAN 1001) to prevent VLAN hopping attacks.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TRAFFIC TRACKER -->
+    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">🔍</span> ROAS Traffic Flow Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how a single physical link handles traffic belonging to multiple subnets. PC1 (VLAN 10) wants to talk to PC5 (VLAN 20) located on another switch.</p>
+
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playRoasStep(1)" id="btn-roas-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Ingress SW1</button>
+                <button onclick="playRoasStep(2)" id="btn-roas-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Trunk to SW2</button>
+                <button onclick="playRoasStep(3)" id="btn-roas-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Up the Stick (R1)</button>
+                <button onclick="playRoasStep(4)" id="btn-roas-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Down the Stick</button>
+            </div>
+
+            <div class="bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Diagram Elements -->
+                <div id="node-r1" class="w-24 h-24 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg mb-8 border-4 border-blue-400 z-10 shadow-lg">R1<span class="text-[10px] font-mono">ROAS</span></div>
+                
+                <div class="flex w-full justify-center gap-24 mb-12">
+                    <div id="node-sw1" class="w-32 h-16 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-slate-500 z-10 shadow-lg">SW1<span class="text-[10px] font-mono">Access Switch</span></div>
+                    <div id="node-sw2" class="w-32 h-16 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-slate-500 z-10 shadow-lg">SW2<span class="text-[10px] font-mono">Core/Dist Switch</span></div>
+                </div>
+
+                <div class="flex w-full justify-around mt-4">
+                    <div id="node-pc1" class="w-16 h-16 rounded-lg bg-slate-600 text-white flex flex-col items-center justify-center border-2 border-slate-400 z-10 shadow-md">
+                        <span class="font-bold">PC1</span><span class="text-[10px] text-sky-300 font-mono">VLAN 10</span>
+                    </div>
+                    <div id="node-pc5" class="w-16 h-16 rounded-lg bg-slate-600 text-white flex flex-col items-center justify-center border-2 border-slate-400 z-10 shadow-md">
+                        <span class="font-bold">PC5</span><span class="text-[10px] text-emerald-300 font-mono">VLAN 20</span>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Overlay -->
+                <div id="roas-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/90 border border-slate-600 p-4 rounded-lg backdrop-blur-sm transition-all shadow-xl">
+                    Click step 1 to begin the simulation.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="view-config" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-fuchsia-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the specific commands to configure Trunks, Native VLANs, and Router Subinterfaces.</p>
+            </div>
+            
+            <!-- Custom Tabs -->
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-fuchsia-600 border-b-2 border-fuchsia-600 transition-colors">Router 1 (R1)</button>
+                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Switch 1 (SW1)</button>
+                <button onclick="switchDeviceTab('sw2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Switch 2 (SW2)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Implement Router on a Stick by configuring dot1q subinterfaces.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Enable the physical interface (No IP needed here)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! VLAN 10 Subinterface</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0.10<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> encapsulation dot1q 10<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> ip address 10.0.0.62 255.255.255.192<br><br>
+
+                    <span class="cli-comment">! VLAN 20 Subinterface</span><br>
+                    <span class="cli-prompt">R1(config-subif)#</span> interface g0/0.20<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> encapsulation dot1q 20<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> ip address 10.0.0.126 255.255.255.192<br><br>
+
+                    <span class="cli-comment">! VLAN 30 Subinterface</span><br>
+                    <span class="cli-prompt">R1(config-subif)#</span> interface g0/0.30<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> encapsulation dot1q 30<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> ip address 10.0.0.190 255.255.255.192<br>
+                </div>
+            </div>
+
+            <!-- SW1 Tab -->
+            <div id="config-sw1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Set access ports and configure a highly secure trunk to SW2.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW1&gt;</span> enable<br>
+                    <span class="cli-prompt">SW1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Assign Access Ports</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface range f0/1 - 2<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 10<br><br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> interface range f0/3 - 4<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 30<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure secure Trunk to SW2</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport mode trunk<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport trunk allowed vlan 10,30<br>
+                    <span class="cli-comment">! ^ We prune VLAN 20 because SW1 has no VLAN 20 hosts</span><br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport trunk native vlan 1001<br>
+                </div>
+            </div>
+
+            <!-- SW2 Tab -->
+            <div id="config-sw2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure the trunk to SW1, manually create VLAN 30, and configure the ROAS trunk to R1.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW2&gt;</span> enable<br>
+                    <span class="cli-prompt">SW2#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Ensure all required VLANs exist in the database manually</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> vlan 30<br>
+                    <span class="cli-prompt">SW2(config-vlan)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Assign Access Ports</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface f0/1<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport access vlan 20<br><br>
+                    <span class="cli-prompt">SW2(config-if)#</span> interface range f0/2 - 3<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> switchport access vlan 10<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure Trunk to SW1</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport mode trunk<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport trunk allowed vlan 10,30<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport trunk native vlan 1001<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure ROAS Trunk to R1 (Allowing all active VLANs)</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface g0/2<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport mode trunk<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport trunk allowed vlan 10,20,30<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport trunk native vlan 1001
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">📝</span> Lab Tasks & Q&A
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress! Click on a question to expand its formal answer based on the video.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-fuchsia-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-fuchsia-600 rounded border-slate-300 focus:ring-fuchsia-500" onclick="event.stopPropagation(); saveProgress('roas_qa1', this)">
+                            <span class="pr-6">1. Configure the switch interfaces connected to PCs as access ports.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Assign edge ports to specific VLANs. This automatically creates the VLAN in the switch's database if it does not already exist.</p>
+                            <div class="cli-window text-xs">
+                                <span class="cli-prompt">SW1(config)#</span> interface range F0/1 - 2<br>
+                                <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                                <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 10
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-fuchsia-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-fuchsia-600 rounded border-slate-300 focus:ring-fuchsia-500" onclick="event.stopPropagation(); saveProgress('roas_qa2', this)">
+                            <span>2. Configure SW1-SW2 Trunk. Allow necessary VLANs. Configure native VLAN. Ensure VLANs exist.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>SW1 does not have any VLAN 20 hosts connected to it. Therefore, we <strong>prune</strong> VLAN 20 from the allowed list to save bandwidth.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW1(config)#</span> interface g0/1<br>
+                                <span class="cli-prompt">SW1(config-if)#</span> switchport mode trunk<br>
+                                <span class="cli-prompt">SW1(config-if)#</span> switchport trunk allowed vlan 10,30<br>
+                                <span class="cli-prompt">SW1(config-if)#</span> switchport trunk native vlan 1001
+                            </div>
+                            <div class="bg-fuchsia-50 p-3 border-l-4 border-fuchsia-500 text-fuchsia-900 rounded">
+                                <strong>Important Troubleshooting Step:</strong> Even if a trunk allows VLAN 30, SW2 will drop the traffic if VLAN 30 is not in its local VLAN database. Because SW2 has no VLAN 30 access ports, it wasn't auto-created. You MUST manually type <code>vlan 30</code> in Global Config on SW2.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-fuchsia-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-fuchsia-600 rounded border-slate-300 focus:ring-fuchsia-500" onclick="event.stopPropagation(); saveProgress('roas_qa3', this)">
+                            <span>3. Configure SW2 to R1 connection using 'Router on a Stick'. Assign IPs to subinterfaces.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Enable the physical interface, then configure logical subinterfaces. The encapsulation command tells the router which 802.1Q VLAN tag to listen for.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                                <span class="cli-prompt">R1(config)#</span> interface g0/0.10<br>
+                                <span class="cli-prompt">R1(config-subif)#</span> encapsulation dot1q 10<br>
+                                <span class="cli-prompt">R1(config-subif)#</span> ip address 10.0.0.62 255.255.255.192
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-fuchsia-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-fuchsia-600 rounded border-slate-300 focus:ring-fuchsia-500" onclick="event.stopPropagation(); saveProgress('roas_qa4', this)">
+                            <span class="pr-6">4. Test connectivity by pinging between PCs. All PCs should be able to reach each other.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>From PC1 (VLAN 10), open the command prompt and ping a PC in VLAN 20 and VLAN 30.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">PC1&gt;</span> ping 10.0.0.65<br>
+                                <span class="cli-comment">Reply from 10.0.0.65...</span><br><br>
+                                <span class="cli-prompt">PC1&gt;</span> ping 10.0.0.129<br>
+                                <span class="cli-comment">Reply from 10.0.0.129...</span>
+                            </div>
+                            <p class="text-emerald-600 font-bold">Success! The traffic travels to SW1, over the trunk to SW2, up the trunk to R1, routes to the different subinterface, and goes back down the trunk to its destination.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">switchport mode trunk</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Forces the port to act as an 802.1Q trunk port, allowing multiple VLANs.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">switchport trunk allowed vlan [x,y]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Restricts the trunk to only forward the explicitly listed VLANs.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">switchport trunk native vlan [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Changes the untagged Native VLAN from default (1) to the specified ID.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">interface [type] [number].[sub_id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates/enters a virtual subinterface on a router (e.g. g0/0.10).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">encapsulation dot1q [vlan_id]</td>
+                            <td class="px-6 py-4"><span class="bg-sky-100 text-sky-800 text-xs px-2 py-1 rounded border border-sky-200">Subinterface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Tells the router subinterface to listen for and tag packets with this VLAN ID.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">show interfaces trunk</td>
+                            <td class="px-6 py-4"><span class="bg-fuchsia-100 text-fuchsia-800 text-xs px-2 py-1 rounded border border-fuchsia-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays trunk ports, their allowed VLANs, and currently active VLANs.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of VLAN Trunking and Subinterface configurations.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('roasChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Legacy Inter-VLAN', 'Router-on-a-Stick'],
+                datasets: [{
+                    label: 'Physical Router Interfaces Required (3 VLANs)',
+                    data: [3, 1],
+                    backgroundColor: ['#94a3b8', '#c026d3'], // Slate, Fuchsia
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 4, 
+                        ticks: { stepSize: 1 },
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: '# of Physical Cables', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-fuchsia-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-fuchsia-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'view-theory') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-fuchsia-600', 'border-fuchsia-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-fuchsia-600', 'border-fuchsia-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- ROAS Simulator Logic ---
+    function playRoasStep(stepIndex) {
+        const allNodes = ['node-r1', 'node-sw1', 'node-sw2', 'node-pc1', 'node-pc5'];
+        const desc = document.getElementById('roas-desc');
+        
+        allNodes.forEach(id => {
+            const el = document.getElementById(id);
+            el.classList.remove('node-highlight', 'node-dim');
+        });
+        
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-roas-'+i);
+            btn.classList.remove('bg-fuchsia-600', 'text-white', 'border-fuchsia-600');
+            btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+        }
+
+        const activeBtn = document.getElementById('btn-roas-'+stepIndex);
+        activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+        activeBtn.classList.add('bg-fuchsia-600', 'text-white', 'border-fuchsia-600');
+
+        if (stepIndex === 1) {
+            ['node-pc1', 'node-sw1'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc5', 'node-sw2', 'node-r1'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-fuchsia-400 font-bold'>Step 1:</span> PC1 sends a ping destined for PC5 (Different Subnet). It targets its Default Gateway MAC. The frame hits SW1 on access port VLAN 10.";
+        } else if (stepIndex === 2) {
+            ['node-sw1', 'node-sw2'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc1', 'node-pc5', 'node-r1'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-fuchsia-400 font-bold'>Step 2:</span> SW1 forwards the frame across the trunk to SW2. It inserts an <strong>802.1Q Tag</strong> identifying the frame as belonging to VLAN 10.";
+        } else if (stepIndex === 3) {
+            ['node-sw2', 'node-r1'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc1', 'node-pc5', 'node-sw1'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-fuchsia-400 font-bold'>Step 3:</span> SW2 forwards the tagged frame up the ROAS trunk to R1. R1 receives it on subinterface <code>G0/0.10</code>, strips the tag, and internally routes the packet to subinterface <code>G0/0.20</code>.";
+        } else if (stepIndex === 4) {
+            ['node-r1', 'node-sw2', 'node-pc5'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc1', 'node-sw1'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-fuchsia-400 font-bold'>Step 4:</span> R1 tags the frame with VLAN 20 and sends it back down the stick to SW2. SW2 reads the tag, strips it, and forwards the standard frame out the access port to PC5.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('roas_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Render Flashcards
+        const flashcards = [
+            { q: "What is Router-on-a-Stick (ROAS)?", a: "Using a single physical router interface to route traffic between multiple VLANs by dividing it into logical <strong>subinterfaces</strong>." },
+            { q: "Do you configure an IP address on the physical interface when using ROAS?", a: "<strong>No.</strong><br><br>The physical interface is only enabled (`no shutdown`). The IP addresses are applied directly to the subinterfaces." },
+            { q: "What command configures 802.1Q encapsulation on a router subinterface?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>encapsulation dot1q [vlan_id]</code>" },
+            { q: "What happens if a switch receives trunk traffic for a VLAN that is NOT in its database?", a: "It <strong>drops</strong> the traffic. The VLAN MUST manually exist in the switch's local database via the `vlan [id]` command, even if allowed on the trunk." },
+            { q: "What is a Native VLAN?", a: "The specific VLAN on an 802.1Q trunk link that carries <strong>untagged</strong> traffic. For security, it should be changed from the default (1) to an unused VLAN." },
+            { q: "Why didn't SW1 need to allow VLAN 20 on its trunk to SW2?", a: "Because SW1 has no end hosts in VLAN 20. <strong>Pruning</strong> unnecessary VLANs from a trunk saves processing power and limits broadcast domains." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-fuchsia-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-fuchsia-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-fuchsia-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('roas_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+    });
+</script>
+</body>
+</html>

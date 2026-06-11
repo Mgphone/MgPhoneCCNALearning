@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: Floating Static Routes</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #f3e8ff; color: #9333ea; border-left-color: #9333ea; font-weight: 600; } /* Purple Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #c084fc; font-weight: bold; } /* Purple 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #9333ea !important; box-shadow: 0 0 15px rgba(147, 51, 234, 0.5); }
+.node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+.link-active { background-color: #10b981; } /* Emerald */
+.link-blocked { background-color: #ef4444; border-style: dashed; } /* Red */
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(147, 51, 234, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(147, 51, 234, 0.8); }
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-purple-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-purple-500">🛟</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-purple-400 font-semibold tracking-wide uppercase mt-1">Floating Routes</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-purple-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Protocols & AD
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Failover Tracker
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Floating Static Routes</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-purple-500 pl-4 bg-purple-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Ensure high availability in your network. Learn how to configure backup static routes that remain hidden in the background, only "floating" into the routing table when the primary dynamic routing protocol (like OSPF) fails.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🧠</span> Administrative Distance (AD)
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The Trustworthiness Value</h4>
+                        <p class="text-sm text-slate-700 mb-3">If a router learns about the same destination network from two different sources (e.g., OSPF and a Static Route), it uses <strong>Administrative Distance (AD)</strong> to decide which path is more trustworthy. <strong class="text-purple-700">Lower AD wins.</strong></p>
+                        <ul class="space-y-2 text-sm text-slate-700">
+                            <li class="flex items-center justify-between border-b border-slate-200 pb-1">
+                                <span>Connected Interface</span> <strong class="text-emerald-600 bg-emerald-50 px-2 rounded">AD: 0</strong>
+                            </li>
+                            <li class="flex items-center justify-between border-b border-slate-200 pb-1">
+                                <span>Standard Static Route</span> <strong class="text-blue-600 bg-blue-50 px-2 rounded">AD: 1</strong>
+                            </li>
+                            <li class="flex items-center justify-between border-b border-slate-200 pb-1">
+                                <span>OSPF (Dynamic)</span> <strong class="text-amber-600 bg-amber-50 px-2 rounded">AD: 110</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-purple-50 p-5 rounded-xl border border-purple-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-purple-900 mb-2">The "Floating" Mechanism</h4>
+                        <p class="text-sm text-purple-800 mb-3">By default, a static route (AD 1) will overwrite an OSPF route (AD 110). If we want the static route to act as a <strong>backup</strong>, we must manually configure it with an AD higher than OSPF (e.g., <strong>111</strong>).</p>
+                        <p class="text-sm text-purple-800">The router will hide the backup route. It only "floats" to the surface if the OSPF route disappears due to a link failure.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Administrative Distance Scale</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Lower numbers are more preferred by the routing engine.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="adChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100">
+                        We configure the floating static route to AD 111 so that OSPF (110) wins the election during normal operations.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🔍</span> Failover Flow Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how the network reacts when the primary OSPF fiber-optic link between R1 and R2 fails. The router will automatically failover to the ISPA backup path using the floating static route.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playTrackerStep(1)" id="btn-track-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Normal OSPF Routing</button>
+                <button onclick="playTrackerStep(2)" id="btn-track-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Primary Link Fails</button>
+                <button onclick="playTrackerStep(3)" id="btn-track-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Floating Route Injected</button>
+                <button onclick="playTrackerStep(4)" id="btn-track-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Traffic Rerouted</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
+                
+                <div class="w-full max-w-lg relative h-64 mx-auto">
+                    <!-- ISPA Node (Top) -->
+                    <div id="node-ispa" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-16 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        ISPA<span class="text-[10px] font-normal text-slate-300 mt-1">Backup</span>
+                    </div>
+
+                    <!-- R1 (Bottom Left) -->
+                    <div id="node-r1" class="absolute bottom-4 left-0 w-24 h-24 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">
+                        R1<span class="text-[10px] font-mono mt-1 font-normal text-blue-200">10.0.1.0/24</span>
+                    </div>
+
+                    <!-- R2 (Bottom Right) -->
+                    <div id="node-r2" class="absolute bottom-4 right-0 w-24 h-24 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">
+                        R2<span class="text-[10px] font-mono mt-1 font-normal text-blue-200">10.0.2.0/24</span>
+                    </div>
+
+                    <!-- Links -->
+                    <!-- R1 to ISPA -->
+                    <div id="link-r1-ispa" class="absolute top-12 left-12 w-[150px] h-1 bg-slate-600 transform origin-bottom-left rotate-[35deg] transition-all -z-10"></div>
+                    <!-- R2 to ISPA -->
+                    <div id="link-r2-ispa" class="absolute top-12 right-12 w-[150px] h-1 bg-slate-600 transform origin-bottom-right -rotate-[35deg] transition-all -z-10"></div>
+                    <!-- R1 to R2 Direct -->
+                    <div id="link-r1-r2" class="absolute bottom-16 left-24 w-[280px] h-2 bg-emerald-500 transition-all -z-10 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+
+                    <!-- Data Packets -->
+                    <div id="pkt-primary" class="absolute bottom-14 left-24 w-6 h-6 bg-white rounded-full hidden border-2 border-emerald-600 z-20"></div>
+                    <div id="pkt-backup-1" class="absolute top-24 left-24 w-6 h-6 bg-white rounded-full hidden border-2 border-purple-600 z-20"></div>
+                    <div id="pkt-backup-2" class="absolute top-24 right-24 w-6 h-6 bg-white rounded-full hidden border-2 border-purple-600 z-20"></div>
+                </div>
+                
+                <!-- Dynamic Overlay -->
+                <div id="tracker-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to begin the simulation.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="view-config" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-purple-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure floating static routes and verify their status in the routing table.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-purple-600 border-b-2 border-purple-600 transition-colors">R1 (Backup Route)</button>
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R2 (Backup Route)</button>
+                <button onclick="switchDeviceTab('verify', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Verification (Show & Tracert)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Add a static route to R2's network (10.0.2.0/24) pointing through ISPA, with an AD of 111.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! View current routing table</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do show ip route<br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment">O    10.0.2.0/24 [110/2] via 192.168.12.2, GigabitEthernet0/2</span><br><br>
+
+                    <span class="cli-comment">! Add the Floating Static Route (Notice the "111" at the end)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ip route 10.0.2.0 255.255.255.0 203.0.113.1 111<br><br>
+
+                    <span class="cli-comment">! Verify it does NOT overwrite OSPF during normal operation</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do show ip route<br>
+                    <span class="cli-comment">O    10.0.2.0/24 [110/2] via 192.168.12.2, GigabitEthernet0/2</span><br>
+                </div>
+            </div>
+
+            <!-- R2 Tab -->
+            <div id="config-r2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Add a return static route to R1's network (10.0.1.0/24) pointing through ISPA, with an AD of 111.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R2&gt;</span> enable<br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Add the Floating Static Route pointing to ISPA</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ip route 10.0.1.0 255.255.255.0 203.0.113.5 111<br><br>
+
+                    <span class="cli-comment">! Simulate a primary link failure to test the backup</span><br>
+                    <span class="cli-prompt">R2(config)#</span> interface g0/2<br>
+                    <span class="cli-prompt">R2(config-if)#</span> shutdown<br>
+                    <span class="cli-comment">%LINK-5-CHANGED: Interface GigabitEthernet0/2, changed state to administratively down</span><br>
+                    <span class="cli-comment">%OSPF-5-ADJCHG: Process 1, Nbr 1.1.1.1 on GigabitEthernet0/2 from FULL to DOWN</span><br><br>
+
+                    <span class="cli-comment">! Verify the floating route has now been injected into the table</span><br>
+                    <span class="cli-prompt">R2(config-if)#</span> do show ip route<br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment text-purple-400 font-bold">S    10.0.1.0/24 [111/0] via 203.0.113.5</span><br>
+                </div>
+            </div>
+
+            <!-- Verify Tab -->
+            <div id="config-verify" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Use PC commands to verify the traffic path during failover.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! On Windows PC1 (Command Prompt)</span><br>
+                    <span class="cli-comment">! Use traceroute to see the hop-by-hop path</span><br>
+                    <span class="cli-prompt">C:\&gt;</span> tracert 10.0.2.1<br><br>
+                    
+                    <span class="cli-comment">Tracing route to 10.0.2.1 over a maximum of 30 hops:</span><br><br>
+                    <span class="cli-comment">  1     1 ms     1 ms     1 ms  10.0.1.254 (R1 Gateway)</span><br>
+                    <span class="cli-comment">  2     2 ms     1 ms     2 ms  203.0.113.1 (ISPA Router 1)</span><br>
+                    <span class="cli-comment">  3     2 ms     2 ms     3 ms  192.168.1.2 (ISPA Router 2)</span><br>
+                    <span class="cli-comment">  4     3 ms     2 ms     3 ms  203.0.113.6 (R2 Gateway)</span><br>
+                    <span class="cli-comment">  5     4 ms     3 ms     3 ms  10.0.2.1 (Destination Server)</span><br><br>
+                    
+                    <span class="cli-comment">Trace complete.</span>
+                </div>
+                <div class="bg-purple-50 p-3 mt-4 border border-purple-200 rounded text-purple-800 text-sm">
+                    <strong>Note:</strong> `tracert` proves that the traffic is bypassing the broken direct link and successfully utilizing the ISPA backup infrastructure.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('float_qa1', this)">
+                            <span class="pr-6">1. Check the routing tables of R1 and R2. Which dynamic protocol is operating?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Using <code>show ip route</code>, we look for codes next to the learned routes.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-comment text-amber-500 font-bold">O</span>    10.0.2.0/24 [110/2] via 192.168.12.2, GigabitEthernet0/2
+                            </div>
+                            <p><strong>Answer:</strong> The `O` code indicates that <strong>OSPF</strong> (Open Shortest Path First) is the dynamic routing protocol in use. The `110` in brackets is OSPF's default Administrative Distance.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('float_qa2', this)">
+                            <span>2. Configure floating static routes on R1 and R2 to act as a backup via ISPA.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>We must configure a static route but override the default AD of 1 to be higher than OSPF's 110.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-comment">! On R1 (Pointing to Server 1's network via ISPA)</span><br>
+                                <span class="cli-prompt">R1(config)#</span> ip route 10.0.2.0 255.255.255.0 203.0.113.1 <span class="text-purple-400 font-bold">111</span><br><br>
+                                <span class="cli-comment">! On R2 (Return path to PC1's network via ISPA)</span><br>
+                                <span class="cli-prompt">R2(config)#</span> ip route 10.0.1.0 255.255.255.0 203.0.113.5 <span class="text-purple-400 font-bold">111</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('float_qa3', this)">
+                            <span>3. Shut down the primary OSPF interface to simulate a failure and verify the route table.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>By bringing down the primary interface, the OSPF adjacency drops, and the OSPF route is removed. The router then elevates the hidden floating static route into the active routing table.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R2(config)#</span> interface g0/2<br>
+                                <span class="cli-prompt">R2(config-if)#</span> shutdown<br>
+                                <span class="cli-prompt">R2(config-if)#</span> do show ip route<br>
+                                <span class="cli-comment">...</span><br>
+                                <span class="cli-comment text-purple-400 font-bold">S    10.0.1.0/24 [111/0] via 203.0.113.5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('float_qa4', this)">
+                            <span class="pr-6">4. Use <code>tracert</code> on PC1 to verify traffic is taking the backup path.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Open the command prompt on PC1 and run the trace command to the server IP.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">C:\&gt;</span> tracert 10.0.2.1
+                            </div>
+                            <p class="text-purple-700 font-semibold mt-2">The output will show hops passing through the <code>203.0.113.x</code> network, proving the traffic is successfully navigating the ISPA fallback infrastructure instead of dropping.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">ip route [net] [mask] [hop] <span class="font-bold bg-purple-100 px-1 rounded">[AD]</span></td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures a static route. Appending a number at the end overrides the default Administrative Distance of 1.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">show ip route</td>
+                            <td class="px-6 py-4"><span class="bg-purple-50 text-purple-800 text-xs px-2 py-1 rounded border border-purple-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the active routing table. Inactive floating routes will NOT be visible here.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">tracert [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Windows CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Traces the path a packet takes hop-by-hop to reach the destination (Windows).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">traceroute [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-purple-50 text-purple-800 text-xs px-2 py-1 rounded border border-purple-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Cisco IOS version of the trace tool. Sends UDP probes to track hops.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">show running-config | include ip route</td>
+                            <td class="px-6 py-4"><span class="bg-purple-50 text-purple-800 text-xs px-2 py-1 rounded border border-purple-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Since floating routes are hidden from `show ip route`, you must look in the running config to verify they were typed correctly.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of Administrative Distances and Trace tools.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('adChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Connected', 'Static', 'EIGRP', 'OSPF', 'Floating Static'],
+                datasets: [
+                    {
+                        label: 'Administrative Distance',
+                        data: [0, 1, 90, 110, 111],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#a855f7'], // Emerald, Blue, Amber, Pink, Purple
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 130, 
+                        ticks: { stepSize: 20 },
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'AD Value (Lower is Better)', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` AD: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-purple-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-purple-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'view-theory') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-purple-600', 'border-purple-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-purple-600', 'border-purple-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Flow Simulator Logic ---
+    function playTrackerStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-track-'+i);
+            if(btn) {
+                btn.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-track-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-purple-600', 'text-white', 'border-purple-600');
+        }
+
+        // Elements
+        const linkDirect = document.getElementById('link-r1-r2');
+        const linkIspa1 = document.getElementById('link-r1-ispa');
+        const linkIspa2 = document.getElementById('link-r2-ispa');
+        
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        const ispa = document.getElementById('node-ispa');
+        
+        const pktPrimary = document.getElementById('pkt-primary');
+        const pktBackup1 = document.getElementById('pkt-backup-1');
+        const pktBackup2 = document.getElementById('pkt-backup-2');
+        
+        const desc = document.getElementById('tracker-desc');
+
+        // Reset visual classes
+        linkDirect.className = "absolute bottom-16 left-24 w-[280px] h-2 bg-slate-600 transition-all -z-10";
+        linkIspa1.className = "absolute top-12 left-12 w-[150px] h-1 bg-slate-600 transform origin-bottom-left rotate-[35deg] transition-all -z-10";
+        linkIspa2.className = "absolute top-12 right-12 w-[150px] h-1 bg-slate-600 transform origin-bottom-right -rotate-[35deg] transition-all -z-10";
+        
+        [r1, r2, ispa].forEach(n => n.classList.remove('node-highlight', 'node-dim'));
+        
+        // Stop animations
+        [pktPrimary, pktBackup1, pktBackup2].forEach(p => {
+            p.classList.add('hidden');
+            p.style.animation = 'none';
+        });
+
+        if (stepIndex === 1) {
+            linkDirect.classList.add('bg-emerald-500', 'shadow-[0_0_10px_rgba(16,185,129,0.5)]');
+            r1.classList.add('node-highlight'); r2.classList.add('node-highlight');
+            ispa.classList.add('node-dim');
+            
+            // CSS Animation
+            pktPrimary.classList.remove('hidden');
+            pktPrimary.style.animation = "slideFlow 2s linear infinite";
+            
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Step 1 (Normal Operation):</span> OSPF dynamically builds a route over the direct fiber link between R1 and R2. Because OSPF has an AD of 110, it beats the configured floating static route (AD 111). The floating route is hidden.";
+        } else if (stepIndex === 2) {
+            linkDirect.classList.add('link-blocked');
+            r1.classList.add('node-highlight'); r2.classList.add('node-highlight');
+            ispa.classList.add('node-dim');
+            
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 2 (Link Failure):</span> The direct fiber link is severed. The interfaces drop to a 'down/down' state. OSPF loses its neighbor adjacency and purges the 110 AD route from the routing table.";
+        } else if (stepIndex === 3) {
+            linkDirect.classList.add('link-blocked', 'opacity-20');
+            linkIspa1.classList.add('bg-purple-400', 'h-2', 'shadow-[0_0_10px_rgba(192,132,252,0.5)]');
+            linkIspa2.classList.add('bg-purple-400', 'h-2', 'shadow-[0_0_10px_rgba(192,132,252,0.5)]');
+            
+            [r1, r2, ispa].forEach(n => n.classList.add('node-highlight'));
+            
+            desc.innerHTML = "<span class='text-purple-400 font-bold'>Step 3 (Floating Route Injection):</span> With the OSPF route gone, the router checks its database. It sees the Static Route (AD 111) is now the <em>best available</em> path. It instantly injects it into the active routing table.";
+        } else if (stepIndex === 4) {
+            linkDirect.classList.add('link-blocked', 'opacity-20');
+            linkIspa1.classList.add('bg-purple-500', 'h-2');
+            linkIspa2.classList.add('bg-purple-500', 'h-2');
+            [r1, r2, ispa].forEach(n => n.classList.add('node-highlight'));
+            
+            pktBackup1.classList.remove('hidden');
+            pktBackup1.style.animation = "slideFlow 1.5s linear infinite";
+            
+            // To simulate the second half of the path (ISPA -> R2)
+            // Just a visual hack for the SPA context
+            pktBackup2.classList.remove('hidden');
+            pktBackup2.style.animation = "slideFlow 1.5s linear infinite";
+
+            desc.innerHTML = "<span class='text-purple-400 font-bold'>Step 4 (Traffic Rerouted):</span> Traffic from PC1 to the Server seamlessly routes up through ISPA and back down to R2. Pings continue to succeed. High availability is achieved!";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('float_static_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is Administrative Distance (AD)?", a: "It is a <strong>Trustworthiness Value</strong> used by routers to select the best path when a route to the same destination is learned from multiple routing protocols. Lower AD wins." },
+            { q: "What is the default AD of OSPF?", a: "<strong>110</strong>" },
+            { q: "What is the default AD of a standard Static Route?", a: "<strong>1</strong>" },
+            { q: "How do you configure a Floating Static route to act as a backup for OSPF?", a: "Create a static route, but manually append an AD value <strong>higher than 110</strong> to the end of the command (e.g., `ip route 10.0.0.0 255.255.255.0 1.1.1.1 111`)." },
+            { q: "Will a floating static route appear in `show ip route` during normal operations?", a: "<strong>No.</strong><br><br>The routing table only displays the <em>best</em> active routes. Because OSPF has a better AD, the floating route is kept hidden in the database until OSPF fails." },
+            { q: "What is the difference between `ping` and `traceroute`?", a: "<strong>Ping</strong> tests basic end-to-end reachability. <strong>Traceroute (or tracert)</strong> maps the exact hop-by-hop path the packet takes, making it excellent for verifying failover routing." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-purple-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-purple-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-purple-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('float_static_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playTrackerStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

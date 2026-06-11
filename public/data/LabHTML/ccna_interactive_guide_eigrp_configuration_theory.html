@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: EIGRP Configuration</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #fef2f2; color: #dc2626; border-left-color: #dc2626; font-weight: 600; } /* Red Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #f87171; font-weight: bold; } /* Red 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #dc2626 !important; box-shadow: 0 0 15px rgba(220, 38, 38, 0.5); }
+.node-dim { opacity: 0.3; filter: grayscale(100%); transition: all 0.3s; }
+.link-active { background-color: #dc2626; box-shadow: 0 0 10px rgba(220,38,38,0.5); }
+.link-standby { background-color: #f87171; border-style: dashed; opacity: 0.5; }
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(220, 38, 38, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.8); }
+}
+
+@keyframes flowTraffic {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 0%; }
+}
+.traffic-flow {
+    background: linear-gradient(90deg, rgba(220,38,38,1) 0%, rgba(254,226,226,1) 50%, rgba(220,38,38,1) 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1s linear infinite;
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-red-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-red-500">🔥</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-red-400 font-semibold tracking-wide uppercase mt-1">EIGRP Routing</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-red-600 text-white shadow-md">
+            <span class="text-xl">📊</span> EIGRP Metrics & Theory
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">⚖️</span> EIGRP Load Balancer
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Enhanced Interior Gateway Routing Protocol</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-red-500 pl-4 bg-red-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            EIGRP is an advanced distance-vector routing protocol. In this module, you will master EIGRP terminology (Feasible Distance, Reported Distance), its unique Feasibility Condition for loop prevention, and how to configure Unequal Cost Load Balancing.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-red-500">🧠</span> EIGRP Metrics & Concepts
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">Crucial EIGRP Terminology</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-red-700">Feasible Distance (FD)</strong>
+                                <span>The <em>local</em> router's total metric to reach the destination network.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-red-700">Reported Distance (RD) / Advertised Distance</strong>
+                                <span>The <em>neighbor</em> router's metric to reach the destination network.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-red-700">Successor</strong>
+                                <span>The absolute best route to the destination. It is installed in the routing table.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-red-700">Feasible Successor (FS)</strong>
+                                <span>A valid backup route that meets the <strong>Feasibility Condition</strong>. It is kept in the topology table for instant failover.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-red-50 p-5 rounded-xl border border-red-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-red-900 mb-2">The Feasibility Condition</h4>
+                        <p class="text-sm text-red-800 mb-3">To become a Feasible Successor (a safe backup route), a route MUST meet this mathematical loop-prevention rule:</p>
+                        <div class="bg-white px-3 py-2 rounded text-center border border-red-300 font-mono font-bold text-slate-800 shadow-sm">
+                            RD < Successor's FD
+                        </div>
+                        <p class="text-xs text-red-700 mt-3">Translation: The neighbor must be strictly closer to the destination than the local router's current best path. If not, it could be a routing loop.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">EIGRP Metric Weights (K-Values)</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">By default, only Bandwidth and Delay are used to calculate the metric.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="kValuesChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100">
+                        Metric = <strong>Bandwidth</strong> (of the slowest link in the path) + <strong>Delay</strong> (Sum of all link delays).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-red-500">⚖️</span> EIGRP Variance & Load Balancing
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Unlike OSPF, EIGRP can perform <strong>Unequal Cost Load Balancing (UCLB)</strong>. Explore how the <code>variance</code> command instructs R1 to distribute traffic across both R2 (Fast path) and R3 (Slower backup path).</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playEigrpStep(1)" id="btn-eigrp-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Default Path (Successor)</button>
+                <button onclick="playEigrpStep(2)" id="btn-eigrp-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Feasibility Check</button>
+                <button onclick="playEigrpStep(3)" id="btn-eigrp-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Apply Variance 2</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Diamond Topology -->
+                <div class="relative w-full max-w-md h-64 mx-auto mt-4">
+                    
+                    <!-- R1 (Left) -->
+                    <div id="node-r1" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg">R1</div>
+                    
+                    <!-- R4 (Right) -->
+                    <div id="node-r4" class="absolute top-1/2 right-0 transform -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg">R4<span class="text-[10px] font-mono font-normal">Dest</span></div>
+
+                    <!-- R2 (Top) -->
+                    <div id="node-r2" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">R2<span class="text-[10px] font-mono font-normal">Gigabit</span></div>
+                    
+                    <!-- R3 (Bottom) -->
+                    <div id="node-r3" class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">R3<span class="text-[10px] font-mono font-normal">FastEth</span></div>
+
+                    <!-- Links -->
+                    <!-- R1 to R2 -->
+                    <div id="link-r1-r2" class="absolute top-12 left-16 w-32 h-1 bg-slate-600 origin-bottom-left -rotate-30 transition-all z-0"></div>
+                    <!-- R2 to R4 -->
+                    <div id="link-r2-r4" class="absolute top-12 right-16 w-32 h-1 bg-slate-600 origin-bottom-right rotate-30 transition-all z-0"></div>
+                    
+                    <!-- R1 to R3 -->
+                    <div id="link-r1-r3" class="absolute bottom-12 left-16 w-32 h-1 bg-slate-600 origin-top-left rotate-30 transition-all z-0"></div>
+                    <!-- R3 to R4 -->
+                    <div id="link-r3-r4" class="absolute bottom-12 right-16 w-32 h-1 bg-slate-600 origin-top-right -rotate-30 transition-all z-0"></div>
+
+                    <!-- Metric Labels -->
+                    <div class="absolute top-0 left-8 text-xs font-mono text-emerald-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-600">FD: 28672</div>
+                    <div class="absolute bottom-0 left-8 text-xs font-mono text-amber-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-600">FD: 30976</div>
+                    <div class="absolute top-0 right-10 text-xs font-mono text-emerald-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-600">RD: 28416</div>
+                    <div class="absolute bottom-0 right-10 text-xs font-mono text-amber-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-600">RD: 28416</div>
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="eigrp-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate EIGRP path selection.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="view-config" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-red-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure EIGRP, wildcards, and passive interfaces.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-red-600 border-b-2 border-red-600 transition-colors">R1 (Precise Networks)</button>
+                <button onclick="switchDeviceTab('r4', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R4 (Universal Shortcut)</button>
+                <button onclick="switchDeviceTab('variance', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R1 (Variance UCLB)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure EIGRP AS 100 using precise wildcard masks, disable auto-summary, and secure the loopback interface.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Create the loopback interface (Virtual interface)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface loopback 0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 1.1.1.1 255.255.255.255<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Initialize EIGRP Process (AS Number MUST match on all routers)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> router eigrp 100<br><br>
+
+                    <span class="cli-comment">! Add specific networks using Wildcard Masks</span><br>
+                    <span class="cli-comment">! (0.0.0.3 represents a /30 subnet)</span><br>
+                    <span class="cli-prompt">R1(config-router)#</span> network 10.0.12.0 0.0.0.3<br>
+                    <span class="cli-prompt">R1(config-router)#</span> network 10.0.13.0 0.0.0.3<br>
+                    <span class="cli-prompt">R1(config-router)#</span> network 1.1.1.1 0.0.0.0<br><br>
+
+                    <span class="cli-comment">! Prevent the router from summarizing subnets to their classful boundaries</span><br>
+                    <span class="cli-prompt">R1(config-router)#</span> no auto-summary<br><br>
+
+                    <span class="cli-comment">! Stop sending EIGRP Hello packets out the loopback (Saves CPU)</span><br>
+                    <span class="cli-prompt">R1(config-router)#</span> passive-interface loopback 0
+                </div>
+            </div>
+
+            <!-- R4 Tab -->
+            <div id="config-r4" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Use a wildcard mask shortcut to instantly enable EIGRP on all active IP addresses on the router.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R4&gt;</span> enable<br>
+                    <span class="cli-prompt">R4#</span> configure terminal<br>
+                    <span class="cli-prompt">R4(config)#</span> interface loopback 0<br>
+                    <span class="cli-prompt">R4(config-if)#</span> ip address 4.4.4.4 255.255.255.255<br>
+                    <span class="cli-prompt">R4(config-if)#</span> exit<br><br>
+
+                    <span class="cli-prompt">R4(config)#</span> router eigrp 100<br><br>
+
+                    <span class="cli-comment">! The "Lazy" Network Command</span><br>
+                    <span class="cli-comment">! 255.255.255.255 wildcard means "match any IP address"</span><br>
+                    <span class="cli-prompt">R4(config-router)#</span> network 0.0.0.0 255.255.255.255<br><br>
+
+                    <span class="cli-prompt">R4(config-router)#</span> no auto-summary<br>
+                    <span class="cli-prompt">R4(config-router)#</span> passive-interface loopback 0<br>
+                    <span class="cli-prompt">R4(config-router)#</span> passive-interface g0/0<br>
+                </div>
+                <div class="bg-red-50 p-3 mt-4 border border-red-200 rounded text-red-800 text-sm">
+                    <strong>Note:</strong> While the `0.0.0.0 255.255.255.255` shortcut is fantastic for lab environments to save time, it is <strong>not recommended</strong> in production because it might accidentally enable EIGRP on guest or internet-facing interfaces.
+                </div>
+            </div>
+
+            <!-- Variance Tab -->
+            <div id="config-variance" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Instruct R1 to load-balance traffic to R4 across both the fast and slow paths.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! First, confirm there is a Feasible Successor in the topology table</span><br>
+                    <span class="cli-prompt">R1#</span> show ip eigrp topology<br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment">P 192.168.4.0/24, 1 successors, FD is 28672</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;via 10.0.12.2 (28672/28416), GigabitEthernet0/0</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;via 10.0.13.3 (30976/28416), FastEthernet0/1</span><br><br>
+                    
+                    <span class="cli-comment">! Enter EIGRP Config</span><br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br>
+                    <span class="cli-prompt">R1(config)#</span> router eigrp 100<br><br>
+
+                    <span class="cli-comment">! Apply variance multiplier (Successor FD 28672 * 2 = 57344 limit)</span><br>
+                    <span class="cli-comment">! Since 30976 is less than 57344, the backup route is added to the routing table!</span><br>
+                    <span class="cli-prompt">R1(config-router)#</span> variance 2<br><br>
+
+                    <span class="cli-comment">! Verify the routing table now contains TWO routes</span><br>
+                    <span class="cli-prompt">R1(config-router)#</span> do show ip route eigrp<br>
+                    <span class="cli-comment">D    192.168.4.0/24 [90/28672] via 10.0.12.2, GigabitEthernet0/0</span><br>
+                    <span class="cli-comment">                    [90/30976] via 10.0.13.3, FastEthernet0/1</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-red-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-red-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-red-600 rounded border-slate-300 focus:ring-red-500" onclick="event.stopPropagation(); saveProgress('eigrp_qa1', this)">
+                            <span class="pr-6">1. Configure a loopback interface on each router (L0).</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>A loopback is a stable, virtual interface that never goes down physically. It is often used for router identification.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R1(config)#</span> interface loopback 0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ip address 1.1.1.1 255.255.255.255<br>
+                                <span class="cli-comment">! Repeat on R2 (2.2.2.2), R3 (3.3.3.3), and R4 (4.4.4.4)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-red-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-red-600 rounded border-slate-300 focus:ring-red-500" onclick="event.stopPropagation(); saveProgress('eigrp_qa2', this)">
+                            <span>2. Enable EIGRP on all routers using AS 100. Disable auto-summary. Configure passive interfaces.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>You must use exact wildcard masks to enable EIGRP only on the interfaces connecting to other routers. Disable <code>auto-summary</code> to prevent routing issues with discontiguous networks.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> router eigrp 100<br>
+                                <span class="cli-prompt">R1(config-router)#</span> network 10.0.12.0 0.0.0.3<br>
+                                <span class="cli-prompt">R1(config-router)#</span> network 10.0.13.0 0.0.0.3<br>
+                                <span class="cli-prompt">R1(config-router)#</span> network 1.1.1.1 0.0.0.0<br>
+                                <span class="cli-prompt">R1(config-router)#</span> no auto-summary<br>
+                                <span class="cli-prompt">R1(config-router)#</span> passive-interface loopback 0
+                            </div>
+                            <p class="text-red-700 font-semibold bg-red-50 border border-red-200 p-2 rounded">Always make loopback and PC-facing LAN interfaces passive so they don't broadcast EIGRP routing updates to end-users.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-red-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-red-600 rounded border-slate-300 focus:ring-red-500" onclick="event.stopPropagation(); saveProgress('eigrp_qa3', this)">
+                            <span>3. Verify EIGRP Adjacencies and the Routing Table.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-comment">! Check Neighbors:</span><br>
+                                <span class="cli-prompt">R1#</span> show ip eigrp neighbors<br>
+                                <span class="cli-comment">H   Address         Interface   Hold  Uptime</span><br>
+                                <span class="cli-comment">0   10.0.12.2       Gi0/0       14    00:15:32</span><br>
+                                <span class="cli-comment">1   10.0.13.3       Fa0/1       12    00:15:28</span><br><br>
+                                
+                                <span class="cli-comment">! View ONLY EIGRP Routes in the Routing Table:</span><br>
+                                <span class="cli-prompt">R1#</span> show ip route eigrp<br>
+                                <span class="cli-comment">D    192.168.4.0/24 [90/28672] via 10.0.12.2, GigabitEthernet0/0</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2">Notice the route uses the 'D' code for EIGRP (since 'E' is used for EGP).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-red-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-red-600 rounded border-slate-300 focus:ring-red-500" onclick="event.stopPropagation(); saveProgress('eigrp_qa4', this)">
+                            <span class="pr-6">4. Perform Unequal Cost Load Balancing using the variance command.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>First, check the topology table to ensure a Feasible Successor exists.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> show ip eigrp topology<br>
+                                <span class="cli-comment">...</span><br>
+                                <span class="cli-prompt">R1#</span> configure terminal<br>
+                                <span class="cli-prompt">R1(config)#</span> router eigrp 100<br>
+                                <span class="cli-prompt">R1(config-router)#</span> variance 2
+                            </div>
+                            <p class="text-red-700 font-semibold bg-red-50 border border-red-200 p-2 rounded">By changing the default variance from 1 to 2, EIGRP takes the best metric (28,672), multiplies it by 2 (57,344), and allows any backup route with a metric lower than 57,344 to be installed into the routing table alongside the primary route.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-red-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-red-700 whitespace-nowrap">router eigrp [AS_Number]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enters EIGRP configuration. The AS Number must match across all neighboring routers.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-red-700 whitespace-nowrap">network [ip] [wildcard]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Router Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Activates EIGRP on interfaces matching the IP/wildcard.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-red-700 whitespace-nowrap">no auto-summary</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Router Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Disables classful network summarization. Essential in modern networks.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-red-700 whitespace-nowrap">passive-interface [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Router Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Stops sending EIGRP Hello packets out the interface, but continues to advertise the network.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-red-700 whitespace-nowrap">variance [multiplier]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Router Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enables Unequal Cost Load Balancing for Feasible Successor routes.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-red-700 whitespace-nowrap">show ip eigrp neighbors</td>
+                            <td class="px-6 py-4"><span class="bg-red-50 text-red-800 text-xs px-2 py-1 rounded border border-red-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Verifies that the router has successfully formed adjacencies with neighbors.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-red-700 whitespace-nowrap">show ip eigrp topology</td>
+                            <td class="px-6 py-4"><span class="bg-red-50 text-red-800 text-xs px-2 py-1 rounded border border-red-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the EIGRP database, showing all Successors and Feasible Successors.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-red-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of EIGRP calculations and terminology.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('kValuesChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['K1 (Bandwidth)', 'K2 (Load)', 'K3 (Delay)', 'K4 (Reliability)', 'K5 (MTU)'],
+                datasets: [
+                    {
+                        label: 'Active Multiplier Status',
+                        data: [1, 0, 1, 0, 0],
+                        backgroundColor: ['#ef4444', '#cbd5e1', '#ef4444', '#cbd5e1', '#cbd5e1'], // Red for active
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 1.2, 
+                        ticks: { stepSize: 1, callback: val => val === 1 ? 'Enabled (1)' : (val === 0 ? 'Disabled (0)' : '') },
+                        grid: { color: '#f1f5f9' },
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw === 1 ? ` Enabled by default` : ` Disabled by default`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-red-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-red-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'view-theory') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-red-600', 'border-red-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-red-600', 'border-red-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- EIGRP Tracker Logic ---
+    function playEigrpStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=3; i++) {
+            const btn = document.getElementById('btn-eigrp-'+i);
+            if(btn) {
+                btn.classList.remove('bg-red-600', 'text-white', 'border-red-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-eigrp-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-red-600', 'text-white', 'border-red-600');
+        }
+
+        const linkR1R2 = document.getElementById('link-r1-r2');
+        const linkR2R4 = document.getElementById('link-r2-r4');
+        const linkR1R3 = document.getElementById('link-r1-r3');
+        const linkR3R4 = document.getElementById('link-r3-r4');
+        const desc = document.getElementById('eigrp-desc');
+
+        // Reset visual classes
+        linkR1R2.className = "absolute top-12 left-16 w-32 h-1 bg-slate-600 origin-bottom-left -rotate-30 transition-all z-0";
+        linkR2R4.className = "absolute top-12 right-16 w-32 h-1 bg-slate-600 origin-bottom-right rotate-30 transition-all z-0";
+        linkR1R3.className = "absolute bottom-12 left-16 w-32 h-1 bg-slate-600 origin-top-left rotate-30 transition-all z-0";
+        linkR3R4.className = "absolute bottom-12 right-16 w-32 h-1 bg-slate-600 origin-top-right -rotate-30 transition-all z-0";
+
+        if (stepIndex === 1) {
+            linkR1R2.className = "absolute top-12 left-16 w-32 h-2 traffic-flow origin-bottom-left -rotate-30 transition-all z-0 shadow-[0_0_10px_rgba(220,38,38,0.5)]";
+            linkR2R4.className = "absolute top-12 right-16 w-32 h-2 traffic-flow origin-bottom-right rotate-30 transition-all z-0 shadow-[0_0_10px_rgba(220,38,38,0.5)]";
+            linkR1R3.classList.add('link-standby');
+            linkR3R4.classList.add('link-standby');
+            
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 1 (Successor):</span> R1 needs to reach R4. The top path via R2 (Gigabit) has a lower metric (FD: 28672) than the bottom path via R3 (FastEthernet FD: 30976). R1 installs the R2 path in the routing table. 100% of traffic takes the top path.";
+        } else if (stepIndex === 2) {
+            linkR1R3.className = "absolute bottom-12 left-16 w-32 h-1 bg-amber-400 origin-top-left rotate-30 transition-all z-0 shadow-[0_0_10px_rgba(251,191,36,0.8)]";
+            linkR3R4.className = "absolute bottom-12 right-16 w-32 h-1 bg-amber-400 origin-top-right -rotate-30 transition-all z-0 shadow-[0_0_10px_rgba(251,191,36,0.8)]";
+            
+            desc.innerHTML = "<span class='text-amber-400 font-bold'>Step 2 (Feasibility Check):</span> EIGRP evaluates the bottom path. R3's Reported Distance (28416) is strictly less than the Successor's Feasible Distance (28672). Therefore, the bottom path meets the Feasibility Condition and becomes a <strong>Feasible Successor</strong> (safe backup).";
+        } else if (stepIndex === 3) {
+            linkR1R2.className = "absolute top-12 left-16 w-32 h-2 traffic-flow origin-bottom-left -rotate-30 transition-all z-0 shadow-[0_0_10px_rgba(220,38,38,0.5)]";
+            linkR2R4.className = "absolute top-12 right-16 w-32 h-2 traffic-flow origin-bottom-right rotate-30 transition-all z-0 shadow-[0_0_10px_rgba(220,38,38,0.5)]";
+            
+            linkR1R3.className = "absolute bottom-12 left-16 w-32 h-2 traffic-flow origin-top-left rotate-30 transition-all z-0 shadow-[0_0_10px_rgba(220,38,38,0.5)]";
+            linkR3R4.className = "absolute bottom-12 right-16 w-32 h-2 traffic-flow origin-top-right -rotate-30 transition-all z-0 shadow-[0_0_10px_rgba(220,38,38,0.5)]";
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 3 (Variance 2):</span> By typing <code>variance 2</code>, we allow R1 to load-balance over any Feasible Successor whose metric is less than 2x the best metric. 30976 < (28672 * 2). Traffic now flows across BOTH paths simultaneously!";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('eigrp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is Feasible Distance (FD)?", a: "The local router's <strong>total calculated metric</strong> to reach the destination network." },
+            { q: "What is Reported Distance (RD) / Advertised Distance?", a: "The <strong>neighbor router's</strong> total calculated metric to reach the destination network." },
+            { q: "What is the exact Feasibility Condition?", a: "A route is only considered a safe backup (Feasible Successor) if its <strong>RD < the Successor's FD</strong>. If RD is greater than or equal, it is rejected to prevent routing loops." },
+            { q: "Which 'K-Values' are used by default to calculate the EIGRP metric?", a: "<strong>K1 (Bandwidth)</strong> and <strong>K3 (Delay)</strong>.<br><br>Bandwidth uses the slowest link in the path. Delay is the sum of all delays in the path." },
+            { q: "What does the <code>variance [multiplier]</code> command do?", a: "It enables <strong>Unequal Cost Load Balancing</strong>. It permits any Feasible Successor with a metric lower than (Successor FD * variance) to be injected into the routing table alongside the primary route." },
+            { q: "What does the 'D' code represent in `show ip route`?", a: "<strong>EIGRP</strong><br><br>(Derived from the DUAL algorithm, since 'E' is historically used for EGP)." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-red-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-red-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-red-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('eigrp_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playEigrpStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

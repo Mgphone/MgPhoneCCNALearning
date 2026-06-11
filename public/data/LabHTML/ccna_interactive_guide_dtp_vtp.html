@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: DTP & VTP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #fff1f2; color: #e11d48; border-left-color: #e11d48; font-weight: 600; } /* Rose Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #fb7185; font-weight: bold; } /* Rose 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #e11d48 !important; box-shadow: 0 0 15px rgba(225, 29, 72, 0.5); }
+.node-dim { opacity: 0.3; filter: grayscale(100%); transition: all 0.3s; }
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(225, 29, 72, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(225, 29, 72, 0.8); }
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-rose-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-rose-500">🤝</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-rose-400 font-semibold tracking-wide uppercase mt-1">DTP & VTP</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-rose-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Protocol Concepts
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> VTP Flow Tracker
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Dynamic Trunking & VLAN Trunking Protocols</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-rose-500 pl-4 bg-rose-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Automate and secure your switching environment. Learn how to manually control trunk formation to disable DTP, and explore how VTP syncs VLAN databases across a campus network using Server, Client, and Transparent modes.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">🧠</span> DTP & VTP Fundamentals
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">Dynamic Trunking Protocol (DTP)</h4>
+                        <p class="text-sm text-slate-700 mb-3">DTP dynamically negotiates whether a link should be an access port or a trunk port. By default, many Cisco switches operate in <code>dynamic auto</code> mode, meaning they passively wait for the other side to initiate trunking.</p>
+                        <div class="bg-rose-50 border-l-4 border-rose-400 p-2 text-xs text-rose-900">
+                            <strong>Security Best Practice:</strong> Disable DTP using <code>switchport nonegotiate</code> on static trunks, and hardcode edge ports with <code>switchport mode access</code> to prevent VLAN hopping attacks.
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">VLAN Trunking Protocol (VTP)</h4>
+                        <p class="text-sm text-slate-700 mb-2">VTP allows a network administrator to manage VLANs on one switch and have those changes automatically propagated to all other switches in the same VTP Domain.</p>
+                        <ul class="text-sm space-y-1 text-slate-700 list-disc pl-5">
+                            <li><strong>Server:</strong> The default mode. Can create, modify, and delete VLANs. Propagates changes.</li>
+                            <li><strong>Client:</strong> Cannot create/modify local VLANs. Syncs its database with the Server's advertisements.</li>
+                            <li><strong>Transparent:</strong> Can create local VLANs, but does not sync with the Server. It <em>does</em> forward VTP advertisements to other switches.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center justify-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">VTP Mode Capabilities</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">What actions are permitted in each VTP Mode?</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="vtpChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100">
+                        Notice that Transparent mode maintains complete isolation for its local VLAN database, while still assisting the domain by forwarding advertisements.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TRAFFIC TRACKER -->
+    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">🔍</span> VTP Propagation Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Explore how VTP Configuration Revision Numbers dictate how VLANs are synchronized across a network with different VTP modes. SW1 is the Server, SW2 is Transparent, and SW3 is the Client.</p>
+
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playVtpStep(1)" id="btn-vtp-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Disable DTP</button>
+                <button onclick="playVtpStep(2)" id="btn-vtp-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Server Sync (SW1)</button>
+                <button onclick="playVtpStep(3)" id="btn-vtp-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Transparent Iso (SW2)</button>
+                <button onclick="playVtpStep(4)" id="btn-vtp-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Client Deny (SW3)</button>
+            </div>
+
+            <div class="bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <div class="flex w-full justify-center mb-12">
+                    <div id="node-sw1" class="w-40 h-24 rounded-lg bg-rose-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-rose-400 z-10 shadow-lg relative">
+                        SW1
+                        <span class="text-xs font-mono font-normal">VTP Server</span>
+                        <div class="absolute -bottom-3 text-[9px] bg-rose-900 px-2 py-1 rounded text-center whitespace-nowrap shadow border border-rose-500">Rev: <span id="rev-sw1">0</span> | VLANs: <span id="vlan-sw1">1</span></div>
+                    </div>
+                </div>
+
+                <div class="flex w-full justify-around mt-4">
+                    <div id="node-sw2" class="w-40 h-24 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-slate-500 z-10 shadow-md relative">
+                        SW2
+                        <span class="text-xs font-mono font-normal">VTP Transparent</span>
+                        <div class="absolute -bottom-3 text-[9px] bg-slate-900 px-2 py-1 rounded text-center whitespace-nowrap shadow border border-slate-600">Rev: <span id="rev-sw2">0</span> | VLANs: <span id="vlan-sw2">1</span></div>
+                    </div>
+                    <div id="node-sw3" class="w-40 h-24 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-slate-500 z-10 shadow-md relative">
+                        SW3
+                        <span class="text-xs font-mono font-normal">VTP Client</span>
+                        <div class="absolute -bottom-3 text-[9px] bg-slate-900 px-2 py-1 rounded text-center whitespace-nowrap shadow border border-slate-600">Rev: <span id="rev-sw3">0</span> | VLANs: <span id="vlan-sw3">1</span></div>
+                    </div>
+                </div>
+                
+                <div id="vtp-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/90 border border-slate-600 p-4 rounded-lg backdrop-blur-sm transition-all shadow-xl">
+                    Click step 1 to begin the DTP/VTP simulation.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="view-config" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-rose-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the specific commands to configure hardcoded trunks and VTP modes.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-rose-600 border-b-2 border-rose-600 transition-colors">SW1 (VTP Server)</button>
+                <button onclick="switchDeviceTab('sw2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">SW2 (Transparent)</button>
+                <button onclick="switchDeviceTab('sw3', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">SW3 (Client)</button>
+            </div>
+
+            <!-- SW1 Tab -->
+            <div id="config-sw1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Hardcode trunk to SW2, disable DTP, set VTP domain, and create VLANs to propagate.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW1&gt;</span> enable<br>
+                    <span class="cli-prompt">SW1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! 1. Hardcode Trunk & Disable DTP Negotiation</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport mode trunk<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport nonegotiate<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 2. Configure VTP (Defaults to Server Mode)</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> vtp domain CCNA<br>
+                    <span class="cli-comment">Changing VTP domain name from null to CCNA</span><br><br>
+
+                    <span class="cli-comment">! 3. Create VLANs (Increases Rev Number, syncs to domain)</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> vlan 10<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> vlan 20<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> vlan 30<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 4. Secure access ports & disable DTP</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface range f0/1 - 2<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 10<br>
+                </div>
+            </div>
+
+            <!-- SW2 Tab -->
+            <div id="config-sw2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Hardcode trunks to SW1 & SW3, set VTP Transparent mode, and create isolated VLAN 40.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW2&gt;</span> enable<br>
+                    <span class="cli-prompt">SW2#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! 1. Hardcode Trunks & Disable DTP Negotiation</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface range g0/1 - 2<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> switchport mode trunk<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> switchport nonegotiate<br>
+                    <span class="cli-prompt">SW2(config-if-range)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 2. Configure VTP Transparent Mode</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> vtp mode transparent<br>
+                    <span class="cli-comment">Setting device to VTP Transparent mode for VLANS.</span><br><br>
+
+                    <span class="cli-comment">! 3. Create Local VLAN (Will NOT sync to domain)</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> vlan 40<br>
+                    <span class="cli-prompt">SW2(config-vlan)#</span> exit<br>
+                </div>
+            </div>
+
+            <!-- SW3 Tab -->
+            <div id="config-sw3" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Hardcode trunk to SW2, set VTP Client mode, and attempt to create a VLAN (which will fail).</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW3&gt;</span> enable<br>
+                    <span class="cli-prompt">SW3#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! 1. Hardcode Trunk & Disable DTP Negotiation</span><br>
+                    <span class="cli-prompt">SW3(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">SW3(config-if)#</span> switchport mode trunk<br>
+                    <span class="cli-prompt">SW3(config-if)#</span> switchport nonegotiate<br>
+                    <span class="cli-prompt">SW3(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 2. Configure VTP Client Mode</span><br>
+                    <span class="cli-prompt">SW3(config)#</span> vtp mode client<br>
+                    <span class="cli-comment">Setting device to VTP Client mode.</span><br><br>
+
+                    <span class="cli-comment">! 3. Attempt to create VLAN (Demonstrates Client limitation)</span><br>
+                    <span class="cli-prompt">SW3(config)#</span> vlan 50<br>
+                    <span class="cli-comment text-red-400">VTP VLAN configuration not allowed when device is in CLIENT mode.</span><br><br>
+
+                    <span class="cli-comment">! 4. Secure access ports & disable DTP</span><br>
+                    <span class="cli-prompt">SW3(config)#</span> interface f0/1<br>
+                    <span class="cli-prompt">SW3(config-if)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW3(config-if)#</span> switchport access vlan 10<br>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('vtp_qa1', this)">
+                            <span class="pr-6">1. Configure the switchports connecting switches as trunk ports. Disable DTP on the ports. Confirm administrative/operational mode.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Hardcode the mode and disable DTP frames using <code>nonegotiate</code>.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">SW1(config)#</span> interface g0/1<br>
+                                <span class="cli-prompt">SW1(config-if)#</span> switchport mode trunk<br>
+                                <span class="cli-prompt">SW1(config-if)#</span> switchport nonegotiate<br><br>
+                                <span class="cli-comment">! To confirm:</span><br>
+                                <span class="cli-prompt">SW1#</span> show interface g0/1 switchport<br>
+                                <span class="cli-comment">Administrative Mode: trunk</span><br>
+                                <span class="cli-comment">Operational Mode: trunk</span><br>
+                                <span class="cli-comment">Negotiation of Trunking: Off</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('vtp_qa2', this)">
+                            <span>2. Configure SW1 in VTP domain CCNA. Create VLANs 10, 20, 30. Have SW2/SW3 added them?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW1(config)#</span> vtp domain CCNA<br>
+                                <span class="cli-prompt">SW1(config)#</span> vlan 10<br>
+                                <span class="cli-prompt">SW1(config-vlan)#</span> vlan 20<br>
+                                <span class="cli-prompt">SW1(config-vlan)#</span> vlan 30
+                            </div>
+                            <p><strong>Answer:</strong> Yes. Because SW2 and SW3 had a "null" domain name, they automatically joined the `CCNA` domain upon receiving SW1's advertisement. Since they default to Server mode, they accepted the higher Revision Number and synced VLANs 10, 20, and 30.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('vtp_qa3', this)">
+                            <span>3. Configure SW2 in VTP transparent mode. Add VLAN 40. Is it added to SW1/SW3?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW2(config)#</span> vtp mode transparent<br>
+                                <span class="cli-prompt">SW2(config)#</span> vlan 40
+                            </div>
+                            <p><strong>Answer:</strong> No. Transparent switches maintain an isolated VLAN database (Revision Number stays at 0). They do not advertise their local VLANs to the domain. Thus, SW1 and SW3 do not learn about VLAN 40.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('vtp_qa4', this)">
+                            <span class="pr-6">4. Configure SW3 in VTP client mode. Try to configure VLAN 50. Is it added?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW3(config)#</span> vtp mode client<br>
+                                <span class="cli-prompt">SW3(config)#</span> vlan 50<br>
+                                <span class="cli-comment text-rose-400">VTP VLAN configuration not allowed when device is in CLIENT mode.</span>
+                            </div>
+                            <p><strong>Answer:</strong> No. VTP Client mode strictly forbids the creation, modification, or deletion of local VLANs. It can only listen and sync to Server advertisements.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa5', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('vtp_qa5', this)">
+                            <span class="pr-6">5. Configure host ports as access ports. Is DTP still enabled?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW3(config)#</span> interface f0/1<br>
+                                <span class="cli-prompt">SW3(config-if)#</span> switchport mode access<br>
+                                <span class="cli-prompt">SW3(config-if)#</span> do show interface f0/1 switchport
+                            </div>
+                            <p><strong>Answer:</strong> No. Manually setting <code>switchport mode access</code> automatically disables DTP negotiation on that interface. You will see <code>Negotiation of Trunking: Off</code> in the output.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">switchport mode trunk</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Hardcodes the interface to operate as an 802.1Q trunk.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">switchport nonegotiate</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Stops the switch from sending DTP negotiation frames out the interface.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">vtp domain [name]</td>
+                            <td class="px-6 py-4"><span class="bg-rose-50 text-rose-800 text-xs px-2 py-1 rounded border border-rose-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets the VTP domain. Switches with null domains automatically join the first domain they hear.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">vtp mode [server|client|transparent]</td>
+                            <td class="px-6 py-4"><span class="bg-rose-50 text-rose-800 text-xs px-2 py-1 rounded border border-rose-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Changes the VTP operating mode. Default is Server.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">vtp password [password]</td>
+                            <td class="px-6 py-4"><span class="bg-rose-50 text-rose-800 text-xs px-2 py-1 rounded border border-rose-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Secures VTP advertisements. Switches will reject syncs if passwords mismatch.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">show vtp status</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays VTP version, domain, mode, and crucially, the Configuration Revision number.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">show interface [id] switchport</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Reveals Admin/Operational modes and if "Negotiation of Trunking" is On/Off.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of DTP modes and VTP synchronization logic.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('vtpChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Server (Default)', 'Client', 'Transparent'],
+                datasets: [
+                    {
+                        label: 'Syncs with Domain',
+                        data: [1, 1, 0],
+                        backgroundColor: '#e11d48', // Rose
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Can Create Local VLANs',
+                        data: [1, 0, 1],
+                        backgroundColor: '#94a3b8', // Slate
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 1.2, 
+                        ticks: { stepSize: 1, callback: val => val === 1 ? 'Yes' : (val === 0 ? 'No' : '') },
+                        grid: { color: '#f1f5f9' },
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw === 1 ? ` ${context.dataset.label}: Yes` : ` ${context.dataset.label}: No`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-rose-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-rose-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'view-theory') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-rose-600', 'border-rose-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-rose-600', 'border-rose-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- VTP Simulator Logic ---
+    function playVtpStep(stepIndex) {
+        const allNodes = ['node-sw1', 'node-sw2', 'node-sw3'];
+        const desc = document.getElementById('vtp-desc');
+        
+        allNodes.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.classList.remove('node-highlight', 'node-dim');
+        });
+        
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-vtp-'+i);
+            if(btn) {
+                btn.classList.remove('bg-rose-600', 'text-white', 'border-rose-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-vtp-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-rose-600', 'text-white', 'border-rose-600');
+        }
+
+        // DOM elements for stats
+        const rev1 = document.getElementById('rev-sw1'); const vl1 = document.getElementById('vlan-sw1');
+        const rev2 = document.getElementById('rev-sw2'); const vl2 = document.getElementById('vlan-sw2');
+        const rev3 = document.getElementById('rev-sw3'); const vl3 = document.getElementById('vlan-sw3');
+
+        if (stepIndex === 1) {
+            ['node-sw1', 'node-sw2', 'node-sw3'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            desc.innerHTML = "<span class='text-rose-400 font-bold'>Step 1 (DTP):</span> Hardcoding the trunks and issuing <code>switchport nonegotiate</code> stops DTP frames from broadcasting. The physical links are now securely established.";
+            rev1.innerText="0"; vl1.innerText="1";
+            rev2.innerText="0"; vl2.innerText="1";
+            rev3.innerText="0"; vl3.innerText="1";
+        } else if (stepIndex === 2) {
+            ['node-sw1', 'node-sw3'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-sw2'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-rose-400 font-bold'>Step 2 (Server Sync):</span> SW1 creates VLANs 10, 20, 30. Its Revision Number increases to 3. It advertises this. SW3 (Client) sees the higher Rev # and syncs its database. SW2 (Transparent) forwards the ad but ignores it locally.";
+            rev1.innerText="3"; vl1.innerText="4"; // 1 + 10,20,30
+            rev2.innerText="0"; vl2.innerText="1"; // Ignored
+            rev3.innerText="3"; vl3.innerText="4"; // Synced
+        } else if (stepIndex === 3) {
+            ['node-sw2'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-sw1', 'node-sw3'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-rose-400 font-bold'>Step 3 (Transparent Iso):</span> SW2 creates VLAN 40. Because it is in Transparent mode, its Revision Number stays at 0. It does NOT advertise this to the domain. SW1 and SW3 remain unaffected.";
+            rev1.innerText="3"; vl1.innerText="4"; 
+            rev2.innerText="0"; vl2.innerText="2"; // + VLAN 40
+            rev3.innerText="3"; vl3.innerText="4"; 
+        } else if (stepIndex === 4) {
+            ['node-sw3'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-sw1', 'node-sw2'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-rose-400 font-bold'>Step 4 (Client Deny):</span> SW3 attempts to create VLAN 50. The Cisco IOS rejects the command entirely because Client mode switches are forbidden from modifying local VLAN databases.";
+            rev1.innerText="3"; vl1.innerText="4"; 
+            rev2.innerText="0"; vl2.innerText="2"; 
+            rev3.innerText="3"; vl3.innerText="4"; // Rejected 50
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('dtp_vtp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is the default DTP mode on many older Cisco switches?", a: "<strong>Dynamic Auto</strong><br><br>The port passively waits for the other side to initiate trunking negotiation." },
+            { q: "What command disables DTP frames entirely?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>switchport nonegotiate</code><br><br>This should be applied to all statically hardcoded trunks for security." },
+            { q: "What happens if you configure an interface with `switchport mode access`?", a: "It forces the port to be an access port AND <strong>automatically disables DTP negotiation</strong> on that interface." },
+            { q: "What dictates which VTP Server's advertisement is trusted?", a: "The <strong>Configuration Revision Number</strong>.<br><br>Clients sync to the server advertisement with the highest revision number." },
+            { q: "Can a switch in VTP Transparent mode create local VLANs?", a: "<strong>Yes.</strong><br><br>It can create local VLANs (its revision number stays 0), but it will not advertise them to the rest of the VTP domain." },
+            { q: "What extra security measure can prevent unauthorized switches from wiping the VTP domain?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>vtp password [password]</code><br><br>Switches reject advertisements if passwords mismatch." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-rose-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <div class="absolute w-full h-full bg-rose-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-rose-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('dtp_vtp_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playVtpStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

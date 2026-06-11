@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: OSPF Configuration (Part 2)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.tab-content.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #fdf2f8; color: #db2777; border-left-color: #db2777; font-weight: 600; } /* Pink/Fuchsia Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #f472b6; font-weight: bold; } /* Pink 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #db2777 !important; box-shadow: 0 0 15px rgba(219, 39, 119, 0.5); }
+.node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+.link-active { background-color: #db2777; box-shadow: 0 0 10px rgba(219,39,119,0.5); }
+.link-standby { background-color: #94a3b8; border-style: dashed; opacity: 0.5; }
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(219, 39, 119, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(219, 39, 119, 0.8); }
+}
+
+@keyframes flowTraffic {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 0%; }
+}
+.traffic-flow {
+    background: linear-gradient(90deg, rgba(219,39,119,1) 0%, rgba(253,232,243,1) 50%, rgba(219,39,119,1) 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1s linear infinite;
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-pink-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-pink-500">⚙️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-pink-400 font-semibold tracking-wide uppercase mt-1">OSPF Config (2)</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-pink-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Advanced Concepts
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Metrics Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Advanced OSPF Configuration</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-pink-500 pl-4 bg-pink-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Enhance your OSPF deployments. Learn to enable OSPF directly on interfaces, streamline security with <code>passive-interface default</code>, and manipulate OSPF cost calculations by altering the Reference Bandwidth to support modern multi-gigabit networks.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-pink-500">🧠</span> Modern OSPF Tuning
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">Configuration Upgrades</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-pink-700">Interface-Level OSPF</strong>
+                                <span>Instead of using complex wildcard masks with the <code>network</code> command, modern IOS allows you to simply enter an interface and type <code>ip ospf 1 area 0</code>. This is much less prone to human error.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-pink-700">Passive-Interface Default</strong>
+                                <span>Instead of manually making 50 LAN interfaces passive, you can make <em>every</em> interface passive by default, and then selectively use <code>no passive-interface</code> on the few uplinks connected to other routers.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-pink-700">The Reference Bandwidth Problem</strong>
+                                <span>By default, OSPF's formula (100 Mbps / Bandwidth) gives both 100M and 1000M links a cost of 1. You must increase the reference bandwidth globally so OSPF can differentiate between fast and ultra-fast links.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">OSPF Cost Re-calculation</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">How changing Reference Bandwidth to 10,000 fixes the metric flaw.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="costChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-pink-50 p-3 rounded border border-pink-200 text-pink-900 shadow-sm">
+                        <strong>New Formula:</strong> Cost = 10,000 Mbps / Interface Bandwidth.<br>
+                        Now, FastEthernet (100M) costs <strong>100</strong>, while Gigabit (1000M) costs <strong>10</strong>. OSPF can now accurately choose the fastest path!
+                    </p>
+                </div>
+            </div>
+            
+            <div class="bg-slate-800 border-l-4 border-slate-500 p-4 text-sm text-slate-300 rounded-lg shadow-sm">
+                <strong class="text-white block mb-1">Advanced Topology Detail: OSPF External Routes (O*E2)</strong>
+                <p>When you inject a default route into OSPF, it usually appears as an External Type 2 (<code>E2</code>) route. E2 routes have a quirky behavior: <em>their metric does not increase as they cross the network</em>. If R1 injects a route with cost 1, R4 sees the cost as 1, regardless of how many slow links are in between. This often causes unexpected load-balancing in simulations like Packet Tracer.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-pink-500">🔍</span> OSPF Cost & Adjacency Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Explore how adjusting the Reference Bandwidth fundamentally alters how OSPF views the network topology and selects its best paths.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playOspfStep(1)" id="btn-ospf-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Default Cost (Ref 100)</button>
+                <button onclick="playOspfStep(2)" id="btn-ospf-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. New Cost (Ref 10000)</button>
+                <button onclick="playOspfStep(3)" id="btn-ospf-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Passive Interface Default</button>
+                <button onclick="playOspfStep(4)" id="btn-ospf-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. External (E2) Gotcha</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Diamond Topology -->
+                <div class="relative w-full max-w-md h-72 mx-auto mt-8">
+                    
+                    <!-- ISP (Top Left) -->
+                    <div id="node-isp" class="absolute -top-6 left-0 transform -translate-x-1/2 -translate-y-1/2 w-16 h-12 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-500 z-10 transition-all opacity-50">ISP</div>
+                    
+                    <!-- R1 (Top Center) -->
+                    <div id="node-r1" class="absolute top-12 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg">R1</div>
+                    
+                    <!-- R2 (Right) -->
+                    <div id="node-r2" class="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">R2</div>
+                    
+                    <!-- R3 (Left) -->
+                    <div id="node-r3" class="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">R3</div>
+
+                    <!-- R4 (Bottom Center) -->
+                    <div id="node-r4" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">R4</div>
+
+                    <!-- Links -->
+                    <!-- ISP to R1 -->
+                    <div id="link-isp-r1" class="absolute top-0 left-12 w-24 h-1 bg-slate-600 origin-top-left rotate-[20deg] transition-all z-0 opacity-50"></div>
+
+                    <!-- R1 to R2 (Gigabit) -->
+                    <div id="link-r1-r2" class="absolute top-16 left-[60%] w-32 h-1 bg-slate-600 origin-top-left rotate-[35deg] transition-all z-0 flex items-center justify-center">
+                        <span class="text-[10px] bg-slate-800 px-1 text-slate-300 font-mono -translate-y-4" id="cost-r1-r2">Cost: 1</span>
+                    </div>
+                    <!-- R1 to R3 (FastEth) -->
+                    <div id="link-r1-r3" class="absolute top-16 right-[60%] w-32 h-1 bg-slate-600 origin-top-right -rotate-[35deg] transition-all z-0 flex items-center justify-center">
+                        <span class="text-[10px] bg-slate-800 px-1 text-slate-300 font-mono -translate-y-4" id="cost-r1-r3">Cost: 1</span>
+                    </div>
+                    
+                    <!-- R3 to R4 (FastEth) -->
+                    <div id="link-r3-r4" class="absolute bottom-16 right-[60%] w-32 h-1 bg-slate-600 origin-bottom-right rotate-[35deg] transition-all z-0 flex items-center justify-center">
+                        <span class="text-[10px] bg-slate-800 px-1 text-slate-300 font-mono translate-y-4" id="cost-r3-r4">Cost: 1</span>
+                    </div>
+                    <!-- R2 to R4 (FastEth) -->
+                    <div id="link-r2-r4" class="absolute bottom-16 left-[60%] w-32 h-1 bg-slate-600 origin-bottom-left -rotate-[35deg] transition-all z-0 flex items-center justify-center">
+                        <span class="text-[10px] bg-slate-800 px-1 text-slate-300 font-mono translate-y-4" id="cost-r2-r4">Cost: 1</span>
+                    </div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="ospf-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate OSPF configuration logic.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-pink-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to enable interface-level OSPF and manipulate the auto-cost reference bandwidth.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-pink-600 border-b-2 border-pink-600 transition-colors">R1 (Int-Level OSPF)</button>
+                <button onclick="switchDeviceTab('r4', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R4 (Passive Default)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure OSPF directly on interfaces using comma-separated ranges. Adjust the reference bandwidth and inject a default route.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Use a comma to configure multiple dissimilar interfaces at once</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface range g0/0 , f1/0 , l0<br>
+                    <span class="cli-comment">! Enable OSPF Process 1 in Area 0 directly on the interface</span><br>
+                    <span class="cli-prompt">R1(config-if-range)#</span> ip ospf 1 area 0<br>
+                    <span class="cli-prompt">R1(config-if-range)#</span> exit<br><br>
+
+                    <span class="cli-prompt">R1(config)#</span> router ospf 1<br>
+                    <span class="cli-prompt">R1(config-router)#</span> passive-interface l0<br><br>
+
+                    <span class="cli-comment">! Fix the metric calculation so Gigabit is preferred over FastEthernet</span><br>
+                    <span class="cli-prompt">R1(config-router)#</span> auto-cost reference-bandwidth 10000<br>
+                    <span class="cli-comment">% OSPF: Reference bandwidth is changed.</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please ensure reference bandwidth is consistent across all routers.</span><br><br>
+
+                    <span class="cli-comment">! Inject static default route into OSPF</span><br>
+                    <span class="cli-prompt">R1(config-router)#</span> default-information originate
+                </div>
+            </div>
+
+            <!-- R4 Tab -->
+            <div id="config-r4" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Use <code>passive-interface default</code> for strict security, then manually re-enable OSPF Hellos on uplinks.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R4&gt;</span> enable<br>
+                    <span class="cli-prompt">R4#</span> configure terminal<br>
+                    <span class="cli-prompt">R4(config)#</span> interface range g0/0 , f1/0 , f2/0 , l0<br>
+                    <span class="cli-prompt">R4(config-if-range)#</span> ip ospf 1 area 0<br>
+                    <span class="cli-prompt">R4(config-if-range)#</span> exit<br><br>
+
+                    <span class="cli-prompt">R4(config)#</span> router ospf 1<br><br>
+
+                    <span class="cli-comment">! Lock down the router by making EVERY interface passive</span><br>
+                    <span class="cli-prompt">R4(config-router)#</span> passive-interface default<br>
+                    <span class="cli-comment">%OSPF-5-ADJCHG: Process 1, Nbr 2.2.2.2 on FastEthernet1/0 from FULL to DOWN</span><br>
+                    <span class="cli-comment">%OSPF-5-ADJCHG: Process 1, Nbr 3.3.3.3 on FastEthernet2/0 from FULL to DOWN</span><br><br>
+
+                    <span class="cli-comment">! Bring neighbor adjacencies back up securely</span><br>
+                    <span class="cli-prompt">R4(config-router)#</span> no passive-interface f1/0<br>
+                    <span class="cli-prompt">R4(config-router)#</span> no passive-interface f2/0<br><br>
+
+                    <span class="cli-comment">! Update metric calculation</span><br>
+                    <span class="cli-prompt">R4(config-router)#</span> auto-cost reference-bandwidth 10000
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-pink-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-pink-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-pink-600 rounded border-slate-300 focus:ring-pink-500" onclick="event.stopPropagation(); saveProgress('ospf2_qa1', this)">
+                            <span class="pr-6">1. Enable OSPF directly on each interface (instead of using the network command).</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R1(config)#</span> interface range g0/0 , f1/0 , l0<br>
+                                <span class="cli-prompt">R1(config-if-range)#</span> ip ospf 1 area 0
+                            </div>
+                            <p><strong>Explanation:</strong> This is a newer, preferred method for enabling OSPF. It eliminates the risk of miscalculating wildcard masks. Notice the use of commas in <code>interface range</code> to select completely different interface types simultaneously.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-pink-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-pink-600 rounded border-slate-300 focus:ring-pink-500" onclick="event.stopPropagation(); saveProgress('ospf2_qa2', this)">
+                            <span>2. Use the `passive-interface default` command, then selectively enable neighbor links.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R4(config)#</span> router ospf 1<br>
+                                <span class="cli-prompt">R4(config-router)#</span> passive-interface default<br>
+                                <span class="cli-prompt">R4(config-router)#</span> no passive-interface f1/0<br>
+                                <span class="cli-prompt">R4(config-router)#</span> no passive-interface f2/0
+                            </div>
+                            <p><strong>Explanation:</strong> In a production network with 50 local LAN segments and only 2 uplinks to other routers, it is much faster and safer to set <em>everything</em> to passive, and explicitly un-passive the 2 uplinks. This guarantees you won't accidentally leak OSPF hellos onto a new user VLAN.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-pink-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-pink-600 rounded border-slate-300 focus:ring-pink-500" onclick="event.stopPropagation(); saveProgress('ospf2_qa3', this)">
+                            <span>3. Fix the metric flaw by configuring the reference bandwidth on each router.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>To make a FastEthernet interface calculate to a cost of 100, we must change the global numerator to 10,000 Mbps.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config-router)#</span> auto-cost reference-bandwidth 10000
+                            </div>
+                            <p class="text-pink-700 font-semibold mt-2">Crucial: You must type this exact command on every single OSPF router in the domain. If routers have different reference bandwidths, routing loops can occur!</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-pink-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-pink-700 whitespace-nowrap">ip ospf [pid] area [num]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Activates OSPF directly on a specific interface without using network/wildcard commands.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-pink-700 whitespace-nowrap">passive-interface default</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Router Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Mutes OSPF Hello packets on ALL interfaces globally for security.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-pink-700 whitespace-nowrap">no passive-interface [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Router Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Explicitly allows OSPF Hellos out of a specific uplink to form adjacencies.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-pink-700 whitespace-nowrap">auto-cost reference-bandwidth [MB]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Router Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Changes the numerator in the OSPF cost equation. Input is in Megabits per second.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-pink-700 whitespace-nowrap">show ip ospf interface</td>
+                            <td class="px-6 py-4"><span class="bg-pink-50 text-pink-800 text-xs px-2 py-1 rounded border border-pink-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays verbose OSPF details for an interface, including its calculated Cost.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-pink-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of OSPF operations and metrics.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('costChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['FastEthernet (100M)', 'GigabitEthernet (1000M)'],
+                datasets: [
+                    {
+                        label: 'Old Default Cost (Ref 100M)',
+                        data: [1, 1], // Cost = 100/100=1. 100/1000=0.1 -> rounded up to 1.
+                        backgroundColor: '#94a3b8', // Slate
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'New Accurate Cost (Ref 10000M)',
+                        data: [100, 10], // Cost = 10000/100=100. 10000/1000=10.
+                        backgroundColor: '#db2777', // Pink
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 120, 
+                        ticks: { stepSize: 20 },
+                        grid: { color: '#f1f5f9' },
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` OSPF Cost: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-pink-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-pink-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playOspfStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-pink-600', 'border-pink-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-pink-600', 'border-pink-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- OSPF Tracker Logic ---
+    function playOspfStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-ospf-'+i);
+            if(btn) {
+                btn.classList.remove('bg-pink-600', 'text-white', 'border-pink-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-ospf-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-pink-600', 'text-white', 'border-pink-600');
+        }
+
+        const l12 = document.getElementById('link-r1-r2');
+        const l13 = document.getElementById('link-r1-r3');
+        const l24 = document.getElementById('link-r2-r4');
+        const l34 = document.getElementById('link-r3-r4');
+        const lisp = document.getElementById('link-isp-r1');
+        
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        const r3 = document.getElementById('node-r3');
+        const r4 = document.getElementById('node-r4');
+        
+        const c12 = document.getElementById('cost-r1-r2');
+        const c13 = document.getElementById('cost-r1-r3');
+        const c24 = document.getElementById('cost-r2-r4');
+        const c34 = document.getElementById('cost-r3-r4');
+
+        const desc = document.getElementById('ospf-desc');
+
+        // Reset visual classes
+        [l12, l13, l24, l34].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|bg-slate-600|bg-pink-400|link-standby/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(219,39,119,0.5)]');
+        });
+        
+        [r1, r2, r3, r4].forEach(r => r.classList.remove('node-highlight', 'node-dim'));
+
+        if (stepIndex === 1) {
+            r4.classList.add('node-highlight'); r1.classList.add('node-highlight');
+            [l24, l34, l12, l13].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(219,39,119,0.5)]');
+            });
+            c12.innerText="Cost: 1"; c13.innerText="Cost: 1"; c24.innerText="Cost: 1"; c34.innerText="Cost: 1";
+            desc.innerHTML = "<span class='text-pink-400 font-bold'>Step 1 (Default Metric):</span> Because the default reference bandwidth is 100Mbps, both the Gigabit and FastEthernet links cost 1. R4 sees two equal-cost paths (Cost 2) to R1 and load-balances across both, which is inefficient.";
+        } else if (stepIndex === 2) {
+            r4.classList.add('node-highlight'); r1.classList.add('node-highlight');
+            [l24, l12].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(219,39,119,0.5)]');
+            });
+            c12.innerText="Cost: 10"; c13.innerText="Cost: 100"; c24.innerText="Cost: 100"; c34.innerText="Cost: 100";
+            desc.innerHTML = "<span class='text-pink-400 font-bold'>Step 2 (Ref BW 10,000):</span> By changing the global formula, Gigabit links accurately cost 10 and FastEthernet costs 100. R4 now calculates the R2 path as Cost 110, and the R3 path as Cost 200. It correctly sends all traffic via the faster R2 link.";
+        } else if (stepIndex === 3) {
+            [r1, r2, r3, r4].forEach(r => r.classList.add('node-highlight'));
+            [l12, l13, l24, l34].forEach(l => l.classList.replace('bg-slate-600', 'bg-pink-400'));
+            desc.innerHTML = "<span class='text-pink-400 font-bold'>Step 3 (Passive Interfaces):</span> A best practice is to make ALL interfaces passive by default, halting OSPF Hello messages. You then manually permit Hellos on the few specific router-to-router uplinks to restore adjacencies securely.";
+        } else if (stepIndex === 4) {
+            r4.classList.add('node-highlight'); r1.classList.add('node-highlight');
+            [l24, l34, l12, l13].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(219,39,119,0.5)]');
+            });
+            c12.innerText="Cost: 1"; c13.innerText="Cost: 1"; c24.innerText="Cost: 1"; c34.innerText="Cost: 1";
+            desc.innerHTML = "<span class='text-pink-400 font-bold'>Step 4 (E2 Route Gotcha):</span> R1 injects a default route to the internet as an External Type 2 (<code>O*E2</code>) route. E2 routes have a fixed cost that does NOT increment across hops. So R4 sees both paths as having Cost=1 to the internet, and goes back to load balancing!";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-pink-600 hover:bg-pink-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ospf2_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "How do you enable OSPF directly on an interface (skipping the network command)?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>ip ospf [process-id] area [area-id]</code><br><br>Entered from Interface Config mode." },
+            { q: "What is the primary benefit of `passive-interface default`?", a: "<strong>Security & Efficiency.</strong><br><br>It stops OSPF Hellos on all ports, ensuring you don't accidentally form rogue neighbor adjacencies on end-user LAN ports. You then manually enable the router uplinks." },
+            { q: "Why must you increase the OSPF Auto-Cost Reference Bandwidth?", a: "Because the default is 100 Mbps. This causes OSPF to view 100 Mbps (FastEthernet) and 1000 Mbps (Gigabit) links identically (Cost = 1). Increasing it allows OSPF to differentiate speeds." },
+            { q: "If you change the Reference Bandwidth, do you have to do it on all routers?", a: "<strong>Yes.</strong><br><br>If routers calculate link costs using different reference values, it can lead to asymmetric routing or routing loops." },
+            { q: "What is unique about an OSPF External Type 2 (O*E2) route's metric?", a: "Its metric <strong>does not increment</strong> as it passes from router to router. The cost remains static throughout the entire OSPF domain." },
+            { q: "To what IP address do OSPF routers multicast their Hello messages?", a: "<strong>224.0.0.5</strong>" }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-pink-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-pink-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-pink-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ospf2_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playOspfStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

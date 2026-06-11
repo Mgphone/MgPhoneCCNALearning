@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: IPv4 Addressing & Interfaces</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #f1f5f9; color: #059669; border-left-color: #059669; font-weight: 600; }
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.open { max-height: 1200px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-block {
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            border: 1px solid #1e293b;
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2);
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #34d399; font-weight: bold; } /* Emerald 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-emerald-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col z-20 shadow-sm transition-all">
+    <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+        <span class="text-3xl text-emerald-600">🔌</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-slate-800">CCNA Mastery</h1>
+            <p class="text-xs text-emerald-600 font-semibold uppercase tracking-wider mt-1">IPv4 Addressing</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📖</span> Core Concepts
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-commands', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    
+    <header class="mb-8 max-w-5xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Configuring IPv4 Addresses & Interfaces</h2>
+        <div class="border-l-4 border-emerald-500 pl-4 bg-white p-4 rounded-r-xl shadow-sm border border-slate-100">
+            <p class="text-lg text-slate-600 leading-relaxed">
+                This module covers the essential steps for configuring IPv4 addresses on Cisco router interfaces to enable routing between different networks. Master subnet classes, interface statuses, and end-to-end connectivity verification.
+            </p>
+        </div>
+    </header>
+
+    <!-- TAB 1: Core Concepts -->
+    <div id="tab-concepts" class="tab-content active max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Theory & Interface Mechanics</h3>
+            <p class="text-slate-600 mb-8 leading-relaxed">
+                Routers separate broadcast domains and route traffic between different IP networks. For a router to act as a gateway, each active interface must be assigned an IP address belonging to the specific subnet it connects to.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-4">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <h4 class="font-bold text-lg text-slate-800 mb-3 flex items-center gap-2"><span class="text-emerald-600">🚦</span> Interface Status Codes</h4>
+                        <ul class="space-y-3 text-sm text-slate-700">
+                            <li>
+                                <strong>Status (Layer 1 - Physical):</strong> Hardware connectivity. If this reads "administratively down," it means the <code class="bg-white border px-1 rounded text-red-600 font-mono text-xs">shutdown</code> command is currently active.
+                            </li>
+                            <li>
+                                <strong>Protocol (Layer 2 - Data Link):</strong> Framing/encapsulation status. <br><em class="text-xs text-slate-500">Note: If Layer 1 is down, Layer 2 will always be down.</em>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-emerald-50 border border-emerald-100 p-5 rounded-xl">
+                        <h4 class="font-bold text-lg text-emerald-900 mb-2 flex items-center gap-2"><span>💡</span> Default Behaviors</h4>
+                        <p class="text-sm text-emerald-800 mb-2">By default, <strong>all interfaces on a Cisco router are shut down</strong>. You must explicitly bring them up using the <code>no shutdown</code> command.</p>
+                        <p class="text-sm text-emerald-800">Interface descriptions are locally significant only. They do not affect routing, but are critical for real-world administration.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">IPv4 Class Allocations (Lab Context)</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Comparing Network vs. Host bits across Class A, B, and C subnets used in this topology.</p>
+                    
+                    <div class="chart-container flex-grow flex items-center justify-center">
+                        <canvas id="subnetChart"></canvas>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-2 mt-4 text-center text-xs">
+                        <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                            <strong>Class A (/8)</strong><br><span class="text-slate-500 font-mono">15.x.x.x</span>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                            <strong>Class B (/16)</strong><br><span class="text-slate-500 font-mono">182.98.x.x</span>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                            <strong>Class C (/24)</strong><br><span class="text-slate-500 font-mono">201.19.120.x</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Device Configurations -->
+    <div id="tab-config" class="tab-content max-w-5xl mx-auto space-y-8">
+         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Device Configuration Lab</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Review the exact Cisco IOS commands and PC GUI steps required to assign IP addresses across three different subnets.
+            </p>
+
+            <!-- Device Tabs -->
+            <div class="flex border-b border-slate-200 gap-4 mb-6 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active pb-3 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition-colors">Router 1 (R1)</button>
+                <button onclick="switchDeviceTab('pc', this)" class="device-tab-btn pb-3 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Host PCs (GUI)</button>
+            </div>
+
+            <!-- R1 Config -->
+            <div id="config-r1" class="device-config block">
+                <p class="text-sm text-slate-600 mb-4">Goal: Set hostname, apply IPs from 3 different classes to G0/0, G0/1, and G0/2, add descriptions, and enable the interfaces.</p>
+                <div class="cli-block">
+                    <span class="cli-prompt">Router&gt;</span> enable<br>
+                    <span class="cli-prompt">Router#</span> configure terminal<br>
+                    <span class="cli-prompt">Router(config)#</span> hostname R1<br><br>
+
+                    <span class="cli-comment">! Configure Interface G0/0 (Class A)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface GigabitEthernet 0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 15.255.255.254 255.0.0.0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> description # to switch 1 #<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure Interface G0/1 (Class B)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 182.98.255.254 255.255.0.0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> description # to switch 2 #<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure Interface G0/2 (Class C)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/2<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 201.19.120.254 255.255.255.0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> description # to switch 3 #<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br><br>
+
+                    <span class="cli-comment">! Save Configuration to NVRAM</span><br>
+                    <span class="cli-prompt">R1(config-if)#</span> end<br>
+                    <span class="cli-prompt">R1#</span> copy running-config startup-config
+                </div>
+            </div>
+
+            <!-- PC Config -->
+            <div id="config-pc" class="device-config hidden">
+                <div class="bg-slate-50 border border-slate-200 p-6 rounded-lg shadow-sm">
+                    <h4 class="font-bold text-lg text-slate-800 mb-2 border-b pb-2">Packet Tracer GUI Configuration</h4>
+                    <p class="text-sm text-slate-600 mb-6">PCs do not use the Cisco CLI. IP addresses are configured via the Desktop &gt; IP Configuration tab.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-emerald-700 mb-2">PC1 (Class A)</h5>
+                            <p class="mb-1"><strong>IPv4:</strong> <code class="bg-slate-100 px-1 border rounded">15.0.0.1</code></p>
+                            <p class="mb-1"><strong>Mask:</strong> <code class="bg-slate-100 px-1 border rounded">255.0.0.0</code></p>
+                            <p class="mt-3 text-slate-500 text-xs italic">Default Gateway: 15.255.255.254</p>
+                        </div>
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-emerald-700 mb-2">PC2 (Class B)</h5>
+                            <p class="mb-1"><strong>IPv4:</strong> <code class="bg-slate-100 px-1 border rounded">182.98.0.1</code></p>
+                            <p class="mb-1"><strong>Mask:</strong> <code class="bg-slate-100 px-1 border rounded">255.255.0.0</code></p>
+                            <p class="mt-3 text-slate-500 text-xs italic">Default Gateway: 182.98.255.254</p>
+                        </div>
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-emerald-700 mb-2">PC3 (Class C)</h5>
+                            <p class="mb-1"><strong>IPv4:</strong> <code class="bg-slate-100 px-1 border rounded">201.19.120.1</code></p>
+                            <p class="mb-1"><strong>Mask:</strong> <code class="bg-slate-100 px-1 border rounded">255.255.255.0</code></p>
+                            <p class="mt-3 text-slate-500 text-xs italic">Default Gateway: 201.19.120.254</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4">*Packet Tracer automatically populates the default subnet mask based on the first octet class rules.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TAB 3: Lab Q&A -->
+    <div id="tab-qa" class="tab-content max-w-5xl mx-auto space-y-8">
+         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Lab Task Q&A</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Below are the expert solutions to the 7 lab tasks from the video. Check off the steps as you complete them to save your progress! Click on a question to expand its answer.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('ipv4_qa1', this)">
+                            <span class="pr-6">1. Configure R1's hostname.</span>
+                        </div>
+                        <span class="text-2xl text-emerald-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>You must enter Global Configuration mode to change the device hostname.</p>
+                            <div class="cli-block">
+                                <span class="cli-prompt">Router&gt;</span> enable<br>
+                                <span class="cli-prompt">Router#</span> configure terminal<br>
+                                <span class="cli-prompt">Router(config)#</span> hostname R1
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('ipv4_qa2', this)">
+                            <span>2. Use a 'show' command to view a list of R1's interfaces, their IP addresses, status, etc.</span>
+                        </div>
+                        <span class="text-2xl text-emerald-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>By default, this command is executed in Privileged EXEC mode. If you are in Global Config mode, prepend it with <code>do</code>.</p>
+                            <div class="cli-block">
+                                <span class="cli-prompt">R1(config)#</span> do show ip interface brief
+                            </div>
+                            <p class="text-xs text-slate-500 italic mt-2">Notice the interfaces are "administratively down" because we haven't configured them yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('ipv4_qa3', this)">
+                            <span>3. Configure the appropriate IP addresses on R1's interfaces, and enable them. Configure descriptions.</span>
+                        </div>
+                        <span class="text-2xl text-emerald-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>Enter the specific interface configuration mode for each port.</p>
+                            <div class="cli-block text-xs">
+                                <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ip address 15.255.255.254 255.0.0.0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> description # to switch 1 #<br>
+                                <span class="cli-prompt">R1(config-if)#</span> no shutdown<br><br>
+                                <span class="cli-comment">! ... Repeat for g0/1 (182.98.255.254) and g0/2 (201.19.120.254)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('ipv4_qa4', this)">
+                            <span>4. Use a 'show' command to verify R1's interfaces again.</span>
+                        </div>
+                        <span class="text-2xl text-emerald-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>Run the brief summary command again to verify that your IP addresses are applied and the Status/Protocol columns now display "up".</p>
+                            <div class="cli-block">
+                                <span class="cli-prompt">R1#</span> show ip interface brief
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-5', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('ipv4_qa5', this)">
+                            <span>5. View the running config to confirm the configuration changes, then save the config.</span>
+                        </div>
+                        <span class="text-2xl text-emerald-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>Verify the active configuration in RAM, then copy it to the startup configuration in NVRAM.</p>
+                            <div class="cli-block">
+                                <span class="cli-prompt">R1#</span> show running-config<br>
+                                <span class="cli-prompt">R1#</span> copy running-config startup-config
+                            </div>
+                            <p class="text-xs text-slate-500 italic mt-2">*Shortcut: <code>write memory</code> or <code>wr</code>.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q6 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-6', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('ipv4_qa6', this)">
+                            <span>6. Configure the IP addresses of PC1, PC2, and PC3.</span>
+                        </div>
+                        <span class="text-2xl text-emerald-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-6" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>Done via the Packet Tracer GUI (Config Tab -> FastEthernet0). Packet Tracer will auto-fill the subnet mask based on the first octet.</p>
+                            <ul class="list-disc pl-5 space-y-1 font-mono text-xs">
+                                <li><strong>PC1:</strong> 15.0.0.1 (Mask: 255.0.0.0)</li>
+                                <li><strong>PC2:</strong> 182.98.0.1 (Mask: 255.255.0.0)</li>
+                                <li><strong>PC3:</strong> 201.19.120.1 (Mask: 255.255.255.0)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q7 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-7', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('ipv4_qa7', this)">
+                            <span>7. Ping from PC1 to PC2 and PC3 to test connectivity.</span>
+                        </div>
+                        <span class="text-2xl text-emerald-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-7" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>Open PC1's Desktop tab, open the Command Prompt, and issue the ping commands.</p>
+                            <div class="cli-block">
+                                <span class="cli-prompt">PC1&gt;</span> ping 182.98.0.1<br>
+                                <span class="cli-prompt">PC1&gt;</span> ping 201.19.120.1
+                            </div>
+                            <p class="text-emerald-700 font-bold text-sm bg-emerald-50 p-3 rounded border border-emerald-100">Success indicates that R1 is successfully routing traffic between the three different subnets.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: Command Matrix -->
+    <div id="tab-commands" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Command Reference Index</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Quick lookup for Cisco IOS commands used to configure interfaces and verify routing.
+            </p>
+
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterTable()" placeholder="Search commands, modes, or purposes..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow text-sm">
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700 font-semibold">
+                        <tr>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Command</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Mode</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">show ip interface brief</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays a summary of all interfaces, IP addresses, and Layer 1/2 status.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">interface [type] [number]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enters interface configuration mode (e.g., <code class="bg-slate-100 px-1 rounded">int g0/0</code>).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">description [text]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Adds locally significant text documentation to an interface.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">ip address [ip] [mask]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Assigns an IPv4 address and subnet mask to the interface.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">no shutdown</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enables the interface, changing state from administratively down to up.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">do [command]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Allows execution of Privileged EXEC commands from within configuration modes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500 bg-white">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: Flashcards -->
+    <div id="tab-flashcards" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Active Recall Flashcards</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of IPv4 interface configurations.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function renderChart() {
+        if(chartRendered) return;
+        const ctx = document.getElementById('subnetChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Class A (/8)', 'Class B (/16)', 'Class C (/24)'],
+                datasets: [
+                    {
+                        label: 'Network Bits',
+                        data: [8, 16, 24],
+                        backgroundColor: '#10b981', // Emerald 500
+                        borderWidth: 0,
+                        barPercentage: 0.6
+                    },
+                    {
+                        label: 'Host Bits',
+                        data: [24, 16, 8],
+                        backgroundColor: '#cbd5e1', // Slate 300
+                        borderWidth: 0,
+                        barPercentage: 0.6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Horizontal
+                scales: {
+                    x: {
+                        stacked: true,
+                        max: 32,
+                        title: { display: true, text: 'Total Bits (32)', font: {weight: 'bold', color: '#64748b'} },
+                        grid: { color: '#f1f5f9' },
+                        ticks: { stepSize: 8 }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true, boxWidth: 10, padding: 20, font: {family: "'Inter', sans-serif"} }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ${context.raw} Bits`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(tabId, btnElement) {
+        // Hide all views
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active state from all nav buttons
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
+        });
+
+        // Show target view & set button active
+        document.getElementById(tabId).classList.add('active');
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
+
+        // Render chart if Concepts tab is opened
+        if(tabId === 'tab-concepts') {
+            renderChart();
+        }
+    }
+
+    // --- Device Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-config').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-emerald-600', 'border-emerald-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-emerald-600', 'border-emerald-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.querySelector('span:last-child');
+        
+        if (content.classList.contains('open')) {
+            content.classList.remove('open');
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('open');
+            icon.style.transform = 'rotate(45deg)';
+        }
+    }
+
+    // --- Command Filter Logic ---
+    function filterTable() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-block').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick').match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ipv4_d8_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is the default physical state of a Cisco router interface?", a: "<strong>Administratively Down</strong><br><br>You must issue the <code>no shutdown</code> command." },
+            { q: "How do you run a show command from Global Configuration Mode?", a: "Prepend the command with <strong>do</strong>.<br><br>Example: <code class='bg-white px-1 border rounded text-emerald-800'>do show ip interface brief</code>" },
+            { q: "What is the default subnet mask for a Class B IP?", a: "<strong>255.255.0.0</strong><br><br>Also written as a /16 prefix length." },
+            { q: "What does the 'Status' column indicate in <code>show ip int brief</code>?", a: "The <strong>Layer 1 (Physical)</strong> connectivity. If it says 'administratively down', the shutdown command is active." },
+            { q: "Does the <code>description</code> command affect routing?", a: "<strong>No.</strong><br><br>It is locally significant only, used for human documentation and troubleshooting." },
+            { q: "How does Packet Tracer handle subnet masks when setting a PC IP?", a: "It automatically populates the default mask based on the address class of the first octet entered." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-emerald-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-emerald-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-emerald-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ipv4_d8_progress_' + id, cb.checked);
+    }
+
+    // Initialize on load
+    document.addEventListener("DOMContentLoaded", () => {
+        renderChart();
+        initFeatures();
+    });
+</script>
+</body>
+</html>

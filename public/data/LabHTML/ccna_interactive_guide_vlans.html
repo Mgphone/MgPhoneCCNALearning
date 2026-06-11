@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: VLANs (Part 1)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #e0e7ff; color: #4338ca; border-left-color: #4338ca; font-weight: 600; }
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1200px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #818cf8; font-weight: bold; } /* Indigo 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #4338ca !important; box-shadow: 0 0 15px rgba(67, 56, 202, 0.5); }
+.node-dim { opacity: 0.3; filter: grayscale(100%); transition: all 0.3s; }
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(67, 56, 202, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(67, 56, 202, 0.8); }
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-indigo-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-indigo-500">🔀</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-indigo-400 font-semibold tracking-wide uppercase mt-1">VLAN Architecture</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-indigo-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Concepts & IP Logic
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Traffic Tracker
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Virtual LANs (VLANs) - Part 1</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-indigo-500 pl-4 bg-indigo-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            VLANs logically segment a single physical switch into multiple independent broadcast domains. In this lab, we configure access ports, assign them to distinct VLANs (Engineering, HR, Sales), and utilize a router with multiple physical interfaces to route traffic between them.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY & IP LOGIC -->
+    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🧠</span> Addressing the Departments
+            </h3>
+            <p class="text-slate-700 mb-6 leading-relaxed">
+                Each VLAN acts as its own distinct subnet. We are taking the <code>10.0.0.0/24</code> network and dividing it into four <code>/26</code> subnets to accommodate our three departments, isolating their broadcast traffic.
+            </p>
+
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="w-full md:w-1/2">
+                    <div class="chart-container">
+                        <canvas id="subnetChart"></canvas>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 space-y-3">
+                    <h4 class="font-bold text-slate-800 mb-2">Subnet Allocation</h4>
+                    <ul class="text-sm space-y-3 text-slate-700">
+                        <li class="flex items-center justify-between p-3 rounded-lg bg-sky-50 border border-sky-100 shadow-sm">
+                            <div><span class="font-bold text-sky-700">VLAN 10 (Engineering)</span><br><code class="text-xs text-sky-600 font-bold">10.0.0.0 /26</code></div>
+                            <div class="text-right text-xs">Gateway: <code>.62</code><br>PCs: <code>.1, .2</code></div>
+                        </li>
+                        <li class="flex items-center justify-between p-3 rounded-lg bg-emerald-50 border border-emerald-100 shadow-sm">
+                            <div><span class="font-bold text-emerald-700">VLAN 20 (HR)</span><br><code class="text-xs text-emerald-600 font-bold">10.0.0.64 /26</code></div>
+                            <div class="text-right text-xs">Gateway: <code>.126</code><br>PCs: <code>.65, .66</code></div>
+                        </li>
+                        <li class="flex items-center justify-between p-3 rounded-lg bg-rose-50 border border-rose-100 shadow-sm">
+                            <div><span class="font-bold text-rose-700">VLAN 30 (Sales)</span><br><code class="text-xs text-rose-600 font-bold">10.0.0.128 /26</code></div>
+                            <div class="text-right text-xs">Gateway: <code>.190</code><br>PCs: <code>.129, .130</code></div>
+                        </li>
+                        <li class="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200">
+                            <div><span class="font-bold text-slate-500">Unused Space</span><br><code class="text-xs text-slate-400">10.0.0.192 /26</code></div>
+                            <div class="text-right text-xs text-slate-400">Available</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-8 bg-indigo-50 border-l-4 border-indigo-500 p-4 text-sm text-indigo-900 rounded-lg shadow-sm">
+                <strong>Design Note: Legacy Inter-VLAN Routing</strong><br>
+                In this lab, we use a separate physical cable from SW1 to R1 for <em>every</em> VLAN. This works but does not scale well as you add more VLANs. In the next module, we will replace these multiple physical links with a single logical "Trunk" link (Router-on-a-Stick).
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TRAFFIC TRACKER -->
+    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🔍</span> Inter-VLAN Traffic Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how a switch isolates broadcast traffic within a single VLAN, but relies on a router to forward unicast traffic between VLANs.</p>
+
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200">
+                <button onclick="simulateTraffic('broadcast')" id="btn-brd" class="px-4 py-2 text-sm font-bold bg-white text-indigo-700 border border-slate-200 rounded-lg shadow-sm hover:text-indigo-600 transition">Simulate Broadcast (VLAN 10)</button>
+                <button onclick="simulateTraffic('unicast')" id="btn-uni" class="px-4 py-2 text-sm font-bold bg-white text-indigo-700 border border-slate-200 rounded-lg shadow-sm hover:text-indigo-600 transition">Simulate Unicast (VLAN 10 to VLAN 20)</button>
+                <button onclick="simulateTraffic('reset')" class="px-4 py-2 text-sm font-bold bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300 transition ml-auto">Reset Tracker</button>
+            </div>
+
+            <div class="bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[400px] relative">
+                <!-- Visual Nodes -->
+                <div id="node-r1" class="w-24 h-24 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xl mb-12 border-4 border-blue-400 transition-all z-10 shadow-lg">R1</div>
+                <div id="node-sw1" class="w-32 h-16 rounded-lg bg-slate-700 text-white font-bold flex items-center justify-center text-xl mb-12 border-2 border-slate-500 transition-all z-10 shadow-lg">SW1</div>
+
+                <div class="flex w-full justify-around mt-4">
+                    <div class="flex flex-col gap-4">
+                        <span class="text-sky-400 font-bold text-center text-sm bg-sky-900/50 px-2 py-1 rounded">VLAN 10</span>
+                        <div id="node-pc1" class="w-16 h-16 rounded-lg bg-slate-600 text-white flex flex-col items-center justify-center border-2 border-slate-400 transition-all z-10 shadow-md"><span class="font-bold">PC1</span><span class="text-[10px] text-sky-200 font-mono">.1</span></div>
+                        <div id="node-pc2" class="w-16 h-16 rounded-lg bg-slate-600 text-white flex flex-col items-center justify-center border-2 border-slate-400 transition-all z-10 shadow-md"><span class="font-bold">PC2</span><span class="text-[10px] text-sky-200 font-mono">.2</span></div>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <span class="text-emerald-400 font-bold text-center text-sm bg-emerald-900/50 px-2 py-1 rounded">VLAN 20</span>
+                        <div id="node-pc3" class="w-16 h-16 rounded-lg bg-slate-600 text-white flex flex-col items-center justify-center border-2 border-slate-400 transition-all z-10 shadow-md"><span class="font-bold">PC3</span><span class="text-[10px] text-emerald-200 font-mono">.65</span></div>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <span class="text-rose-400 font-bold text-center text-sm bg-rose-900/50 px-2 py-1 rounded">VLAN 30</span>
+                        <div id="node-pc5" class="w-16 h-16 rounded-lg bg-slate-600 text-white flex flex-col items-center justify-center border-2 border-slate-400 transition-all z-10 shadow-md"><span class="font-bold">PC5</span><span class="text-[10px] text-rose-200 font-mono">.129</span></div>
+                    </div>
+                </div>
+                
+                <div id="traffic-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/90 border border-slate-600 p-3 rounded-lg backdrop-blur-sm transition-all">
+                    Awaiting simulation... Click a traffic type above to begin.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="view-config" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-indigo-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the specific commands to map interfaces to VLANs and route them.</p>
+            </div>
+            
+            <!-- Custom Tabs -->
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">Router 1 (R1)</button>
+                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Switch 1 (SW1)</button>
+                <button onclick="switchDeviceTab('pc', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Host PCs (GUI)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Provide a default gateway for each VLAN using separate physical interfaces.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! VLAN 10 Gateway</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 10.0.0.62 255.255.255.192<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br><br>
+
+                    <span class="cli-comment">! VLAN 20 Gateway</span><br>
+                    <span class="cli-prompt">R1(config-if)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 10.0.0.126 255.255.255.192<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br><br>
+
+                    <span class="cli-comment">! VLAN 30 Gateway</span><br>
+                    <span class="cli-prompt">R1(config-if)#</span> interface g0/2<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address 10.0.0.190 255.255.255.192<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                </div>
+            </div>
+
+            <!-- SW1 Tab -->
+            <div id="config-sw1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Name VLANs and map the physical access ports (both host and router links) into their respective VLAN domains.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW1&gt;</span> enable<br>
+                    <span class="cli-prompt">SW1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Create & Name VLANs</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> vlan 10<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> name Engineering<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> vlan 20<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> name HR<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> vlan 30<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> name Sales<br>
+                    <span class="cli-prompt">SW1(config-vlan)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Assign ports to VLAN 10 (Includes G0/1 uplink to R1)</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface range g0/1, f3/1, f4/1<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 10<br><br>
+
+                    <span class="cli-comment">! Assign ports to VLAN 20 (Includes G1/1 uplink to R1)</span><br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> interface range g1/1, f5/1, f6/1<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 20<br><br>
+
+                    <span class="cli-comment">! Assign ports to VLAN 30 (Includes G2/1 uplink to R1)</span><br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> interface range g2/1, f7/1, f8/1<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 30<br>
+                </div>
+            </div>
+
+            <!-- PC Tab -->
+            <div id="config-pc" class="device-tab-content hidden p-6">
+                <div class="bg-slate-50 border border-slate-200 p-6 rounded-lg text-sm text-slate-700">
+                    <h4 class="font-bold text-lg mb-2 text-slate-800">Packet Tracer GUI Configurations</h4>
+                    <p class="mb-4">Configure the Gateway to the last usable address of each /26 subnet.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-sky-700 mb-2 border-b pb-1">VLAN 10 PCs</h5>
+                            <p><strong>IPs:</strong> <code class="bg-slate-100 px-1 border rounded">10.0.0.1</code>, <code class="bg-slate-100 px-1 border rounded">.2</code></p>
+                            <p><strong>Mask:</strong> <code class="bg-slate-100 px-1 border rounded">255.255.255.192</code></p>
+                            <p class="text-indigo-700 mt-2"><strong>Gateway:</strong> <code class="bg-indigo-50 px-1 border border-indigo-200 rounded font-bold">10.0.0.62</code></p>
+                        </div>
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-emerald-700 mb-2 border-b pb-1">VLAN 20 PCs</h5>
+                            <p><strong>IPs:</strong> <code class="bg-slate-100 px-1 border rounded">10.0.0.65</code>, <code class="bg-slate-100 px-1 border rounded">.66</code></p>
+                            <p><strong>Mask:</strong> <code class="bg-slate-100 px-1 border rounded">255.255.255.192</code></p>
+                            <p class="text-indigo-700 mt-2"><strong>Gateway:</strong> <code class="bg-indigo-50 px-1 border border-indigo-200 rounded font-bold">10.0.0.126</code></p>
+                        </div>
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-rose-700 mb-2 border-b pb-1">VLAN 30 PCs</h5>
+                            <p><strong>IPs:</strong> <code class="bg-slate-100 px-1 border rounded">10.0.0.129</code>, <code class="bg-slate-100 px-1 border rounded">.130</code></p>
+                            <p><strong>Mask:</strong> <code class="bg-slate-100 px-1 border rounded">255.255.255.192</code></p>
+                            <p class="text-indigo-700 mt-2"><strong>Gateway:</strong> <code class="bg-indigo-50 px-1 border border-indigo-200 rounded font-bold">10.0.0.190</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">📝</span> Lab Tasks & Q&A
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress! Click on a question to expand its formal answer.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('vlan_qa1', this)">
+                            <span class="pr-6">1. Configure IP/mask on PCs. Set the gateway to the LAST USABLE address of the subnet.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-2">
+                            <p class="italic text-slate-500 mb-3">All subnets use a /26 mask (255.255.255.192). Configured via Packet Tracer GUI.</p>
+                            <ul class="list-disc pl-5 space-y-2 font-mono text-xs">
+                                <li><strong class="font-sans text-slate-800">VLAN 10 (PC1, PC2):</strong> IPs: 10.0.0.1, 10.0.0.2 | GW: 10.0.0.62</li>
+                                <li><strong class="font-sans text-slate-800">VLAN 20 (PC3, PC4):</strong> IPs: 10.0.0.65, 10.0.0.66 | GW: 10.0.0.126</li>
+                                <li><strong class="font-sans text-slate-800">VLAN 30 (PC5, PC6):</strong> IPs: 10.0.0.129, 10.0.0.130 | GW: 10.0.0.190</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('vlan_qa2', this)">
+                            <span>2. Make 3 connections R1-SW1. Configure R1 interface per VLAN using gateway addresses.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700">
+                            <p class="mb-2">We establish 3 physical cables and assign the previously calculated Gateways to R1:</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> int g0/0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ip addr 10.0.0.62 255.255.255.192<br>
+                                <span class="cli-prompt">R1(config-if)#</span> no shut<br>
+                                <span class="cli-comment">... repeat for G0/1 (.126) and G0/2 (.190)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('vlan_qa3', this)">
+                            <span>3. Configure SW1 interfaces in proper VLANs, name VLANs (Engineering, HR, Sales). Remember R1 links!</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700">
+                            <p class="mb-2">We use the <code>interface range</code> command, explicitly including the Gigabit uplinks facing R1.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW1(config)#</span> vlan 10<br>
+                                <span class="cli-prompt">SW1(config-vlan)#</span> name Engineering<br>
+                                <span class="cli-prompt">SW1(config)#</span> int range g0/1, f3/1, f4/1<br>
+                                <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                                <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 10<br>
+                                <span class="cli-comment">... repeat for VLAN 20 and 30</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('vlan_qa4', this)">
+                            <span class="pr-6">4. Ping between PCs. Send a broadcast ping from PC1 (10.0.0.63). Which devices receive it?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Receivers: PC2 and R1 (G0/0)</strong></p>
+                            <p>Because SW1 has segmented its ports into different VLANs, the broadcast frame (destination MAC FFFF.FFFF.FFFF) is <strong>ONLY</strong> flooded out of the active ports assigned to VLAN 10. The traffic is isolated from the devices in VLAN 20 and VLAN 30.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">vlan [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a VLAN and enters VLAN configuration mode.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">name [text]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">VLAN Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Assigns a descriptive name to the created VLAN.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">switchport mode access</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Forces the port to act as an access port (single VLAN only).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">switchport access vlan [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Assigns the interface to the specified VLAN.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">show vlan brief</td>
+                            <td class="px-6 py-4"><span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded border border-indigo-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays all VLANs, their names, and the ports assigned to them.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of VLAN configurations and switchport modes.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartInstance = null;
+    function initChart() {
+        if (chartInstance) return;
+        const ctx = document.getElementById('subnetChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['VLAN 10 (.0/26)', 'VLAN 20 (.64/26)', 'VLAN 30 (.128/26)', 'Unused (.192/26)'],
+                datasets: [{
+                    data: [64, 64, 64, 64],
+                    backgroundColor: ['#0ea5e9', '#10b981', '#f43f5e', '#cbd5e1'], // Sky, Emerald, Rose, Slate
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return ` ${context.label}: ${context.raw} IPs`; }
+                        },
+                        padding: 12, cornerRadius: 8
+                    }
+                }
+            }
+        });
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-indigo-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-indigo-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'view-theory') { initChart(); }
+        if(viewId === 'view-tracker') { simulateTraffic('reset'); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-indigo-600', 'border-indigo-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-indigo-600', 'border-indigo-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Traffic Simulator Logic ---
+    function simulateTraffic(type) {
+        const allNodes = ['node-r1', 'node-sw1', 'node-pc1', 'node-pc2', 'node-pc3', 'node-pc5'];
+        const desc = document.getElementById('traffic-desc');
+        
+        allNodes.forEach(id => {
+            const el = document.getElementById(id);
+            el.classList.remove('node-highlight', 'node-dim');
+        });
+        
+        document.getElementById('btn-brd').classList.remove('bg-indigo-700', 'text-white');
+        document.getElementById('btn-brd').classList.add('bg-white', 'text-indigo-700');
+        document.getElementById('btn-uni').classList.remove('bg-indigo-50');
+
+        if (type === 'broadcast') {
+            document.getElementById('btn-brd').classList.add('bg-indigo-700', 'text-white');
+            document.getElementById('btn-brd').classList.remove('bg-white', 'text-indigo-700');
+            ['node-pc1', 'node-sw1', 'node-pc2', 'node-r1'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc3', 'node-pc5'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-sky-400 font-bold'>Broadcast:</span> PC1 sends to 10.0.0.63. SW1 floods it ONLY to ports in VLAN 10 (PC2 & R1). VLANs 20 & 30 are isolated.";
+        } else if (type === 'unicast') {
+            document.getElementById('btn-uni').classList.add('bg-indigo-50');
+            ['node-pc1', 'node-sw1', 'node-r1', 'node-pc3'].forEach(id => document.getElementById(id).classList.add('node-highlight'));
+            ['node-pc2', 'node-pc5'].forEach(id => document.getElementById(id).classList.add('node-dim'));
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Inter-VLAN Unicast:</span> PC1 pings PC3. SW1 sends frame to R1 via VLAN 10 uplink. R1 routes the packet and sends it back to SW1 via VLAN 20 uplink, which delivers it to PC3.";
+        } else {
+            desc.innerHTML = "Awaiting simulation... Click a traffic type above to begin.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ccna_vlan_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Render Flashcards
+        const flashcards = [
+            { q: "What is the primary purpose of a VLAN?", a: "To logically segment a physical switch into <strong>multiple independent broadcast domains</strong>." },
+            { q: "Do switches forward frames between different VLANs?", a: "<strong>No.</strong><br><br>A Layer 3 device (like a router or L3 switch) is required to route traffic between different VLANs." },
+            { q: "What happens when a broadcast is sent on VLAN 10?", a: "The switch floods the broadcast <strong>ONLY</strong> out of active ports that are assigned to VLAN 10." },
+            { q: "What command assigns an interface to a specific VLAN?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>switchport access vlan [ID]</code>" },
+            { q: "What mode should an interface be in if it connects directly to an end host (PC)?", a: "<strong>Access mode.</strong><br><br>Configured via <code class='bg-white border px-1 rounded text-slate-800 font-mono'>switchport mode access</code>." },
+            { q: "What command verifies VLAN creation and port assignments?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>show vlan brief</code>" }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-indigo-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-indigo-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-indigo-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ccna_vlan_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+    });
+</script>
+</body>
+</html>

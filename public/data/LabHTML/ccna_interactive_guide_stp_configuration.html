@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: STP Configuration & Timers</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #f0fdf4; color: #16a34a; border-left-color: #16a34a; font-weight: 600; } /* Green Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #4ade80; font-weight: bold; } /* Green 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; }
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(22, 163, 74, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(22, 163, 74, 0.8); }
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-green-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-green-500">🌲</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-green-400 font-semibold tracking-wide uppercase mt-1">STP Config & Timers</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-green-600 text-white shadow-md">
+            <span class="text-xl">📊</span> STP Convergence
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">⏱️</span> State Tracker
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">STP Configuration & Timers</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-green-500 pl-4 bg-green-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Learn how to manipulate the Spanning Tree Protocol to force your core switches to become the Root Bridge. We will also analyze the 50-second convergence delay introduced by classic 802.1D STP transitional states.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-green-500">🧠</span> Core Concepts: Timers & Configuration
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The STP Timers</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex items-start">
+                                <span class="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded text-xs mt-1 mr-3 w-16 text-center">2 sec</span>
+                                <div><strong>Hello Timer:</strong> How often the Root Bridge sends Configuration BPDUs to maintain the topology.</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded text-xs mt-1 mr-3 w-16 text-center">15 sec</span>
+                                <div><strong>Forward Delay:</strong> The time a port spends in the <em>Listening</em> state, and then again in the <em>Learning</em> state (30 seconds total).</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs mt-1 mr-3 w-16 text-center">20 sec</span>
+                                <div><strong>Max Age:</strong> How long a switch will hold onto a BPDU before discarding it. If a blocking port stops receiving BPDUs for 20s, it assumes the topology changed and begins transitioning to Forwarding.</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-green-50 p-5 rounded-xl border border-green-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-green-900 mb-2">Manipulating the Root Election</h4>
+                        <p class="text-sm text-green-800 mb-3">You should never leave the Root Bridge election up to chance (lowest MAC address). You can manually set the priority in increments of <strong>4096</strong>.</p>
+                        <p class="text-sm text-green-800 font-mono bg-white px-2 py-1 rounded border border-green-300">spanning-tree vlan 1 root primary</p>
+                        <p class="text-xs text-green-700 mt-2 italic">*This macro command automatically lowers the switch's priority to 24576 (or lower) to ensure it beats the current root.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">802.1D Convergence Time (50 Seconds)</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Why it takes a disconnected port 50s to start forwarding data.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="timerChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100">
+                        This massive delay is the primary reason classic 802.1D Spanning Tree was eventually replaced by Rapid Spanning Tree (802.1w).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-green-500">⏱️</span> STP Port State Transitions
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">When an alternate link fails, a blocked port must transition to forwarding. Click through the steps below to watch the port move through the classic 802.1D transitional states before it is allowed to send user data.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playStateStep(1)" id="btn-state-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Blocking</button>
+                <button onclick="playStateStep(2)" id="btn-state-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Listening</button>
+                <button onclick="playStateStep(3)" id="btn-state-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Learning</button>
+                <button onclick="playStateStep(4)" id="btn-state-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Forwarding</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col md:flex-row gap-8 items-center min-h-[350px]">
+                
+                <!-- Visual Port -->
+                <div class="w-full md:w-1/3 flex flex-col items-center justify-center">
+                    <div id="port-status-ring" class="w-32 h-32 rounded-full border-8 border-slate-600 flex items-center justify-center bg-slate-800 transition-all duration-500 shadow-lg">
+                        <span id="port-status-icon" class="text-4xl">🛑</span>
+                    </div>
+                    <div id="port-status-label" class="mt-4 font-mono font-bold text-lg text-slate-400 uppercase tracking-widest">BLK</div>
+                    <div id="port-timer" class="mt-2 text-sm text-slate-500 font-mono bg-slate-800 px-3 py-1 rounded border border-slate-700">Timer: 20s Max Age</div>
+                </div>
+
+                <!-- Explanation Panel -->
+                <div class="w-full md:w-2/3 bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm flex flex-col justify-center min-h-[200px]">
+                    <h4 id="state-title" class="text-xl font-bold text-white mb-3 border-b border-slate-600 pb-2">Blocking State</h4>
+                    <p id="state-desc" class="text-slate-300 text-sm leading-relaxed mb-4">
+                        The port receives BPDUs but drops all other frames. If the root port fails, this port waits for the 20-second Max Age timer to expire (meaning it stopped hearing from the root) before it transitions to Listening.
+                    </p>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-xs font-mono mt-auto">
+                        <div id="state-bpdu" class="bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Rx/Tx BPDUs
+                        </div>
+                        <div id="state-mac" class="bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-slate-500">
+                            <span class="w-3 h-3 rounded-full bg-slate-600"></span> Populates MAC Table
+                        </div>
+                        <div id="state-data" class="bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-slate-500">
+                            <span class="w-3 h-3 rounded-full bg-slate-600"></span> Forwards User Data
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="view-config" class="view-section max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-green-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to force Root Bridge elections and manipulate port costs to alter traffic paths.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-green-600 border-b-2 border-green-600 transition-colors">SW1 (Primary Root)</button>
+                <button onclick="switchDeviceTab('sw2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">SW2 (Secondary Root)</button>
+                <button onclick="switchDeviceTab('sw3', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">SW3 (Port Cost Tuning)</button>
+            </div>
+
+            <!-- SW1 Tab -->
+            <div id="config-sw1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Ensure SW1 becomes the Root Bridge for VLAN 1 without needing to manually calculate priority numbers.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW1&gt;</span> enable<br>
+                    <span class="cli-prompt">SW1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Method 1: Using the macro command (Best Practice)</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> spanning-tree vlan 1 root primary<br><br>
+
+                    <span class="cli-comment">! Method 2: Manually setting the priority to a lower number</span><br>
+                    <span class="cli-comment">! (Must be in increments of 4096: 0, 4096, 8192, etc.)</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> spanning-tree vlan 1 priority 4096<br><br>
+                    <span class="cli-prompt">SW1(config)#</span> exit<br>
+                    <span class="cli-prompt">SW1#</span> show spanning-tree<br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment text-green-400">This bridge is the root</span>
+                </div>
+            </div>
+
+            <!-- SW2 Tab -->
+            <div id="config-sw2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Ensure SW2 takes over as Root Bridge if SW1 fails.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW2&gt;</span> enable<br>
+                    <span class="cli-prompt">SW2#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Method 1: Using the macro command</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> spanning-tree vlan 1 root secondary<br>
+                    <span class="cli-comment">! This automatically sets priority to 28672 (better than default 32768, worse than primary 24576)</span><br><br>
+
+                    <span class="cli-comment">! Method 2: Manually setting the priority</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> spanning-tree vlan 1 priority 28672<br><br>
+                    <span class="cli-prompt">SW2(config)#</span> end
+                </div>
+            </div>
+
+            <!-- SW3 Tab -->
+            <div id="config-sw3" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> SW3 currently uses G0/1 as its Root Port. Manually increase the cost of G0/1 to force SW3 to use G0/2 instead.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW3&gt;</span> enable<br>
+                    <span class="cli-prompt">SW3#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Verify current state (Assume G0/1 is Root, G0/2 is Altn)</span><br>
+                    <span class="cli-prompt">SW3(config)#</span> do show spanning-tree<br><br>
+
+                    <span class="cli-comment">! Increase the STP cost of the current Root Port to make it less desirable</span><br>
+                    <span class="cli-prompt">SW3(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">SW3(config-if)#</span> spanning-tree vlan 1 cost 100<br>
+                    <span class="cli-prompt">SW3(config-if)#</span> end<br><br>
+
+                    <span class="cli-comment">! Verify the change. G0/2 should now be the Root Port.</span><br>
+                    <span class="cli-prompt">SW3#</span> show spanning-tree<br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment">Gi0/1       Altn BLK  100       128.1    P2p</span><br>
+                    <span class="cli-comment text-green-400">Gi0/2       Root FWD  4         128.2    P2p</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-green-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-green-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-green-600 rounded border-slate-300 focus:ring-green-500" onclick="event.stopPropagation(); saveProgress('stpcfg_qa1', this)">
+                            <span class="pr-6">1. Configure SW1 to be the primary root bridge.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>You can use the macro command which dynamically lowers the priority. It usually drops it to 24576.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">SW1(config)#</span> spanning-tree vlan 1 root primary
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-green-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-green-600 rounded border-slate-300 focus:ring-green-500" onclick="event.stopPropagation(); saveProgress('stpcfg_qa2', this)">
+                            <span>2. Configure SW2 to be the secondary root bridge.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>This command drops the priority to 28672. If SW1 goes offline, SW2's priority will be better than the default (32768) of the other switches, allowing it to gracefully take over.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW2(config)#</span> spanning-tree vlan 1 root secondary
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-green-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-green-600 rounded border-slate-300 focus:ring-green-500" onclick="event.stopPropagation(); saveProgress('stpcfg_qa3', this)">
+                            <span>3. Change the STP cost of an interface to manipulate the Root Port election.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>By default, Gigabit links have a cost of 4. By raising the cost of an interface, spanning tree will see that path as "more expensive" and choose an alternate path if one is available.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW3(config)#</span> interface g0/1<br>
+                                <span class="cli-prompt">SW3(config-if)#</span> spanning-tree vlan 1 cost 100
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-green-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-green-700 whitespace-nowrap">spanning-tree vlan [id] root primary</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Forces the switch to become the root bridge by automatically lowering its priority (usually to 24576).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-green-700 whitespace-nowrap">spanning-tree vlan [id] root secondary</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets the priority to 28672, making it the backup root bridge.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-green-700 whitespace-nowrap">spanning-tree vlan [id] priority [value]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Manually sets bridge priority. Must be in increments of 4096.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-green-700 whitespace-nowrap">spanning-tree vlan [id] cost [value]</td>
+                            <td class="px-6 py-4"><span class="bg-sky-100 text-sky-800 text-xs px-2 py-1 rounded border border-sky-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Manually overrides the default STP port cost to manipulate path selection.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-green-700 whitespace-nowrap">spanning-tree vlan [id] port-priority [val]</td>
+                            <td class="px-6 py-4"><span class="bg-sky-100 text-sky-800 text-xs px-2 py-1 rounded border border-sky-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Alters port priority (default 128) to win tiebreakers when costs are equal.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-green-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of STP timers and configuration commands.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('timerChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Blocking (Max Age)', 'Listening (Fwd Delay)', 'Learning (Fwd Delay)', 'Total Convergence Delay'],
+                datasets: [{
+                    label: 'Seconds Spent in State',
+                    data: [20, 15, 15, 50],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#84cc16', '#3b82f6'], // Red, Amber, Lime, Blue
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 60, 
+                        ticks: { stepSize: 10, callback: val => val + 's' },
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'Delay in Seconds', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.raw} seconds`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-green-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-green-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'view-theory') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-green-600', 'border-green-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-green-600', 'border-green-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- STP State Simulator Logic ---
+    function playStateStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-state-'+i);
+            if(btn) {
+                btn.classList.remove('bg-green-600', 'text-white', 'border-green-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-state-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-green-600', 'text-white', 'border-green-600');
+        }
+
+        const ring = document.getElementById('port-status-ring');
+        const icon = document.getElementById('port-status-icon');
+        const label = document.getElementById('port-status-label');
+        const timer = document.getElementById('port-timer');
+        const title = document.getElementById('state-title');
+        const desc = document.getElementById('state-desc');
+        
+        // Status indicators
+        const bpdu = document.getElementById('state-bpdu');
+        const mac = document.getElementById('state-mac');
+        const data = document.getElementById('state-data');
+
+        if (stepIndex === 1) {
+            // Blocking
+            ring.className = "w-32 h-32 rounded-full border-8 border-red-500 flex items-center justify-center bg-slate-800 transition-all duration-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]";
+            icon.innerText = "🛑";
+            label.innerText = "BLK";
+            label.className = "mt-4 font-mono font-bold text-lg text-red-400 uppercase tracking-widest";
+            timer.innerText = "Timer: 20s Max Age";
+            title.innerText = "Blocking State";
+            desc.innerText = "The port receives BPDUs but drops all other frames. If the root port fails, this port waits for the 20-second Max Age timer to expire (meaning it stopped hearing from the root) before it transitions to Listening.";
+            
+            bpdu.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-white";
+            bpdu.innerHTML = '<span class="w-3 h-3 rounded-full bg-emerald-500"></span> Rx/Tx BPDUs';
+            mac.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-slate-500";
+            mac.innerHTML = '<span class="w-3 h-3 rounded-full bg-slate-600"></span> Populates MAC Table';
+            data.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-slate-500";
+            data.innerHTML = '<span class="w-3 h-3 rounded-full bg-slate-600"></span> Forwards User Data';
+        } else if (stepIndex === 2) {
+            // Listening
+            ring.className = "w-32 h-32 rounded-full border-8 border-amber-500 flex items-center justify-center bg-slate-800 transition-all duration-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]";
+            icon.innerText = "👂";
+            label.innerText = "LIS";
+            label.className = "mt-4 font-mono font-bold text-lg text-amber-400 uppercase tracking-widest";
+            timer.innerText = "Timer: 15s Fwd Delay";
+            title.innerText = "Listening State";
+            desc.innerText = "The port actively sends and receives BPDUs to participate in the STP election process. It ensures no loops will form if it moves to forwarding. It still drops user data and does not learn MAC addresses yet.";
+            
+            bpdu.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-white";
+            bpdu.innerHTML = '<span class="w-3 h-3 rounded-full bg-emerald-500"></span> Rx/Tx BPDUs';
+            mac.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-slate-500";
+            mac.innerHTML = '<span class="w-3 h-3 rounded-full bg-slate-600"></span> Populates MAC Table';
+            data.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-slate-500";
+            data.innerHTML = '<span class="w-3 h-3 rounded-full bg-slate-600"></span> Forwards User Data';
+        } else if (stepIndex === 3) {
+            // Learning
+            ring.className = "w-32 h-32 rounded-full border-8 border-lime-500 flex items-center justify-center bg-slate-800 transition-all duration-500 shadow-[0_0_15px_rgba(132,204,22,0.4)]";
+            icon.innerText = "🧠";
+            label.innerText = "LRN";
+            label.className = "mt-4 font-mono font-bold text-lg text-lime-400 uppercase tracking-widest";
+            timer.innerText = "Timer: 15s Fwd Delay";
+            title.innerText = "Learning State";
+            desc.innerText = "The port is preparing to forward data. It begins reading the Source MAC addresses of incoming frames to silently populate the switch's MAC address table, minimizing initial flooding when it finally transitions.";
+            
+            bpdu.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-white";
+            bpdu.innerHTML = '<span class="w-3 h-3 rounded-full bg-emerald-500"></span> Rx/Tx BPDUs';
+            mac.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-white";
+            mac.innerHTML = '<span class="w-3 h-3 rounded-full bg-lime-500"></span> Populates MAC Table';
+            data.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-slate-500";
+            data.innerHTML = '<span class="w-3 h-3 rounded-full bg-slate-600"></span> Forwards User Data';
+        } else if (stepIndex === 4) {
+            // Forwarding
+            ring.className = "w-32 h-32 rounded-full border-8 border-green-500 flex items-center justify-center bg-green-900 transition-all duration-500 shadow-[0_0_20px_rgba(34,197,94,0.6)]";
+            icon.innerText = "✅";
+            label.innerText = "FWD";
+            label.className = "mt-4 font-mono font-bold text-lg text-green-400 uppercase tracking-widest";
+            timer.innerText = "Active";
+            title.innerText = "Forwarding State";
+            desc.innerText = "After 50 seconds of transitional delays, the port is fully operational. It sends and receives BPDUs, populates the MAC table, and actively forwards user data frames across the network.";
+            
+            bpdu.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-white";
+            bpdu.innerHTML = '<span class="w-3 h-3 rounded-full bg-emerald-500"></span> Rx/Tx BPDUs';
+            mac.className = "bg-slate-900 p-2 rounded border border-slate-700 flex items-center gap-2 text-white";
+            mac.innerHTML = '<span class="w-3 h-3 rounded-full bg-lime-500"></span> Populates MAC Table';
+            data.className = "bg-slate-900 p-2 rounded border border-green-700 flex items-center gap-2 text-white shadow-inner";
+            data.innerHTML = '<span class="w-3 h-3 rounded-full bg-green-400"></span> Forwards User Data';
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('stpcfg_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What are the two transitional STP port states?", a: "<strong>Listening</strong> and <strong>Learning</strong>.<br><br>The port waits 15 seconds in each state to ensure no loops form before forwarding data." },
+            { q: "How long is the default Forward Delay timer?", a: "<strong>15 seconds.</strong><br><br>This timer dictates how long a port spends in the Listening state, and then again in the Learning state (30 seconds total delay)." },
+            { q: "What command forces a switch to become the primary root bridge?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>spanning-tree vlan [id] root primary</code><br><br>It automatically lowers the priority to 24576." },
+            { q: "Does a port in the 'Learning' state forward user data?", a: "<strong>No.</strong><br><br>It only receives frames to silently populate its MAC address table. It drops the actual user data." },
+            { q: "What is the Max Age timer?", a: "<strong>20 seconds.</strong><br><br>The amount of time a blocking port will wait after it stops receiving BPDUs before it assumes the topology has changed and begins transitioning." },
+            { q: "What command manually changes the STP cost of an interface?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>spanning-tree vlan [id] cost [value]</code><br><br>Used to artificially make a path look 'worse' or 'better' to force the root port election." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-green-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-green-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-green-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('stpcfg_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playStateStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

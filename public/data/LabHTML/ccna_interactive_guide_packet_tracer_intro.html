@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: Packet Tracer Intro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 background */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 500px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600; }
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.open { max-height: 1200px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling (For names/text) */
+        .cli-block {
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            border: 1px solid #1e293b;
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2);
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #60a5fa; font-weight: bold; } /* Blue 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Topology Nodes (NO SVG) */
+        .topo-node { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: transform 0.2s; }
+        .topo-node:hover { transform: translateY(-3px); }
+        
+        .device-router { width: 60px; height: 60px; background-color: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 3px solid #bfdbfe; font-size: 1.25rem; }
+        .device-switch { width: 60px; height: 40px; background-color: #475569; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 2px solid #cbd5e1; font-size: 1.25rem; }
+        .device-fw { width: 50px; height: 50px; background-color: #dc2626; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 2px solid #fecaca; font-size: 1.25rem; }
+        .device-pc { width: 45px; height: 45px; background-color: #64748b; color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); font-size: 1.25rem; }
+        .device-server { width: 40px; height: 60px; background-color: #0f766e; color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); font-size: 1.25rem; }
+        .device-laptop { width: 50px; height: 35px; background-color: #9333ea; color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); font-size: 1.25rem; margin-top: 10px; }
+        
+        .topo-line-h { flex-grow: 1; height: 3px; background-color: #94a3b8; min-width: 20px; }
+        .topo-line-v { width: 3px; height: 20px; background-color: #94a3b8; margin: 0 auto; }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-blue-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col z-20 shadow-sm transition-all">
+    <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+        <span class="text-3xl text-blue-600">🛠️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-slate-800">CCNA Mastery</h1>
+            <p class="text-xs text-blue-600 font-semibold uppercase tracking-wider mt-1">Packet Tracer Intro</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📖</span> Network Devices
+        </button>
+        <button onclick="switchTab('tab-topology', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">🗺️</span> Target Topology
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📝</span> Lab Tasks Guide
+        </button>
+        <button onclick="switchTab('tab-matrix', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">📋</span> Device Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    
+    <header class="mb-8 max-w-5xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Introduction to Packet Tracer</h2>
+        <div class="border-l-4 border-blue-500 pl-4 bg-white p-4 rounded-r-xl shadow-sm border border-slate-100">
+            <p class="text-lg text-slate-600 leading-relaxed">
+                Before configuring devices via the Command Line Interface (CLI), you must understand how to physically build networks. This lab focuses on identifying, placing, renaming, and cabling network infrastructure devices within the Cisco Packet Tracer environment.
+            </p>
+        </div>
+    </header>
+
+    <!-- TAB 1: Core Concepts -->
+    <div id="tab-concepts" class="tab-content active max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">The Components of a Network</h3>
+            <p class="text-slate-600 mb-8 leading-relaxed">
+                Enterprise networks are composed of various specialized devices. Packet Tracer provides software simulations of real-world Cisco hardware to help you practice building these architectures.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-4">
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start gap-4">
+                        <div class="device-router flex-shrink-0 shadow-sm text-2xl">🌐</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Routers (e.g., Cisco 2911)</h4>
+                            <p class="text-sm text-slate-600 mt-1">Operate at Layer 3. They connect different networks together and make path-determination decisions to route traffic across the internet.</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start gap-4">
+                        <div class="device-switch flex-shrink-0 shadow-sm text-xl mt-1">▤</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Switches (e.g., Cisco 2960)</h4>
+                            <p class="text-sm text-slate-600 mt-1">Operate at Layer 2. They provide the physical ports to connect end devices (PCs, Servers) together to form a single Local Area Network (LAN).</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start gap-4">
+                        <div class="device-fw flex-shrink-0 shadow-sm text-xl">🔒</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Firewalls (e.g., Cisco ASA 5505)</h4>
+                            <p class="text-sm text-slate-600 mt-1">Security appliances that monitor and control incoming and outgoing network traffic based on predetermined security rules.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Topology Device Requirements</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">A visual breakdown of the 12 total devices needed to construct the Day 1 Lab network.</p>
+                    
+                    <div class="chart-container flex-grow flex items-center justify-center">
+                        <canvas id="deviceChart"></canvas>
+                    </div>
+                    
+                    <p class="text-xs text-center text-slate-500 mt-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        *Includes the pre-placed "Internet" router included in Jeremy's base lab file.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Target Topology -->
+    <div id="tab-topology" class="tab-content max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+             <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Target Network Diagram</h3>
+            <p class="text-slate-600 mb-8 leading-relaxed">
+                Your goal is to recreate the network diagram displayed at 16:40 of the Day 1 video. It consists of a New York branch (Left), a Tokyo branch (Right), and the Internet connecting them.
+            </p>
+
+            <!-- Pure HTML/CSS Interactive Topology (NO SVG) -->
+            <div class="bg-slate-100 rounded-2xl p-8 mb-8 relative overflow-x-auto shadow-inner border border-slate-200">
+                <div class="min-w-[800px] flex items-center justify-center gap-2 relative z-10 py-12">
+                    
+                    <!-- New York Branch (Left) -->
+                    <div class="flex flex-col gap-6">
+                        <div class="topo-node">
+                            <div class="device-pc">💻</div>
+                            <span class="text-xs font-bold mt-1 text-slate-700">PC1</span>
+                        </div>
+                        <div class="topo-node">
+                            <div class="device-pc">💻</div>
+                            <span class="text-xs font-bold mt-1 text-slate-700">PC2</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col justify-center mx-2 gap-8">
+                        <div class="topo-line-h w-8"></div>
+                        <div class="topo-line-h w-8"></div>
+                    </div>
+
+                    <div class="topo-node">
+                        <div class="device-switch">▤</div>
+                        <span class="text-xs font-bold mt-1 text-slate-700">Switch 1</span>
+                    </div>
+
+                    <div class="topo-line-h"></div>
+
+                    <div class="topo-node">
+                        <div class="device-router">🌐</div>
+                        <span class="text-xs font-bold mt-1 text-slate-700">R1</span>
+                    </div>
+
+                    <div class="topo-line-h"></div>
+
+                    <div class="topo-node">
+                        <div class="device-fw">🔒</div>
+                        <span class="text-xs font-bold mt-1 text-slate-700">Firewall 1</span>
+                    </div>
+
+                    <div class="topo-line-h"></div>
+
+                    <!-- The Internet (Center) -->
+                    <div class="flex flex-col items-center">
+                        <div class="topo-node">
+                            <div class="device-router bg-slate-800 border-slate-500">☁️</div>
+                            <span class="text-xs font-bold mt-1 text-slate-700">Internet</span>
+                        </div>
+                        <div class="topo-line-v"></div>
+                        <div class="topo-node">
+                            <div class="device-laptop">💻</div>
+                            <span class="text-xs font-bold mt-1 text-red-600">Attacker</span>
+                        </div>
+                    </div>
+
+                    <div class="topo-line-h"></div>
+
+                    <!-- Tokyo Branch (Right) -->
+                    <div class="topo-node">
+                        <div class="device-router">🌐</div>
+                        <span class="text-xs font-bold mt-1 text-slate-700">R2</span>
+                    </div>
+
+                    <div class="topo-line-h"></div>
+
+                    <div class="topo-node">
+                        <div class="device-fw">🔒</div>
+                        <span class="text-xs font-bold mt-1 text-slate-700">Firewall 2</span>
+                    </div>
+
+                    <div class="topo-line-h"></div>
+
+                    <div class="topo-node">
+                        <div class="device-switch">▤</div>
+                        <span class="text-xs font-bold mt-1 text-slate-700">Switch 2</span>
+                    </div>
+
+                    <div class="flex flex-col justify-center mx-2 gap-8">
+                        <div class="topo-line-h w-8"></div>
+                        <div class="topo-line-h w-8"></div>
+                    </div>
+
+                    <div class="flex flex-col gap-6">
+                        <div class="topo-node">
+                            <div class="device-server">🗄️</div>
+                            <span class="text-xs font-bold mt-1 text-slate-700">Server 1</span>
+                        </div>
+                        <div class="topo-node">
+                            <div class="device-server">🗄️</div>
+                            <span class="text-xs font-bold mt-1 text-slate-700">Server 2</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded text-sm text-blue-900">
+                <strong>Placement Note:</strong> Depending on enterprise network design, firewalls can be placed either between the switch and the router (protecting internal VLANs) or between the router and the internet (protecting the edge). In Jeremy's diagram, FW1 is at the edge, and FW2 is internal.
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: Lab Tasks & Q&A -->
+    <div id="tab-qa" class="tab-content max-w-5xl mx-auto space-y-8">
+         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Lab Task Guide</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps below as you successfully place, rename, and connect the devices in Packet Tracer. Click a task to expand instructions on how to perform it within the Packet Tracer interface.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Task 1 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('pt_qa1', this)">
+                            <span class="pr-6">1. Place the Cisco 2911 Routers (x2)</span>
+                        </div>
+                        <span class="text-2xl text-blue-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>To place a router in the logical workspace:</p>
+                            <ol class="list-decimal pl-5 space-y-2">
+                                <li>Look at the bottom-left corner of the Packet Tracer window.</li>
+                                <li>Click on the <strong>Network Devices</strong> icon (it looks like a router/switch stack).</li>
+                                <li>In the sub-menu below it, ensure <strong>Routers</strong> is selected.</li>
+                                <li>Find the model <strong>2911</strong> in the list of devices on the right.</li>
+                                <li>Click and drag two 2911 routers into your workspace.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 2 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('pt_qa2', this)">
+                            <span>2. Place the Cisco 2960 Switches (x2)</span>
+                        </div>
+                        <span class="text-2xl text-blue-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>To place a switch:</p>
+                            <ol class="list-decimal pl-5 space-y-2">
+                                <li>In the bottom-left <strong>Network Devices</strong> menu, click the <strong>Switches</strong> icon.</li>
+                                <li>Find the model <strong>2960</strong> in the device list.</li>
+                                <li>Click and drag two 2960 switches into your workspace.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 3 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('pt_qa3', this)">
+                            <span>3. Place the Cisco 5505 Firewalls (x2)</span>
+                        </div>
+                        <span class="text-2xl text-blue-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>To place a firewall security appliance:</p>
+                            <ol class="list-decimal pl-5 space-y-2">
+                                <li>In the bottom-left <strong>Network Devices</strong> menu, click the <strong>Security</strong> icon (it looks like a brick wall).</li>
+                                <li>Find the model <strong>5505</strong> in the device list.</li>
+                                <li>Click and drag two 5505 ASAs into your workspace.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 4 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('pt_qa4', this)">
+                            <span>4. Place PCs (x2), Servers (x2), and a Laptop (x1)</span>
+                        </div>
+                        <span class="text-2xl text-blue-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>To place end devices:</p>
+                            <ol class="list-decimal pl-5 space-y-2">
+                                <li>Go to the bottom-left main menu and click the <strong>End Devices</strong> icon (looks like a monitor/PC).</li>
+                                <li>Select the <strong>PC</strong> icon and drag two into the New York branch (left).</li>
+                                <li>Select the <strong>Server</strong> icon and drag two into the Tokyo branch (right).</li>
+                                <li>Select the <strong>Laptop</strong> icon and place it near the Internet router to act as the attacker.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 5 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-5', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('pt_qa5', this)">
+                            <span>5. Rename the devices to match the diagram</span>
+                        </div>
+                        <span class="text-2xl text-blue-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>By default, Packet Tracer numbers devices sequentially (e.g., Router0, Router1). To change the display name:</p>
+                            <ol class="list-decimal pl-5 space-y-2">
+                                <li>Click directly on the <strong>text label</strong> below the device icon in the workspace.</li>
+                                <li>Type the new name (e.g., Switch 1, R1, Firewall 1, Attacker).</li>
+                                <li>Press Enter to save the name.</li>
+                            </ol>
+                            <p class="text-xs text-slate-500 italic mt-2">*Note: This changes the display name in the GUI, not the internal administrative hostname set via the CLI.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task 6 -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="toggleAccordion('acc-6', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('pt_qa6', this)">
+                            <span class="pr-6">6. Connect devices using 'Automatically Choose Connection Type'</span>
+                        </div>
+                        <span class="text-2xl text-blue-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-6" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-slate-700 text-sm space-y-3">
+                            <p>To cable the network without manually selecting Straight-Through or Crossover cables:</p>
+                            <ol class="list-decimal pl-5 space-y-2">
+                                <li>Click the <strong>Connections</strong> icon (the lightning bolt) in the bottom-left menu.</li>
+                                <li>Click the <strong>gold lightning bolt icon</strong> ("Automatically Choose Connection Type").</li>
+                                <li>Click on the first device (e.g., PC1), then click on the second device (e.g., Switch 1). Packet Tracer will automatically select the correct cable type and available ports.</li>
+                            </ol>
+                            <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mt-3 text-blue-800 rounded text-xs">
+                                <strong>Speed Tip:</strong> If you hold down the <code>CTRL</code> key on your keyboard while clicking the gold lightning bolt, it will remain selected after you make a connection, allowing you to quickly wire the entire network without re-selecting the tool!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: Device Function Matrix -->
+    <div id="tab-matrix" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Device Function Matrix</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                A quick reference guide for the network hardware components utilized in this lab. Use the search box to filter.
+            </p>
+
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterTable()" placeholder="Search devices or functions..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-shadow text-sm">
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700 font-semibold">
+                        <tr>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs w-1/4">Device / Model</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs w-1/4">OSI Layer</th>
+                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Primary Function</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">Router<br><span class="text-xs font-mono text-slate-500">Cisco 2911</span></td>
+                            <td class="px-6 py-4"><span class="bg-blue-100 px-2 py-1 rounded text-xs border border-blue-200 text-blue-800 font-bold">Layer 3 (Network)</span></td>
+                            <td class="px-6 py-4 text-slate-600">Connects different IP networks together. Uses IP addresses in routing tables to determine the best path to forward packets.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">Switch<br><span class="text-xs font-mono text-slate-500">Cisco 2960</span></td>
+                            <td class="px-6 py-4"><span class="bg-slate-200 px-2 py-1 rounded text-xs border border-slate-300 text-slate-700 font-bold">Layer 2 (Data Link)</span></td>
+                            <td class="px-6 py-4 text-slate-600">Connects end devices within the same Local Area Network (LAN). Uses MAC addresses to forward frames specifically to the intended destination port.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">Firewall<br><span class="text-xs font-mono text-slate-500">Cisco ASA 5505</span></td>
+                            <td class="px-6 py-4"><span class="bg-red-100 px-2 py-1 rounded text-xs border border-red-200 text-red-800 font-bold">Layer 3 / 4 / 7</span></td>
+                            <td class="px-6 py-4 text-slate-600">Security appliance that inspects and filters incoming and outgoing traffic based on stateful rules to protect internal networks.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">PC / Laptop</td>
+                            <td class="px-6 py-4"><span class="bg-green-100 px-2 py-1 rounded text-xs border border-green-200 text-green-800 font-bold">Endpoint (L7)</span></td>
+                            <td class="px-6 py-4 text-slate-600">End-user devices that generate and receive network traffic.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">Server</td>
+                            <td class="px-6 py-4"><span class="bg-green-100 px-2 py-1 rounded text-xs border border-green-200 text-green-800 font-bold">Endpoint (L7)</span></td>
+                            <td class="px-6 py-4 text-slate-600">High-capacity end devices that host resources and services (web, email, files) for other devices to access.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500 bg-white">No matching devices found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: Flashcards -->
+    <div id="tab-flashcards" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Active Recall Flashcards</h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of basic network devices and Packet Tracer functionality.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function renderChart() {
+        if(chartRendered) return;
+        const ctx = document.getElementById('deviceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Routers', 'Switches', 'Firewalls', 'PCs/Laptops', 'Servers'],
+                datasets: [{
+                    data: [3, 2, 2, 3, 2], // 3 Routers (Internet + 2), 2 Switches, 2 FW, 3 PCs (2 PC + 1 Lap), 2 Servers
+                    backgroundColor: ['#2563eb', '#475569', '#dc2626', '#9333ea', '#0f766e'], 
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { family: "'Inter', sans-serif" } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ${context.raw} Device(s)`;
+                            }
+                        },
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(tabId, btnElement) {
+        // Hide all views
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active state from all buttons
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
+        });
+
+        // Show target view & set button active
+        document.getElementById(tabId).classList.add('active');
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
+
+        // Render chart if Concepts tab is opened
+        if(tabId === 'tab-concepts') {
+            renderChart();
+        }
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.querySelector('span:last-child');
+        
+        if (content.classList.contains('open')) {
+            content.classList.remove('open');
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('open');
+            icon.style.transform = 'rotate(45deg)';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterTable() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons (Adding generic logic for any future cli-blocks)
+        document.querySelectorAll('.cli-block').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick').match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('pt_intro_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is the primary function of a Router?", a: "To operate at <strong>Layer 3</strong>, connecting different networks together and making routing decisions to forward packets toward their destination." },
+            { q: "What is the primary function of a Switch?", a: "To operate at <strong>Layer 2</strong>, connecting end devices within the same Local Area Network (LAN) and forwarding frames using MAC addresses." },
+            { q: "What does the 'lightning bolt' tool do in Packet Tracer?", a: "It selects connections. The <strong>Gold Lightning Bolt</strong> automatically selects the correct cable type (Straight-through vs Crossover) between two clicked devices." },
+            { q: "How do you rename a device's display label in Packet Tracer?", a: "Click directly on the text label beneath the device icon in the logical workspace and type the new name." },
+            { q: "What does the Cisco ASA 5505 represent in this lab?", a: "A <strong>Firewall</strong>. It is a security appliance designed to monitor and control network traffic based on security rules." },
+            { q: "How do you place multiple devices quickly in Packet Tracer?", a: "Hold the <strong>CTRL</strong> key while selecting a device type from the bottom menu, then click multiple times in the workspace." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-blue-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-blue-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-blue-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('pt_intro_progress_' + id, cb.checked);
+    }
+
+    // Initialize on load
+    document.addEventListener("DOMContentLoaded", () => {
+        renderChart();
+        initFeatures();
+    });
+</script>
+</body>
+</html>
