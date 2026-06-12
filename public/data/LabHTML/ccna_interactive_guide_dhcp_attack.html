@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Mastery: DHCP Exhaustion Attack</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #fafafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Sidebar Custom Styling */
+.sidebar-nav { background-color: #0f111a; }
+.brand-header { background-color: #151824; }
+
+/* Chart Container */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 320px; 
+}
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-radius: 0.375rem; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;}
+.nav-active { background-color: #4f46e5; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); } 
+.nav-inactive { color: #94a3b8; }
+.nav-inactive:hover { background-color: rgba(255,255,255,0.05); color: #e2e8f0; }
+.nav-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Accordions */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px solid #f1f5f9; }
+
+/* Code Blocks */
+.cli-window { 
+    background-color: #1e1e1e; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #334155; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.6;
+}
+.cli-prompt { color: #4ade80; font-weight: bold; } 
+.cli-kali { color: #ef4444; font-weight: bold; } /* Red for attacker */
+.cli-comment { color: #94a3b8; font-style: italic; }
+
+/* Tracker Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #4f46e5 !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+.node-attack { animation: pulseRed 0.5s infinite alternate; border-color: #ef4444 !important; }
+
+@keyframes pulseGlow { 0% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); } 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.8); } }
+@keyframes pulseRed { 0% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); } 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 1); } }
+
+@keyframes flowTraffic { 0% { background-position: 0% 0%; } 100% { background-position: 100% 0%; } }
+.traffic-flow-indigo {
+    background: linear-gradient(90deg, #4f46e5 0%, #c7d2fe 50%, #4f46e5 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1.5s linear infinite;
+}
+.traffic-flow-attack {
+    background: linear-gradient(90deg, #ef4444 0%, #fecaca 50%, #ef4444 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 0.2s linear infinite; /* Very fast */
+}
+
+/* 3D Flip Utilities */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-indigo-200">
+
+<!-- Sidebar Navigation -->
+<nav class="sidebar-nav border-r border-slate-800 w-full md:w-64 flex-shrink-0 md:h-full flex flex-col shadow-2xl z-20 transition-all">
+    <div class="brand-header p-6 border-b border-slate-800 flex items-center gap-3">
+        <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-1.998A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"></path></svg>
+        <div>
+            <h1 class="text-sm font-bold text-white tracking-wide">CCNA Mastery</h1>
+            <p class="text-[10px] text-red-400 font-bold tracking-widest uppercase mt-0.5">Day 48 Lab</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-6 px-4 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Attack Theory
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            Attack Visualizer
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Terminal Commands
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            Lab Walkthrough
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-6 md:p-10 relative scroll-smooth bg-white">
+    <!-- Header Banner -->
+    <header class="mb-10 max-w-5xl mx-auto">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Cybersecurity Lab</span>
+            <span class="text-slate-400 text-sm">Jeremy's IT Lab Day 48</span>
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">DHCP Exhaustion Attack</h2>
+        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded-r-lg">
+            <p class="text-indigo-900 text-sm md:text-base leading-relaxed">
+                Discover how vulnerabilities in the DORA process allow an attacker to starve a network of IP addresses. In this demo, we use Kali Linux and <strong>Yersinia</strong> to execute a Denial of Service (DoS) attack against a Cisco router acting as a DHCP server.
+            </p>
+        </div>
+    </header>
+
+    <!-- SECTION 1: THEORY / CHART -->
+    <div id="view-theory" class="view-section active max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                The Vulnerability: DORA & MAC Spoofing
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                <div class="space-y-6">
+                    <p class="text-sm text-slate-600">The DHCP protocol lacks built-in authentication. When an attacker floods the network with DHCP <strong>DISCOVER</strong> messages, the server faithfully replies with offers, temporarily reserving those IPs.</p>
+                    
+                    <ul class="space-y-4 text-sm text-slate-700">
+                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
+                            <strong class="text-indigo-700 mb-1">Why spoof MAC Addresses?</strong>
+                            <span>If the attacker used their real MAC address repeatedly, the DHCP server would just offer the <em>same</em> IP address over and over. By spoofing thousands of random MACs, the attacker tricks the server into thinking thousands of unique hosts are joining.</span>
+                        </li>
+                        <li class="flex flex-col bg-red-50 p-4 rounded border border-red-100">
+                            <strong class="text-red-700 mb-1">The Consequence (DoS & APIPA)</strong>
+                            <span>Once the pool reaches 100% capacity, legitimate users cannot get an IP address. Windows PCs will give up and self-assign an <strong>APIPA</strong> address in the <code>169.254.X.X</code> range, breaking network connectivity.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <h4 class="text-center font-bold text-slate-700 mb-2 text-sm">DHCP Pool Capacity (Simulated Attack)</h4>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="poolChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="view-tracker" class="view-section max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Attack Visualizer
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Simulate the sequence of a DHCP Exhaustion attack from initial deployment to the resulting Denial of Service.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-50 p-2 rounded-lg border border-slate-200 justify-center">
+                <button onclick="playDhcpStep(1)" id="btn-sec-1" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-indigo-600 transition">1. Normal Network</button>
+                <button onclick="playDhcpStep(2)" id="btn-sec-2" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-red-600 transition">2. Launch Yersinia</button>
+                <button onclick="playDhcpStep(3)" id="btn-sec-3" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-amber-600 transition">3. Legitimate PC Fails</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
+                
+                <div class="relative w-full max-w-lg h-64 mx-auto mt-4">
+                    <!-- Router (DHCP Server) -->
+                    <div id="node-router" class="absolute top-1/2 left-3/4 transform -translate-x-1/2 -translate-y-1/2 w-28 h-24 rounded-full bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-slate-600 z-10 shadow-lg transition-all">
+                        R1 (DHCP)
+                        <span id="pool-status" class="text-[10px] mt-1 bg-green-500 px-2 py-0.5 rounded text-white font-mono">Pool: 254 Free</span>
+                    </div>
+                    
+                    <!-- Kali Linux (Attacker) -->
+                    <div id="node-attacker" class="absolute bottom-4 left-4 w-24 h-16 rounded bg-slate-800 text-slate-300 font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-600 z-10 shadow-lg transition-all">
+                        Kali Linux
+                        <span class="text-[9px] font-mono font-normal text-slate-400">Yersinia</span>
+                    </div>
+
+                    <!-- PC1 (Victim) -->
+                    <div id="node-pc1" class="absolute top-4 left-4 w-24 h-16 rounded bg-slate-700 text-slate-300 font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all opacity-50">
+                        PC 1
+                        <span id="pc-ip" class="text-[9px] font-mono font-normal">Offline</span>
+                    </div>
+
+                    <!-- Switch -->
+                    <div id="node-switch" class="absolute top-1/2 left-1/3 transform -translate-y-1/2 w-12 h-8 rounded bg-slate-600 border border-slate-500 z-10 flex items-center justify-center text-[8px] text-white">SW1</div>
+
+                    <!-- Links -->
+                    <!-- Attacker to Switch -->
+                    <div id="link-attacker-switch" class="absolute bottom-12 left-24 w-16 h-1 bg-slate-600 origin-bottom-left -rotate-[20deg] transition-all z-0"></div>
+                    <!-- PC to Switch -->
+                    <div id="link-pc-switch" class="absolute top-12 left-24 w-16 h-1 bg-slate-600 origin-top-left rotate-[20deg] transition-all z-0 opacity-50"></div>
+                    <!-- Switch to Router -->
+                    <div id="link-switch-router" class="absolute top-1/2 left-[calc(33%+48px)] transform -translate-y-1/2 w-32 h-1 bg-slate-600 transition-all z-0"></div>
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="sec-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800 border border-slate-600 p-4 rounded shadow-xl">
+                    Click step 1 to view the initial network state.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="view-config" class="view-section max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-5 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Terminal Demo Commands
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands used by Jeremy during the Kali Linux and Cisco Router demonstration.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-1 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-5 py-2.5 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">R1 (Verification)</button>
+                <button onclick="switchDeviceTab('kali', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Kali Linux (Attacker)</button>
+                <button onclick="switchDeviceTab('pc1', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">PC1 (Victim)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3">Check the status of the pool before, during, and after the attack.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! View the configured pool parameters</span><br>
+                    <span class="cli-prompt">R1#</span> show run | section dhcp<br><br>
+                    
+                    <span class="cli-comment">! View total leased vs available addresses</span><br>
+                    <span class="cli-prompt">R1#</span> show ip dhcp pool<br>
+                    <span class="text-slate-400">Pool POOL1 :</span><br>
+                    <span class="text-slate-400"> Utilization mark (high/low)    : 100 / 0</span><br>
+                    <span class="text-slate-400"> Total addresses                : 254</span><br>
+                    <span class="text-slate-400"> Leased addresses               : 253</span><br><br>
+
+                    <span class="cli-comment">! View the specific MAC to IP address mappings (The bindings)</span><br>
+                    <span class="cli-comment">! During an attack, this table will be massively filled with random MACs</span><br>
+                    <span class="cli-prompt">R1#</span> show ip dhcp binding<br><br>
+
+                    <span class="cli-comment">! TO RECOVER: Clear all leased bindings from the router's memory</span><br>
+                    <span class="cli-prompt">R1#</span> clear ip dhcp binding *
+                </div>
+            </div>
+
+            <!-- Kali Tab -->
+            <div id="config-kali" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3">Launch the Yersinia network tool to execute the starvation attack.</p>
+                <div class="cli-window">
+                    <span class="cli-comment"># Open the Yersinia Graphical User Interface (GUI)</span><br>
+                    <span class="cli-kali">kali@kali:~$</span> yersinia -G<br><br>
+                    <span class="cli-comment"># 1. Click "Launch Attack"</span><br>
+                    <span class="cli-comment"># 2. Select "DHCP"</span><br>
+                    <span class="cli-comment"># 3. Choose "sending DISCOVER packet" (Causes DoS)</span><br>
+                    <span class="cli-comment"># 4. Click OK</span><br>
+                </div>
+            </div>
+
+            <!-- PC1 Tab -->
+            <div id="config-pc1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3">Observe the behavior of a Windows client failing to find a DHCP server.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">C:\> Check network adapters and current IPs</span><br>
+                    <span class="cli-prompt">C:\></span> ipconfig /all<br><br>
+                    
+                    <span class="cli-comment">C:\> Example output during attack (APIPA Address assigned)</span><br>
+                    <span class="text-slate-400">Autoconfiguration IPv4 Address. . : 169.254.15.22</span><br>
+                    <span class="text-slate-400">Subnet Mask . . . . . . . . . . . : 255.255.0.0</span><br><br>
+
+                    <span class="cli-comment">C:\> After admin clears router bindings, force the PC to request a new IP</span><br>
+                    <span class="cli-prompt">C:\></span> ipconfig /renew
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+                📝 Lab Demonstration Flow
+            </h3>
+            <p class="text-slate-500 text-sm mb-6 border-b border-slate-100 pb-6">Check off the steps to track the chronological flow of Jeremy's demo.</p>
+
+            <div class="space-y-3">
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa1', this)">
+                            <span class="text-sm">1. Verify Initial Router Settings</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Verify that R1 has a configured pool (e.g., <code>192.168.1.0/24</code>) and that <code>show ip dhcp pool</code> indicates 0 leased addresses.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa2', this)">
+                            <span class="text-sm">2. Execute Attack via Kali Linux</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Open Yersinia (<code>yersinia -G</code>) and launch the DHCP "DISCOVER packet" DoS attack. Immediately, checking R1's bindings will show 253 leased addresses assigned to random spoofed MACs.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa3', this)">
+                            <span class="text-sm">3. Connect PC1 and Observe APIPA</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>When connecting PC1, it fails to receive an IP. Using <code>ipconfig /all</code> reveals an autoconfigured IPv4 address starting with <code>169.254.X.X</code>. Pings to the default gateway (R1) fail.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa4', this)">
+                            <span class="text-sm">4. Disconnect Attacker & Recover Network</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Disconnect Kali Linux, run <code>clear ip dhcp binding *</code> on R1 to empty the pool, and then run <code>ipconfig /renew</code> on PC1 to successfully grab an IP address.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                Command Matrix
+            </h3>
+            
+            <div class="mb-6 relative">
+                <svg class="absolute inset-y-0 left-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search commands..." class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-5 py-3 font-semibold tracking-wide w-1/3">Command</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide w-1/4">Device/Mode</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">show ip dhcp pool</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">R1 Priv EXEC</span></td>
+                            <td class="px-5 py-3 text-slate-600">Shows pool statistics including total and leased counts.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">show ip dhcp binding</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">R1 Priv EXEC</span></td>
+                            <td class="px-5 py-3 text-slate-600">Displays list of IPs currently handed out, mapped to MAC addresses.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">clear ip dhcp binding *</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">R1 Priv EXEC</span></td>
+                            <td class="px-5 py-3 text-slate-600">Erases all dynamically leased IP mappings from the router.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-red-600 whitespace-nowrap">yersinia -G</td>
+                            <td class="px-5 py-3"><span class="bg-red-50 text-red-700 text-xs px-2 py-1 rounded">Kali Terminal</span></td>
+                            <td class="px-5 py-3 text-slate-600">Opens the Yersinia network attack tool in Graphical Interface mode.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">ipconfig /all</td>
+                            <td class="px-5 py-3"><span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded">Windows CMD</span></td>
+                            <td class="px-5 py-3 text-slate-600">Shows all adapter info, helpful for spotting a 169.254.X.X APIPA.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">ipconfig /renew</td>
+                            <td class="px-5 py-3"><span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded">Windows CMD</span></td>
+                            <td class="px-5 py-3 text-slate-600">Forces Windows to broadcast a new DHCP Discover to get an IP.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Flashcards
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    let poolChartInstance = null;
+
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('poolChart').getContext('2d');
+        poolChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Leased Addresses', 'Available (Free)'],
+                datasets: [{
+                    data: [2, 252], // Normal state
+                    backgroundColor: ['#ef4444', '#10b981'], // Red for leased, Green for free
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return ` ${context.label}: ${context.raw}`; }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // Function to animate chart during visualizer
+    function updateChartData(leased, free) {
+        if(!poolChartInstance) return;
+        poolChartInstance.data.datasets[0].data = [leased, free];
+        poolChartInstance.update();
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
+        });
+        
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
+
+        if(viewId === 'view-theory') { initChart(); updateChartData(2, 252); } // Reset chart on theory view
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-indigo-600', 'border-indigo-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-indigo-600', 'border-indigo-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Tracker Logic ---
+    function playDhcpStep(stepIndex) {
+        // Button styling
+        for(let i=1; i<=3; i++) {
+            const btn = document.getElementById('btn-sec-'+i);
+            btn.classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        }
+        document.getElementById('btn-sec-'+stepIndex).classList.add('ring-2', 'ring-indigo-500', 'border-indigo-500');
+
+        const routerNode = document.getElementById('node-router');
+        const attackerNode = document.getElementById('node-attacker');
+        const pcNode = document.getElementById('node-pc1');
+        
+        const poolStatus = document.getElementById('pool-status');
+        const pcIp = document.getElementById('pc-ip');
+        
+        const linkAttacker = document.getElementById('link-attacker-switch');
+        const linkPc = document.getElementById('link-pc-switch');
+        const linkSwitchToRtr = document.getElementById('link-switch-router');
+        const desc = document.getElementById('sec-desc');
+
+        // Reset
+        routerNode.classList.remove('node-attack');
+        attackerNode.classList.remove('node-attack');
+        pcNode.classList.remove('opacity-50');
+        linkPc.classList.remove('opacity-50');
+        
+        linkAttacker.className = "absolute bottom-12 left-24 w-16 h-1 bg-slate-600 origin-bottom-left -rotate-[20deg] transition-all z-0";
+        linkPc.className = "absolute top-12 left-24 w-16 h-1 bg-slate-600 origin-top-left rotate-[20deg] transition-all z-0";
+        linkSwitchToRtr.className = "absolute top-1/2 left-[calc(33%+48px)] transform -translate-y-1/2 w-32 h-1 bg-slate-600 transition-all z-0";
+
+        if (stepIndex === 1) {
+            poolStatus.className = "text-[10px] mt-1 bg-green-500 px-2 py-0.5 rounded text-white font-mono";
+            poolStatus.innerText = "Pool: 254 Free";
+            pcNode.classList.add('opacity-50');
+            linkPc.classList.add('opacity-50');
+            
+            desc.innerHTML = "<span class='text-green-400 font-bold'>Step 1: Normal State.</span> The router has plenty of IP addresses available in its DHCP pool. Kali Linux is connected but dormant. PC1 is offline.";
+        } else if (stepIndex === 2) {
+            attackerNode.classList.add('node-attack');
+            routerNode.classList.add('node-attack');
+            
+            poolStatus.className = "text-[10px] mt-1 bg-red-600 px-2 py-0.5 rounded text-white font-mono";
+            poolStatus.innerText = "Pool: 0 Free (FULL)";
+            
+            linkAttacker.className = "absolute bottom-12 left-24 w-16 h-3 traffic-flow-attack origin-bottom-left -rotate-[20deg] transition-all z-0";
+            linkSwitchToRtr.className = "absolute top-1/2 left-[calc(33%+48px)] transform -translate-y-1/2 w-32 h-3 traffic-flow-attack transition-all z-0"; 
+            
+            pcNode.classList.add('opacity-50');
+            linkPc.classList.add('opacity-50');
+            
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 2 (Attack):</span> Yersinia spams DHCP DISCOVER messages with spoofed MACs. The router hands out IP offers until the pool is 100% exhausted.";
+        } else if (stepIndex === 3) {
+            routerNode.classList.add('node-attack');
+            poolStatus.className = "text-[10px] mt-1 bg-red-600 px-2 py-0.5 rounded text-white font-mono";
+            poolStatus.innerText = "Pool: 0 Free (FULL)";
+            
+            pcIp.className = "text-[9px] font-mono font-normal text-amber-400";
+            pcIp.innerText = "IP: 169.254.X.X";
+            
+            linkPc.className = "absolute top-12 left-24 w-16 h-2 bg-amber-500 origin-top-left rotate-[20deg] transition-all z-0";
+            linkSwitchToRtr.className = "absolute top-1/2 left-[calc(33%+48px)] transform -translate-y-1/2 w-32 h-1 bg-slate-600 transition-all z-0";
+
+            desc.innerHTML = "<span class='text-amber-400 font-bold'>Step 3 (DoS):</span> PC1 connects and requests an IP. R1 has none to give. PC1 falls back to an APIPA address (169.254.X.X) and cannot route traffic.";
+        }
+    }
+
+    // --- Features ---
+    function initFeatures() {
+        // Copy buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                btn.innerText = 'Copied!';
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // Load checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1] && localStorage.getItem(match[1]) === 'true') {
+                cb.checked = true;
+            }
+        });
+
+        // Flashcards data
+        const flashcards = [
+            { q: "What specific DHCP message is flooded during a Starvation attack?", a: "The attacker floods the server with DHCP <strong>DISCOVER</strong> messages." },
+            { q: "Why must the attacker spoof the source MAC address?", a: "If the MAC address didn't change, the DHCP server would recognize the host and repeatedly offer the exact same single IP address. Spoofing simulates thousands of unique hosts." },
+            { q: "What IPv4 address range is assigned via APIPA if DHCP fails?", a: "The APIPA range is <strong>169.254.0.0/16</strong>." },
+            { q: "What Cisco IOS command clears the DHCP bindings table?", a: "<code>clear ip dhcp binding *</code>" },
+            { q: "What Windows command forces the PC to request a new IP?", a: "<code>ipconfig /renew</code>" },
+            { q: "Which tool in Kali Linux was used to demonstrate the attack?", a: "<strong>Yersinia</strong><br>(Specifically, the graphical interface launched with `yersinia -G`)." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-56 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-300">Q${index + 1}</span>
+                                <h5 class="text-sm md:text-base font-semibold text-slate-700">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-indigo-500 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-indigo-50 border border-indigo-100 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-indigo-400">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem(id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playDhcpStep(1); // Default tracker state
+    });
+</script>
+</body>
+</html>

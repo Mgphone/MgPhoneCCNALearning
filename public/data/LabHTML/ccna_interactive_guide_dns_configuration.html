@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: DNS Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #f0f9ff; color: #0284c7; border-left-color: #0284c7; font-weight: 600; } /* Sky Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #38bdf8; font-weight: bold; } /* Sky 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #0284c7 !important; box-shadow: 0 0 15px rgba(2, 132, 199, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(2, 132, 199, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(2, 132, 199, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(2,132,199,1) 0%, rgba(224,242,254,1) 50%, rgba(2,132,199,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-sky-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-sky-500">📖</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-sky-400 font-semibold tracking-wide uppercase mt-1">Domain Name System</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-sky-600 text-white shadow-md">
+            <span class="text-xl">📊</span> DNS Concepts
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Resolution Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Domain Name System (DNS)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-sky-500 pl-4 bg-sky-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Computers route traffic using IP addresses, but humans prefer memorable names. Learn how DNS (UDP Port 53) translates Fully Qualified Domain Names (FQDNs) like <code>youtube.com</code> into IP addresses, and how to configure routers to resolve names locally or query external servers.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">🧠</span> Name Resolution Hierarchy
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">How Routers Resolve Names</h4>
+                        <p class="text-sm text-slate-700 mb-4">When you type a command like <code>ping PC1</code> on a Cisco router, it must figure out the IP address associated with "PC1" before it can send the ICMP packet. It checks sources in a specific order:</p>
+                        <ul class="space-y-3 text-sm text-slate-700">
+                            <li class="flex items-start">
+                                <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-8 text-center shadow-sm">1</span>
+                                <div><strong>Local Host Table:</strong> The router first checks its own manually configured host table (configured via the <code>ip host</code> command).</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-sky-100 text-sky-800 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-8 text-center shadow-sm">2</span>
+                                <div><strong>External DNS Server:</strong> If the name isn't in the local table, the router sends a DNS Query to configured external DNS servers (configured via <code>ip name-server</code>).</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-rose-100 text-rose-800 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-8 text-center shadow-sm">3</span>
+                                <div><strong>Broadcast:</strong> (Legacy) If no DNS server is configured, older IOS versions might attempt a local broadcast. Modern networks rely strictly on DNS.</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Protocol Sequence for an Initial Named Ping</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Visualizing the chained dependencies required to ping an unknown hostname.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="dnsChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-sky-50 p-3 rounded border border-sky-200 text-sky-900 shadow-sm">
+                        You cannot ping a name without first resolving its IP via <strong>DNS</strong>. You cannot send an IP packet without first resolving the next-hop MAC address via <strong>ARP</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">🔍</span> DNS Resolution Flow Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe the sequence of network protocols triggered when a user simply types <code>ping youtube.com</code> on a freshly booted PC.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playDnsStep(1)" id="btn-dns-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. DNS Query</button>
+                <button onclick="playDnsStep(2)" id="btn-dns-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. DNS Reply</button>
+                <button onclick="playDnsStep(3)" id="btn-dns-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Router ARP</button>
+                <button onclick="playDnsStep(4)" id="btn-dns-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. ICMP Ping</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
+                
+                <div class="relative w-full max-w-2xl h-72 mx-auto mt-4">
+                    
+                    <!-- PC1 (Left) -->
+                    <div id="node-pc1" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-500 z-10 shadow-md transition-all">PC1</div>
+                    
+                    <!-- R1 (Center Left) -->
+                    <div id="node-r1" class="absolute top-1/2 left-[25%] transform -translate-y-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 shadow-lg transition-all">R1</div>
+                    
+                    <!-- Cloud (Center Right) -->
+                    <div id="node-isp" class="absolute top-1/2 right-[35%] transform -translate-y-1/2 w-24 h-16 rounded-full bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-600 z-10 shadow-lg transition-all">Internet</div>
+
+                    <!-- Cloudflare DNS (Top Right) -->
+                    <div id="node-dns" class="absolute top-4 right-0 w-20 h-16 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-500 z-10 shadow-md transition-all">1.1.1.1<span class="text-[9px] font-normal text-sky-200 mt-1">DNS Server</span></div>
+                    
+                    <!-- YouTube (Bottom Right) -->
+                    <div id="node-yt" class="absolute bottom-4 right-0 w-20 h-16 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-500 z-10 shadow-md transition-all">YouTube<span class="text-[9px] font-normal font-mono text-emerald-200 mt-1">.6.78</span></div>
+
+                    <!-- Links -->
+                    <div id="link-pc1-r1" class="absolute top-1/2 left-16 w-[120px] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+                    <div id="link-r1-isp" class="absolute top-1/2 left-[35%] w-[130px] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex items-center justify-center"><span class="text-[9px] text-slate-400 bg-slate-800 px-1 rounded -translate-y-3 border border-slate-700">Default Route</span></div>
+                    
+                    <div id="link-isp-dns" class="absolute top-12 right-20 w-[100px] h-1 bg-slate-600 origin-bottom-right -rotate-[25deg] transition-all z-0"></div>
+                    <div id="link-isp-yt" class="absolute bottom-12 right-20 w-[100px] h-1 bg-slate-600 origin-top-right rotate-[25deg] transition-all z-0"></div>
+
+                    <!-- Packet indicator -->
+                    <div id="pkt-dns" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-4 h-4 bg-sky-400 rounded-full shadow-[0_0_10px_#38bdf8] z-20 hidden transition-all duration-1000 ease-in-out"></div>
+                    
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="dns-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to execute the ping command.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-sky-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure local host tables, DNS servers, and routing.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-sky-600 border-b-2 border-sky-600 transition-colors">Router 1 (R1)</button>
+                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Switch 1 (SW1 Bonus)</button>
+                <button onclick="switchDeviceTab('pc', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Host PCs (GUI)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure a default route to the internet, point R1 to a public DNS server, and build a local host table for the LAN PCs.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Create a default route to the Internet</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ip route 0.0.0.0 0.0.0.0 203.0.113.2<br><br>
+
+                    <span class="cli-comment">! Tell R1 to use Cloudflare's public DNS server for name resolution</span><br>
+                    <span class="cli-comment">! Note: "ip domain-lookup" is enabled by default</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ip name-server 1.1.1.1<br><br>
+
+                    <span class="cli-comment">! Build a Local Host Table so R1 can ping local devices by name</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ip host R1 192.168.0.254<br>
+                    <span class="cli-prompt">R1(config)#</span> ip host PC1 192.168.0.1<br>
+                    <span class="cli-prompt">R1(config)#</span> ip host PC2 192.168.0.2<br>
+                    <span class="cli-prompt">R1(config)#</span> ip host PC3 192.168.0.3<br><br>
+
+                    <span class="cli-comment">! Test local resolution</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do ping PC1<br>
+                    <span class="cli-comment">Translating "PC1"...domain server (1.1.1.1) [OK]</span><br>
+                    <span class="cli-comment">Type escape sequence to abort.</span><br>
+                    <span class="cli-comment">Sending 5, 100-byte ICMP Echos to 192.168.0.1...</span><br>
+                    <span class="cli-comment">!!!!!</span>
+                </div>
+            </div>
+
+            <!-- SW1 Tab -->
+            <div id="config-sw1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> (From Boson Preview) Configure an IP address on a Layer 2 switch so it can be managed remotely, and set its DNS server.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">Switch1&gt;</span> enable<br>
+                    <span class="cli-prompt">Switch1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Layer 2 switches don't assign IPs to physical interfaces. </span><br>
+                    <span class="cli-comment">! Assign the management IP to the Switch Virtual Interface (SVI) for VLAN 1.</span><br>
+                    <span class="cli-prompt">Switch1(config)#</span> interface vlan 1<br>
+                    <span class="cli-prompt">Switch1(config-if)#</span> ip address 10.0.0.2 255.255.255.0<br>
+                    <span class="cli-prompt">Switch1(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">Switch1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure DNS lookup so the switch can ping names</span><br>
+                    <span class="cli-prompt">Switch1(config)#</span> ip domain-lookup<br>
+                    <span class="cli-prompt">Switch1(config)#</span> ip name-server 10.0.0.1<br>
+                </div>
+                <div class="bg-sky-50 p-3 mt-4 border border-sky-200 rounded text-sky-800 text-sm">
+                    <strong>Note on Cisco Routers as DNS Servers:</strong> You can configure a Cisco router to act as a DNS server for the local network using the global command <code>ip dns server</code>. This allows PCs to point to the router's IP for DNS. However, this command is not supported in Packet Tracer.
+                </div>
+            </div>
+
+            <!-- PC Tab -->
+            <div id="config-pc" class="device-tab-content hidden p-6">
+                <div class="bg-slate-50 border border-slate-200 p-6 rounded-lg text-sm text-slate-700">
+                    <h4 class="font-bold text-lg mb-2 text-slate-800">Packet Tracer GUI Configuration</h4>
+                    <p class="mb-4">Configure the DNS Server IP via the Desktop &gt; IP Configuration tab.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-indigo-700 mb-2 border-b pb-1">PC1</h5>
+                            <p><strong>IP:</strong> <code class="bg-slate-100 px-1 border rounded">192.168.0.1</code></p>
+                            <p><strong>Gateway:</strong> <code class="bg-slate-100 px-1 border rounded">192.168.0.254</code></p>
+                            <p class="text-sky-700 mt-2"><strong>DNS Server:</strong> <code class="bg-sky-50 px-1 border border-sky-200 rounded font-bold">1.1.1.1</code></p>
+                        </div>
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-indigo-700 mb-2 border-b pb-1">PC2</h5>
+                            <p><strong>IP:</strong> <code class="bg-slate-100 px-1 border rounded">192.168.0.2</code></p>
+                            <p><strong>Gateway:</strong> <code class="bg-slate-100 px-1 border rounded">192.168.0.254</code></p>
+                            <p class="text-sky-700 mt-2"><strong>DNS Server:</strong> <code class="bg-sky-50 px-1 border border-sky-200 rounded font-bold">1.1.1.1</code></p>
+                        </div>
+                        <div class="bg-white p-4 border border-slate-200 rounded shadow-sm">
+                            <h5 class="font-bold text-indigo-700 mb-2 border-b pb-1">PC3</h5>
+                            <p><strong>IP:</strong> <code class="bg-slate-100 px-1 border rounded">192.168.0.3</code></p>
+                            <p><strong>Gateway:</strong> <code class="bg-slate-100 px-1 border rounded">192.168.0.254</code></p>
+                            <p class="text-sky-700 mt-2"><strong>DNS Server:</strong> <code class="bg-sky-50 px-1 border border-sky-200 rounded font-bold">1.1.1.1</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-sky-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('dns_qa1', this)">
+                            <span class="pr-6">1. Configure a default route to the internet on R1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>To reach cloudflare's DNS and YouTube, R1 needs a route indicating how to reach unknown networks.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R1(config)#</span> ip route 0.0.0.0 0.0.0.0 203.0.113.2
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-sky-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('dns_qa2', this)">
+                            <span>2. Configure PC1, PC2, and PC3 to use 1.1.1.1 as their DNS server.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Done via the Packet Tracer GUI.</p>
+                            <ul class="list-disc pl-5">
+                                <li>Open PC -> Desktop -> IP Configuration.</li>
+                                <li>Ensure 'Static' is selected.</li>
+                                <li>Enter <code>1.1.1.1</code> in the DNS Server field.</li>
+                            </ul>
+                            <p class="italic text-xs text-slate-500 mt-2">In real networks, this is usually handled automatically via DHCP.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-sky-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('dns_qa3', this)">
+                            <span>3. Configure R1's DNS server and configure a local host table.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> ip name-server 1.1.1.1<br>
+                                <span class="cli-prompt">R1(config)#</span> ip host PC1 192.168.0.1<br>
+                                <span class="cli-prompt">R1(config)#</span> ip host PC2 192.168.0.2<br>
+                                <span class="cli-prompt">R1(config)#</span> ip host PC3 192.168.0.3
+                            </div>
+                            <p class="mt-2 text-xs">Verify the local entries using <code class="bg-white px-1 border rounded text-slate-800">show hosts</code>.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-sky-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('dns_qa4', this)">
+                            <span class="pr-6">4. Use Simulation Mode to analyze a ping to youtube.com by name.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>When you type <code>ping youtube.com</code> on PC1, the following happens:</p>
+                            <ol class="list-decimal pl-5 space-y-1">
+                                <li>PC1 creates a <strong>DNS Query</strong> targeting 1.1.1.1.</li>
+                                <li>The DNS query travels through R1 and the Internet router to Cloudflare.</li>
+                                <li>Cloudflare sends a <strong>DNS Reply</strong> back containing YouTube's IP (e.g., 172.217.6.78).</li>
+                                <li>Only NOW does PC1 generate the <strong>ICMP Echo Request</strong> destined for the IP it just learned.</li>
+                            </ol>
+                            <p class="text-sky-700 font-bold mt-2">First Ping Timeout:</p>
+                            <p class="text-xs">If the Internet router hasn't talked to YouTube yet, it must pause the ICMP packet to send an <strong>ARP Request</strong> to resolve YouTube's MAC address. During this delay, PC1's first ping will likely timeout.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">ip name-server [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures the external DNS server the router uses to resolve names.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">ip domain-lookup</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enables hostname-to-IP translation. Enabled by default on Cisco routers.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">no ip domain-lookup</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Disables DNS. Useful in labs to prevent the router from hanging when you mistype a command.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">ip host [name] [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a static entry in the router's local host table.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">show hosts</td>
+                            <td class="px-6 py-4"><span class="bg-sky-50 text-sky-800 text-xs px-2 py-1 rounded border border-sky-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the router's local host table entries and default domain name.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">ip dns server</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures the router to act as a DNS server for clients. (Not supported in PT).</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of DNS mechanisms.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('dnsChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['DNS Query', 'DNS Reply', 'ARP Req/Rep', 'ICMP Ping'],
+                datasets: [
+                    {
+                        label: 'Execution Order (Protocol Sequence)',
+                        data: [1, 2, 3, 4], 
+                        backgroundColor: ['#38bdf8', '#0284c7', '#f59e0b', '#10b981'], // Sky tones, Amber, Emerald
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: { 
+                        beginAtZero: true, 
+                        max: 5, 
+                        ticks: { stepSize: 1, display: false },
+                        grid: { display: false },
+                        title: { display: true, text: 'Time / Sequence of Events →', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    y: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` Step ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-sky-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-sky-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playDnsStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-sky-600', 'border-sky-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-sky-600', 'border-sky-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- DNS Tracker Logic ---
+    function playDnsStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-dns-'+i);
+            if(btn) {
+                btn.classList.remove('bg-sky-600', 'text-white', 'border-sky-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-dns-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-sky-600', 'text-white', 'border-sky-600');
+        }
+
+        const pc1 = document.getElementById('node-pc1');
+        const r1 = document.getElementById('node-r1');
+        const isp = document.getElementById('node-isp');
+        const dns = document.getElementById('node-dns');
+        const yt = document.getElementById('node-yt');
+        
+        const l_pc1 = document.getElementById('link-pc1-r1');
+        const l_isp = document.getElementById('link-r1-isp');
+        const l_dns = document.getElementById('link-isp-dns');
+        const l_yt = document.getElementById('link-isp-yt');
+        
+        const pkt = document.getElementById('pkt-dns');
+        const desc = document.getElementById('dns-desc');
+
+        // Reset visual classes
+        [pc1, r1, isp, dns, yt].forEach(n => n.classList.remove('node-highlight', 'node-dim'));
+        [l_pc1, l_isp, l_dns, l_yt].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|bg-slate-600/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(2,132,199,0.5)]');
+        });
+        pkt.classList.add('hidden');
+        pkt.style.animation = "none";
+
+        if (stepIndex === 1) {
+            [pc1, r1, isp, dns].forEach(n => n.classList.add('node-highlight'));
+            yt.classList.add('node-dim');
+            
+            // Draw path PC1 -> DNS
+            [l_pc1, l_isp, l_dns].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(2,132,199,0.5)]');
+            });
+            
+            desc.innerHTML = "<span class='text-sky-400 font-bold'>Step 1 (DNS Query):</span> The user types <code>ping youtube.com</code>. PC1 cannot ping a name. It encapsulates a DNS Query (UDP Port 53) destined for its configured DNS Server (1.1.1.1) and sends it out.";
+        } else if (stepIndex === 2) {
+            [dns, isp, r1, pc1].forEach(n => n.classList.add('node-highlight'));
+            yt.classList.add('node-dim');
+            
+            [l_dns, l_isp, l_pc1].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow'); // Re-using same style for visual simplicity
+                l.classList.add('shadow-[0_0_10px_rgba(2,132,199,0.5)]');
+            });
+
+            desc.innerHTML = "<span class='text-sky-400 font-bold'>Step 2 (DNS Reply):</span> Cloudflare's server (1.1.1.1) receives the query, looks up the record, and sends a DNS Reply back to PC1 containing the IP address: <code>172.217.6.78</code>.";
+        } else if (stepIndex === 3) {
+            [isp, yt].forEach(n => n.classList.add('node-highlight'));
+            [pc1, r1, dns].forEach(n => n.classList.add('node-dim'));
+            
+            l_yt.classList.replace('bg-slate-600', 'traffic-flow');
+            l_yt.classList.add('shadow-[0_0_10px_rgba(2,132,199,0.5)]');
+
+            desc.innerHTML = "<span class='text-amber-500 font-bold'>Step 3 (ARP Resolution):</span> PC1 sends the ICMP Ping packet toward the YouTube IP. When it hits the Internet router, the router realizes it doesn't know YouTube's MAC address. It pauses the ping and broadcasts an <strong>ARP Request</strong> to resolve it. This often causes the first ping to timeout.";
+        } else if (stepIndex === 4) {
+            [pc1, r1, isp, yt].forEach(n => n.classList.add('node-highlight'));
+            dns.classList.add('node-dim');
+
+            [l_pc1, l_isp, l_yt].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(2,132,199,0.5)]');
+            });
+
+            desc.innerHTML = "<span class='text-emerald-500 font-bold'>Step 4 (ICMP Ping):</span> With all names and MAC addresses successfully resolved, PC1's ICMP Echo Request traverses the entire path to the YouTube server, and the Echo Reply successfully returns.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('dns_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What port and protocol does DNS use for standard queries?", a: "<strong>UDP Port 53</strong>" },
+            { q: "Why might a ping to a hostname timeout on the very first attempt?", a: "The device must pause to resolve the name via <strong>DNS</strong>, and potentially pause again to resolve the next-hop MAC address via <strong>ARP</strong>. These delays often cause the first ICMP request to timeout." },
+            { q: "What does the `ip domain-lookup` command do?", a: "It enables hostname-to-IP translation on the router. It is <strong>enabled by default</strong>. Many admins disable it to prevent the router from freezing when a typo is entered in the CLI." },
+            { q: "What command manually maps a hostname to an IP in the router's local table?", a: "<code class='bg-white px-1 border rounded text-slate-800 font-mono'>ip host [name] [ip-address]</code>" },
+            { q: "If a router has an entry in its local host table AND a configured DNS server, which does it check first?", a: "It always checks the <strong>Local Host Table</strong> first before sending a query to an external DNS server." },
+            { q: "Can you configure a Cisco router to act as a DNS server for end hosts?", a: "<strong>Yes.</strong><br><br>Using the global command <code>ip dns server</code>. However, this specific feature is not supported in Packet Tracer." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-sky-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-sky-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-sky-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('dns_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playDnsStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: DHCP Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #f0fdfa; color: #0d9488; border-left-color: #0d9488; font-weight: 600; } /* Teal Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #2dd4bf; font-weight: bold; } /* Teal 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #0d9488 !important; box-shadow: 0 0 15px rgba(13, 148, 136, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+        .node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); color: white !important;}
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(13, 148, 136, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(13, 148, 136, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(13,148,136,1) 0%, rgba(204,251,241,1) 50%, rgba(13,148,136,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+        .traffic-flow-bcast {
+            background: linear-gradient(90deg, rgba(245,158,11,1) 0%, rgba(254,243,199,1) 50%, rgba(245,158,11,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-teal-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-teal-500">🪄</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-teal-400 font-semibold tracking-wide uppercase mt-1">DHCP Configuration</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-teal-600 text-white shadow-md">
+            <span class="text-xl">📊</span> DORA & Mechanics
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Relay Agent Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Dynamic Host Configuration Protocol (DHCP)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-teal-500 pl-4 bg-teal-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Automate IP address distribution on your network. Learn how to configure Cisco routers as DHCP servers, set up address pools, exclude static IPs, configure router interfaces as DHCP clients, and utilize DHCP Relay Agents to bridge broadcast domains.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">🧠</span> The DORA Process & Relay Mechanics
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The D.O.R.A. Handshake</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-teal-700">1. Discover (Broadcast)</strong>
+                                <span>The client sends a broadcast message to find an available DHCP server on the local subnet.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-teal-700">2. Offer (Unicast/Broadcast)</strong>
+                                <span>The server replies with an IP address lease offer, including subnet mask, gateway, and DNS info.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-teal-700">3. Request (Broadcast)</strong>
+                                <span>The client broadcasts an acceptance of the offered IP address. (Broadcast so other servers know their offers were rejected).</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-teal-700">4. Acknowledgment (Unicast/Broadcast)</strong>
+                                <span>The server formally finalizes the lease and the client begins using the IP address.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-teal-50 border border-teal-200 p-4 rounded-xl text-sm shadow-sm">
+                        <strong class="text-teal-900 block mb-1">The Problem with Broadcasts</strong>
+                        <p class="text-teal-800">Routers drop broadcast packets by default. If a PC is on VLAN 10, but the DHCP server is on a remote subnet, the <strong>Discover</strong> broadcast will die at the local router. To fix this, we use the <code>ip helper-address</code> command to turn the local router into a <strong>DHCP Relay Agent</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">DHCP Pool Allocation Logic</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Visualizing a /24 subnet (192.168.1.0) configured in the lab.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="poolChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        The <code>ip dhcp excluded-address</code> command MUST be run from Global Configuration mode before clients start pulling addresses to protect static resources like gateways and servers.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">🔍</span> DHCP Relay Agent Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how a DHCP Relay Agent intercepts local broadcasts and forwards them as unicast packets to a remote server. Click the DORA steps below to visualize the flow.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playDhcpStep(1)" id="btn-dhcp-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Discover (Bcast)</button>
+                <button onclick="playDhcpStep(2)" id="btn-dhcp-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Offer (Unicast)</button>
+                <button onclick="playDhcpStep(3)" id="btn-dhcp-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Request (Bcast)</button>
+                <button onclick="playDhcpStep(4)" id="btn-dhcp-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. ACK (Unicast)</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Topology -->
+                <div class="relative w-full max-w-2xl h-64 mx-auto mt-4">
+                    
+                    <!-- PC1 (Left) -->
+                    <div id="node-pc1" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-500 z-10 shadow-md transition-all">PC1<span class="text-[9px] font-normal font-mono text-slate-400 mt-1" id="lbl-pc-ip">0.0.0.0</span></div>
+
+                    <!-- R1 (Center) -->
+                    <div id="node-r1" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">
+                        R1
+                        <span class="text-[9px] font-normal font-mono bg-slate-800 px-1 rounded border border-slate-500 mt-1" id="relay-label">Relay Agent</span>
+                    </div>
+                    
+                    <!-- R2 (Right) -->
+                    <div id="node-r2" class="absolute top-1/2 right-0 transform -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-md transition-all">
+                        R2
+                        <span class="text-[9px] font-normal font-mono text-teal-200 bg-slate-800 px-1 rounded border border-slate-500 mt-1">DHCP Server</span>
+                    </div>
+
+                    <!-- Links -->
+                    <!-- Inbound Link -->
+                    <div id="link-pc1-r1" class="absolute top-1/2 left-16 w-[170px] h-2 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex justify-center"><span class="absolute -top-5 text-[10px] font-bold text-amber-400 bg-slate-800 px-1 rounded opacity-0 transition-opacity" id="tag-local">Local Subnet</span></div>
+                    <!-- Outbound Link -->
+                    <div id="link-r1-r2" class="absolute top-1/2 right-20 w-[170px] h-2 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex justify-center"><span class="absolute top-2 text-[10px] font-bold text-teal-400 bg-slate-800 px-1 rounded opacity-0 transition-opacity" id="tag-remote">Remote Subnet</span></div>
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="dhcp-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate the DHCP Relay process.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-teal-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to exclude addresses, build DHCP pools, configure relay agents, and assign DHCP to interfaces.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600 transition-colors">R2 (DHCP Server)</button>
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R1 (Relay & Client)</button>
+            </div>
+
+            <!-- R2 Server Tab -->
+            <div id="config-r2" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure R2 as the centralized DHCP server for the entire topology. Exclude static IPs first, then build the pools.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R2&gt;</span> enable<br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Crucial: Exclude addresses BEFORE creating pools to prevent IP conflicts</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ip dhcp excluded-address 192.168.1.1 192.168.1.10<br>
+                    <span class="cli-prompt">R2(config)#</span> ip dhcp excluded-address 192.168.2.1 192.168.2.10<br>
+                    <span class="cli-prompt">R2(config)#</span> ip dhcp excluded-address 203.0.113.1<br><br>
+
+                    <span class="cli-comment">! Pool 1 for 192.168.1.0/24 Subnet</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ip dhcp pool POOL1<br>
+                    <span class="cli-prompt">R2(dhcp-config)#</span> network 192.168.1.0 255.255.255.0<br>
+                    <span class="cli-prompt">R2(dhcp-config)#</span> dns-server 8.8.8.8<br>
+                    <span class="cli-prompt">R2(dhcp-config)#</span> domain-name jeremysitlab.com<br>
+                    <span class="cli-prompt">R2(dhcp-config)#</span> default-router 192.168.1.1<br>
+                    <span class="cli-prompt">R2(dhcp-config)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Pool 3 for Router Link (Assigns an IP to R1)</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ip dhcp pool POOL3<br>
+                    <span class="cli-prompt">R2(dhcp-config)#</span> network 203.0.113.0 255.255.255.252<br>
+                    <span class="cli-prompt">R2(dhcp-config)#</span> exit
+                </div>
+            </div>
+
+            <!-- R1 Relay Tab -->
+            <div id="config-r1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Obtain a dynamic IP for the uplink to R2, and configure the LAN interface to relay DHCP broadcasts to R2.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Configure R1 as a DHCP Client on the WAN link</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip address dhcp<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                    <span class="cli-comment">*Mar  2 00:05:12.331: %DHCP-6-ADDRESS_ASSIGN: Interface GigabitEthernet0/0 assigned DHCP address 203.0.113.2, mask 255.255.255.252</span><br><br>
+
+                    <span class="cli-comment">! Configure R1 as a DHCP Relay Agent for the local LAN</span><br>
+                    <span class="cli-comment">! Applied to the interface facing the client PCs</span><br>
+                    <span class="cli-prompt">R1(config-if)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip helper-address 203.0.113.1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa1', this)">
+                            <span class="pr-6">1. Configure excluded addresses and DHCP pools on R2.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Exclusions are placed in Global Config mode. Pools are defined using sub-commands for network, default-router, and dns-server.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R2(config)#</span> ip dhcp excluded-address 192.168.1.1 192.168.1.10<br>
+                                <span class="cli-prompt">R2(config)#</span> ip dhcp pool POOL1<br>
+                                <span class="cli-prompt">R2(dhcp-config)#</span> network 192.168.1.0 255.255.255.0<br>
+                                <span class="cli-prompt">R2(dhcp-config)#</span> default-router 192.168.1.1<br>
+                                <span class="cli-prompt">R2(dhcp-config)#</span> dns-server 8.8.8.8
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa2', this)">
+                            <span>2. Configure R1's G0/0 interface as a DHCP Client.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Instead of manually typing an IP, instruct the interface to request one.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ip address dhcp<br>
+                                <span class="cli-prompt">R1(config-if)#</span> no shutdown
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa3', this)">
+                            <span>3. Configure R1 as a DHCP Relay Agent for its local PCs.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Apply the <code>ip helper-address</code> command to the interface facing the local clients (G0/1), pointing to the remote DHCP server's IP.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> interface g0/1<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ip helper-address 203.0.113.1
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa4', this)">
+                            <span class="pr-6">4. Request a DHCP lease from PC1 and verify the allocated parameters.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>From the Windows Command Prompt on the PC:</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">C:\&gt;</span> ipconfig /renew<br>
+                                <span class="cli-comment">IP Address......................: 192.168.1.11</span><br>
+                                <span class="cli-comment">Subnet Mask.....................: 255.255.255.0</span><br>
+                                <span class="cli-comment">Default Gateway.................: 192.168.1.1</span><br><br>
+                                <span class="cli-prompt">C:\&gt;</span> ipconfig /all
+                            </div>
+                            <p class="text-teal-700 font-semibold mt-2">Check <code>ipconfig /all</code> to verify the DNS server and Domain Name were applied successfully.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Boson Q -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa5', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('dhcp_qa5', this)">
+                            <span class="pr-6">5. (Bonus) Why would a router ignore all DHCP requests despite valid pools?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>As demonstrated in the Boson NetSim troubleshooting section, Cisco routers have a global service command that must be enabled. It is enabled by default, but if someone typed <code>no service dhcp</code>, the router will silently drop all DHCP messages.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-comment">! To fix:</span><br>
+                                <span class="cli-prompt">R2(config)#</span> service dhcp
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">ip dhcp excluded-address [ip] [end-ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Prevents specific IPs (like gateways) from being handed out by the server.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">ip dhcp pool [name]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a DHCP pool and enters DHCP configuration mode.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">network [ip] [mask]</td>
+                            <td class="px-6 py-4"><span class="bg-teal-50 text-teal-800 text-xs px-2 py-1 rounded border border-teal-200">DHCP Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Defines the range of addresses the server is allowed to lease out.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">default-router [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-teal-50 text-teal-800 text-xs px-2 py-1 rounded border border-teal-200">DHCP Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Specifies the default gateway IP to give to the clients.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">ip address dhcp</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures the router interface to act as a DHCP client and request an IP.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">ip helper-address [server-ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Turns the interface into a Relay Agent, converting broadcasts to unicast toward the server.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">show ip dhcp binding</td>
+                            <td class="px-6 py-4"><span class="bg-teal-50 text-teal-800 text-xs px-2 py-1 rounded border border-teal-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays a table mapping assigned IP addresses to client MAC addresses.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of DHCP processes and Relay functionality.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('poolChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Excluded IPs (Statics)', 'Leased IPs (Clients)', 'Available IPs'],
+                datasets: [
+                    {
+                        label: 'Address Pool Usage',
+                        data: [10, 2, 242], // Excluded 1-10, Leased 2 PCs, 242 left in /24
+                        backgroundColor: ['#ef4444', '#0d9488', '#cbd5e1'], // Red, Teal, Slate
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                scales: {
+                    y: { display: false },
+                    x: { display: false }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.raw} Addresses`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-teal-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-teal-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playDhcpStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-teal-600', 'border-teal-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-teal-600', 'border-teal-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- DHCP Simulator Logic ---
+    function playDhcpStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-dhcp-'+i);
+            if(btn) {
+                btn.classList.remove('bg-teal-600', 'text-white', 'border-teal-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-dhcp-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-teal-600', 'text-white', 'border-teal-600');
+        }
+
+        const pc1 = document.getElementById('node-pc1');
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        
+        const l1 = document.getElementById('link-pc1-r1');
+        const l2 = document.getElementById('link-r1-r2');
+        
+        const tagLocal = document.getElementById('tag-local');
+        const tagRemote = document.getElementById('tag-remote');
+        
+        const lblPcIp = document.getElementById('lbl-pc-ip');
+        const desc = document.getElementById('dhcp-desc');
+
+        // Reset visual classes
+        [pc1, r1, r2].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'node-error'));
+        [l1, l2].forEach(l => {
+            l.className = l.className.replace(/traffic-flow-bcast|traffic-flow|bg-slate-600/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(245,158,11,0.5)]', 'shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+        });
+        [tagLocal, tagRemote].forEach(t => {
+            t.classList.replace('opacity-100', 'opacity-0');
+            t.classList.remove('text-amber-400', 'text-teal-400');
+        });
+
+        if (stepIndex === 1) {
+            lblPcIp.innerText = "0.0.0.0";
+            [pc1, r1, r2].forEach(n => n.classList.add('node-highlight'));
+            
+            l1.classList.replace('bg-slate-600', 'traffic-flow-bcast');
+            l1.classList.add('shadow-[0_0_10px_rgba(245,158,11,0.5)]');
+            l2.classList.replace('bg-slate-600', 'traffic-flow');
+            l2.classList.add('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+
+            tagLocal.classList.replace('opacity-0', 'opacity-100');
+            tagLocal.classList.add('text-amber-400');
+            tagLocal.innerText = "Broadcast (L2/L3)";
+
+            tagRemote.classList.replace('opacity-0', 'opacity-100');
+            tagRemote.classList.add('text-teal-400');
+            tagRemote.innerText = "Unicast (L3)";
+
+            desc.innerHTML = "<span class='text-amber-500 font-bold'>Step 1 (Discover):</span> PC1 broadcasts a DHCP Discover. R1 (Relay Agent) intercepts the broadcast, rewrites it into a <strong>Unicast</strong> packet sourced from its G0/1 interface, and forwards it to R2's specific IP.";
+        } else if (stepIndex === 2) {
+            lblPcIp.innerText = "0.0.0.0";
+            [r2, r1, pc1].forEach(n => n.classList.add('node-highlight'));
+            
+            l2.classList.replace('bg-slate-600', 'traffic-flow');
+            l2.classList.add('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+            l2.style.animationDirection = "reverse"; // visual trick
+            
+            l1.classList.replace('bg-slate-600', 'traffic-flow');
+            l1.classList.add('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+            l1.style.animationDirection = "reverse";
+
+            tagRemote.classList.replace('opacity-0', 'opacity-100');
+            tagRemote.classList.add('text-teal-400');
+            tagRemote.innerText = "Unicast Offer";
+
+            desc.innerHTML = "<span class='text-teal-500 font-bold'>Step 2 (Offer):</span> R2 creates an Offer containing the IP <code>192.168.1.11</code> from POOL1. It Unicasts it back to R1. R1 then relays the Offer back down to PC1.";
+        } else if (stepIndex === 3) {
+            lblPcIp.innerText = "0.0.0.0";
+            [pc1, r1, r2].forEach(n => n.classList.add('node-highlight'));
+            
+            l1.classList.replace('bg-slate-600', 'traffic-flow-bcast');
+            l1.classList.add('shadow-[0_0_10px_rgba(245,158,11,0.5)]');
+            l2.classList.replace('bg-slate-600', 'traffic-flow');
+            l2.classList.add('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+
+            tagLocal.classList.replace('opacity-0', 'opacity-100');
+            tagLocal.classList.add('text-amber-400');
+            tagLocal.innerText = "Broadcast Request";
+
+            tagRemote.classList.replace('opacity-0', 'opacity-100');
+            tagRemote.classList.add('text-teal-400');
+            tagRemote.innerText = "Unicast Request";
+
+            desc.innerHTML = "<span class='text-amber-500 font-bold'>Step 3 (Request):</span> PC1 broadcasts a DHCP Request declaring it accepts R2's offer. R1 intercepts the broadcast again and Unicasts the Request to R2.";
+        } else if (stepIndex === 4) {
+            lblPcIp.innerText = "192.168.1.11";
+            [r2, r1, pc1].forEach(n => n.classList.add('node-highlight'));
+            
+            l2.classList.replace('bg-slate-600', 'traffic-flow');
+            l2.classList.add('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+            
+            l1.classList.replace('bg-slate-600', 'traffic-flow');
+            l1.classList.add('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+
+            desc.innerHTML = "<span class='text-emerald-500 font-bold'>Step 4 (ACK):</span> R2 sends the final Acknowledgment via Unicast to R1. R1 relays it to PC1. PC1 formally applies the IP Address, Subnet Mask, Gateway, and DNS Server!";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('dhcp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What does D.O.R.A. stand for?", a: "<strong>Discover, Offer, Request, Acknowledge</strong><br><br>The four-step process a client uses to obtain an IP lease." },
+            { q: "Why do we exclude IP addresses in DHCP?", a: "To prevent the server from leasing out IPs that are statically assigned elsewhere, such as the <strong>Default Gateway</strong> or fixed Servers." },
+            { q: "Where must the `ip dhcp excluded-address` command be typed?", a: "In <strong>Global Configuration Mode</strong>.<br><br>It cannot be typed inside the DHCP Pool sub-configuration mode." },
+            { q: "What command configures a router interface to obtain its IP from a DHCP server?", a: "<code class='bg-white px-1 border rounded text-slate-800 font-mono'>ip address dhcp</code>" },
+            { q: "What does the `ip helper-address` command do?", a: "It configures the interface as a <strong>DHCP Relay Agent</strong>. It intercepts local broadcast DHCP requests and forwards them as unicast packets to a remote server." },
+            { q: "What global command must be enabled for a Cisco router to process DHCP requests?", a: "<code class='bg-white px-1 border rounded text-slate-800 font-mono'>service dhcp</code><br><br>(Enabled by default, but a common troubleshooting culprit if disabled)." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-teal-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-teal-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-teal-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('dhcp_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playDhcpStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

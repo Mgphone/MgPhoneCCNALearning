@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: CDP & LLDP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #ecfeff; color: #0891b2; border-left-color: #0891b2; font-weight: 600; } /* Cyan Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #22d3ee; font-weight: bold; } /* Cyan 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #0891b2 !important; box-shadow: 0 0 15px rgba(8, 145, 178, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(8, 145, 178, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(8, 145, 178, 0.8); }
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-cyan-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-cyan-500">📡</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-cyan-400 font-semibold tracking-wide uppercase mt-1">CDP & LLDP</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-cyan-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Discovery Protocols
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Topology Mapper
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Cisco Discovery Protocol & LLDP</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-cyan-500 pl-4 bg-cyan-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Learn how to use Layer 2 discovery protocols to map out an unknown network. You will master both Cisco's proprietary CDP and the vendor-neutral LLDP (802.1AB), including how to enable, disable, and tune their timers for optimal network awareness and security.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🧠</span> Neighbor Discovery Concepts
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">CDP vs. LLDP</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-cyan-700">Cisco Discovery Protocol (CDP)</strong>
+                                <span>Cisco proprietary. Enabled globally on Cisco devices by default. It sends multicast advertisements to <code>01:00:0C:CC:CC:CC</code> to discover directly connected Cisco neighbors.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-cyan-700">Link Layer Discovery Protocol (LLDP)</strong>
+                                <span>IEEE 802.1AB standard (Vendor-neutral). Often disabled globally by default on Cisco equipment. It is essential when your network incorporates devices from multiple manufacturers (e.g., Juniper, HP, Arista).</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-cyan-700">Security Implications</strong>
+                                <span>Discovery protocols leak detailed information (device model, IP address, OS version). It is a major security best practice to <strong>disable</strong> them on edge interfaces connected to PCs, servers, or untrusted networks (the Internet).</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Default Protocol Timers</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Comparing the default Hello (Message) and Hold timers.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="timerChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-cyan-50 p-3 rounded border border-cyan-200 text-cyan-900 shadow-sm">
+                        The <strong>Hold Timer</strong> dictates how long a device will remember a neighbor after it stops receiving Hello messages before flushing it from the table.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🔍</span> Interactive Topology Mapper
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Imagine you are logged into R1 with no network diagram. Click the <strong>Discover</strong> button below to simulate running <code>show cdp neighbors</code> and map out the directly connected devices.</p>
+
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="discoverNeighbors()" id="btn-discover" class="px-6 py-2 text-sm font-bold bg-cyan-600 text-white border border-cyan-700 rounded-lg shadow-sm hover:bg-cyan-500 transition">Run `show cdp neighbors`</button>
+                <button onclick="resetDiscovery()" id="btn-reset" class="px-6 py-2 text-sm font-bold bg-slate-200 text-slate-600 border border-slate-300 rounded-lg shadow-sm hover:bg-slate-300 transition">Reset</button>
+            </div>
+
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col lg:flex-row gap-8 min-h-[400px]">
+                
+                <!-- Topology Diagram -->
+                <div class="relative w-full lg:w-1/2 h-72 mx-auto mt-4 border border-slate-700 bg-slate-800/50 rounded-xl overflow-hidden flex items-center justify-center">
+                    
+                    <!-- R1 (Center) -->
+                    <div id="node-r1" class="absolute w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-20 shadow-lg">R1</div>
+                    
+                    <!-- Neighbors (Initially Hidden) -->
+                    <div id="node-sw1" class="absolute top-10 left-10 w-20 h-16 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-md transition-all opacity-0 scale-90">SW1<span class="text-[9px] font-mono text-cyan-300 mt-1">G0/1</span></div>
+                    <div id="node-r2" class="absolute top-10 right-10 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-md transition-all opacity-0 scale-90">R2<span class="text-[9px] font-mono text-cyan-300 mt-1">G0/0</span></div>
+                    <div id="node-r3" class="absolute bottom-10 right-10 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-md transition-all opacity-0 scale-90">R3<span class="text-[9px] font-mono text-cyan-300 mt-1">G0/1</span></div>
+
+                    <!-- Links -->
+                    <div id="link-sw1" class="absolute top-1/4 left-[30%] w-24 h-1 bg-cyan-400 origin-bottom-right rotate-[35deg] transition-all z-0 opacity-0"></div>
+                    <div id="link-r2" class="absolute top-1/4 right-[30%] w-24 h-1 bg-cyan-400 origin-bottom-left -rotate-[35deg] transition-all z-0 opacity-0"></div>
+                    <div id="link-r3" class="absolute bottom-1/4 right-[30%] w-24 h-1 bg-cyan-400 origin-top-left rotate-[35deg] transition-all z-0 opacity-0"></div>
+
+                    <!-- Local Interface Labels -->
+                    <span id="lbl-l1" class="absolute top-[40%] left-[40%] text-[10px] bg-slate-800 text-white px-1 rounded font-mono border border-slate-600 opacity-0 transition-opacity">G0/2</span>
+                    <span id="lbl-l2" class="absolute top-[40%] right-[40%] text-[10px] bg-slate-800 text-white px-1 rounded font-mono border border-slate-600 opacity-0 transition-opacity">G0/1</span>
+                    <span id="lbl-l3" class="absolute bottom-[40%] right-[40%] text-[10px] bg-slate-800 text-white px-1 rounded font-mono border border-slate-600 opacity-0 transition-opacity">G0/0</span>
+                </div>
+
+                <!-- CLI Output Simulation -->
+                <div class="w-full lg:w-1/2 flex flex-col">
+                    <div class="cli-window h-full flex-grow text-xs leading-relaxed">
+                        <span class="cli-prompt">R1#</span> <span id="cmd-typed"></span>
+                        <div id="cli-output" class="mt-2 text-slate-300 hidden">
+                            Capability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S - Switch, H - Host, I - IGMP, r - Repeater, P - Phone, ...<br><br>
+                            Device ID&nbsp;&nbsp;&nbsp;&nbsp;Local Intrfce&nbsp;&nbsp;Holdtme&nbsp;&nbsp;Capability&nbsp;&nbsp;Platform&nbsp;&nbsp;Port ID<br>
+                            SW1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Gig 0/2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;160&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S I &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2960&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Gig 0/1<br>
+                            R2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Gig 0/1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;142&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R B S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2911&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Gig 0/0<br>
+                            R3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Gig 0/0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;171&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R B S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2911&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Gig 0/1<br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-cyan-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to migrate from CDP to LLDP, and how to securely disable them on edge interfaces.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-cyan-600 border-b-2 border-cyan-600 transition-colors">R1 (CDP to LLDP Migration)</button>
+                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">SW1 (Securing Edge Ports)</button>
+                <button onclick="switchDeviceTab('boson', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R1 (Tuning LLDP Timers)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Disable the proprietary CDP protocol globally and switch the router to the open-standard LLDP. Explicitly enable LLDP Tx/Rx on the connecting interfaces.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Disable CDP globally</span><br>
+                    <span class="cli-prompt">R1(config)#</span> no cdp run<br><br>
+
+                    <span class="cli-comment">! Enable LLDP globally</span><br>
+                    <span class="cli-prompt">R1(config)#</span> lldp run<br><br>
+
+                    <span class="cli-comment">! Enable LLDP transmission and reception on the uplink interfaces</span><br>
+                    <span class="cli-comment">! (Note: Depending on IOS version, 'lldp run' may auto-enable this)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface range g0/0 - 2<br>
+                    <span class="cli-prompt">R1(config-if-range)#</span> lldp transmit<br>
+                    <span class="cli-prompt">R1(config-if-range)#</span> lldp receive<br>
+                    <span class="cli-prompt">R1(config-if-range)#</span> end<br><br>
+
+                    <span class="cli-comment">! Verify LLDP Neighbors</span><br>
+                    <span class="cli-prompt">R1#</span> show lldp neighbors
+                </div>
+            </div>
+
+            <!-- SW1 Tab -->
+            <div id="config-sw1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Disable discovery protocols on the FastEthernet port connected to PC1 to prevent information leakage.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW1&gt;</span> enable<br>
+                    <span class="cli-prompt">SW1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Navigate to the interface connected to PC1</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface f0/10<br><br>
+
+                    <span class="cli-comment">! Disable CDP on this specific interface ONLY</span><br>
+                    <span class="cli-prompt">SW1(config-if)#</span> no cdp enable<br><br>
+
+                    <span class="cli-comment">! Verify CDP is disabled (Output should be blank)</span><br>
+                    <span class="cli-prompt">SW1(config-if)#</span> do show cdp interface f0/10<br><br>
+
+                    <span class="cli-comment">! If migrating to LLDP, apply the same logic to prevent LLDP transmission</span><br>
+                    <span class="cli-prompt">SW1(config-if)#</span> no lldp transmit
+                </div>
+            </div>
+
+            <!-- Boson Tab -->
+            <div id="config-boson" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Tune the LLDP timers to speed up discovery updates. (As seen in the Boson NetSim portion of the video).</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! View current timers (Default: Timer=30s, Holdtime=120s)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do show lldp<br><br>
+
+                    <span class="cli-comment">! Cut the timers in half for faster updates</span><br>
+                    <span class="cli-prompt">R1(config)#</span> lldp timer 15<br>
+                    <span class="cli-prompt">R1(config)#</span> lldp holdtime 60<br><br>
+
+                    <span class="cli-prompt">R1(config)#</span> do show lldp<br>
+                    <span class="cli-comment">Global LLDP Information:</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;Status: ACTIVE</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;LLDP advertisements are sent every 15 seconds</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;LLDP hold time advertised is 60 seconds</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('cdp_qa1', this)">
+                            <span class="pr-6">1. Determine the IP address and default gateway of PC1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Open the Command Prompt on the PC and use the Windows IP command.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">C:\&gt;</span> ipconfig
+                            </div>
+                            <p><strong>Result:</strong> You will discover PC1's IP is 192.168.1.1 and its Default Gateway is 192.168.1.254 (which implies R1's IP address).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('cdp_qa2', this)">
+                            <span>2. Use CDP to map out the network. What command shows connected devices and their ports?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Use the standard neighbor command in Privileged EXEC mode.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> show cdp neighbors
+                            </div>
+                            <p>This command reveals the Device ID (Hostname), Local Interface, and Port ID (Remote Interface) of adjacent Cisco equipment.</p>
+                            <div class="bg-cyan-50 border-l-4 border-cyan-500 p-3 mt-2 text-cyan-900 rounded text-xs shadow-sm">
+                                <strong>Important:</strong> CDP only works between Cisco devices. It will NOT show PC1. To find which port PC1 connects to on SW1, you must use <code>show interfaces status</code> and look for the 'connected' edge port.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('cdp_qa3', this)">
+                            <span>3. How do you find the exact IP address of a discovered CDP neighbor?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>If <code>show cdp neighbors</code> reveals R3 is attached to G0/0, use the detail command or query the specific entry.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> show cdp entry R3<br>
+                                <span class="cli-comment">! OR</span><br>
+                                <span class="cli-prompt">R1#</span> show cdp neighbors detail
+                            </div>
+                            <p>This will display detailed Layer 3 information, including R3's configured IP address.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('cdp_qa4', this)">
+                            <span class="pr-6">4. Disable CDP globally and replace it with LLDP.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>In Global Configuration mode, disable the proprietary protocol and enable the IEEE standard.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> no cdp run<br>
+                                <span class="cli-prompt">R1(config)#</span> lldp run
+                            </div>
+                            <p class="text-cyan-700 font-semibold mt-2">To verify, use <code>show lldp neighbors</code>.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">show cdp neighbors</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays basic info about directly connected Cisco devices (Hostname, Ports).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">show cdp entry [name]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays detailed info for a specific neighbor, including its IP address and iOS version.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">no cdp run</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Completely disables CDP globally on the entire device.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">no cdp enable</td>
+                            <td class="px-6 py-4"><span class="bg-cyan-50 text-cyan-800 text-xs px-2 py-1 rounded border border-cyan-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Disables CDP on a specific interface only (e.g., ports facing PCs).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">lldp run</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enables LLDP globally on the device.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">lldp transmit / lldp receive</td>
+                            <td class="px-6 py-4"><span class="bg-cyan-50 text-cyan-800 text-xs px-2 py-1 rounded border border-cyan-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Explicitly enables sending/receiving LLDP frames on an interface.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">lldp timer [sec]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Changes how frequently LLDP advertisements are sent (Default 30s).</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of discovery protocols and security.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('timerChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['CDP (Cisco)', 'LLDP (IEEE)'],
+                datasets: [
+                    {
+                        label: 'Message Timer (Hello)',
+                        data: [60, 30],
+                        backgroundColor: '#06b6d4', // Cyan 500
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Hold Timer (Timeout)',
+                        data: [180, 120],
+                        backgroundColor: '#94a3b8', // Slate 400
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 200, 
+                        ticks: { stepSize: 30, callback: val => val + 's' },
+                        grid: { color: '#f1f5f9' },
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ${context.raw} Seconds`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-cyan-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-cyan-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-cyan-600', 'border-cyan-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-cyan-600', 'border-cyan-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Topology Mapper Logic ---
+    function discoverNeighbors() {
+        // Change button state
+        const btn = document.getElementById('btn-discover');
+        btn.innerText = "Discovering...";
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+        
+        // Hide R1 initially for reset effect
+        document.getElementById('node-r1').classList.remove('node-highlight');
+        
+        // Start animation sequence
+        setTimeout(() => {
+            document.getElementById('node-r1').classList.add('node-highlight');
+            
+            // Show links
+            document.getElementById('link-sw1').classList.replace('opacity-0', 'opacity-100');
+            document.getElementById('link-r2').classList.replace('opacity-0', 'opacity-100');
+            document.getElementById('link-r3').classList.replace('opacity-0', 'opacity-100');
+            
+            // Show labels
+            document.getElementById('lbl-l1').classList.replace('opacity-0', 'opacity-100');
+            document.getElementById('lbl-l2').classList.replace('opacity-0', 'opacity-100');
+            document.getElementById('lbl-l3').classList.replace('opacity-0', 'opacity-100');
+
+            setTimeout(() => {
+                // Show neighbors
+                document.getElementById('node-sw1').classList.replace('opacity-0', 'opacity-100');
+                document.getElementById('node-sw1').classList.replace('scale-90', 'scale-100');
+                
+                document.getElementById('node-r2').classList.replace('opacity-0', 'opacity-100');
+                document.getElementById('node-r2').classList.replace('scale-90', 'scale-100');
+                
+                document.getElementById('node-r3').classList.replace('opacity-0', 'opacity-100');
+                document.getElementById('node-r3').classList.replace('scale-90', 'scale-100');
+
+                // Typewriter effect for CLI output
+                const cmdSpan = document.getElementById('cmd-typed');
+                const outDiv = document.getElementById('cli-output');
+                const text = "show cdp neighbors";
+                cmdSpan.innerText = "";
+                outDiv.classList.add('hidden');
+                
+                let i = 0;
+                function typeWriter() {
+                    if (i < text.length) {
+                        cmdSpan.innerHTML += text.charAt(i);
+                        i++;
+                        setTimeout(typeWriter, 50);
+                    } else {
+                        setTimeout(() => {
+                            outDiv.classList.remove('hidden');
+                            btn.innerText = "Run `show cdp neighbors`";
+                            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                        }, 200);
+                    }
+                }
+                typeWriter();
+
+            }, 500);
+        }, 300);
+    }
+
+    function resetDiscovery() {
+        document.getElementById('node-r1').classList.remove('node-highlight');
+        
+        ['node-sw1', 'node-r2', 'node-r3'].forEach(id => {
+            document.getElementById(id).classList.replace('opacity-100', 'opacity-0');
+            document.getElementById(id).classList.replace('scale-100', 'scale-90');
+        });
+
+        ['link-sw1', 'link-r2', 'link-r3'].forEach(id => {
+            document.getElementById(id).classList.replace('opacity-100', 'opacity-0');
+        });
+
+        ['lbl-l1', 'lbl-l2', 'lbl-l3'].forEach(id => {
+            document.getElementById(id).classList.replace('opacity-100', 'opacity-0');
+        });
+
+        document.getElementById('cmd-typed').innerText = "";
+        document.getElementById('cli-output').classList.add('hidden');
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                // If it contains the cli-output from the tracker, get that text. Otherwise get block text.
+                let textToCopy = block.innerText.replace(/Copy$/, '').trim(); 
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('cdp_lldp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "Is CDP enabled by default on Cisco devices?", a: "<strong>Yes.</strong><br><br>It is enabled globally and on all active interfaces out-of-the-box." },
+            { q: "What is the difference between `no cdp run` and `no cdp enable`?", a: "`no cdp run` disables the protocol <strong>globally</strong> for the entire router. `no cdp enable` disables it on a <strong>single interface</strong> only." },
+            { q: "What command reveals the IP address of a discovered CDP neighbor?", a: "<code class='bg-white px-1 border rounded text-cyan-800 font-mono'>show cdp entry [name]</code> OR <code class='bg-white px-1 border rounded text-cyan-800 font-mono'>show cdp neighbors detail</code>." },
+            { q: "Why is it important to disable CDP/LLDP on ports facing end hosts?", a: "<strong>Security.</strong><br><br>These protocols broadcast detailed information about your network infrastructure (iOS version, IP schemas, device models) that an attacker could use." },
+            { q: "What is LLDP's default Hold Timer?", a: "<strong>120 seconds.</strong><br><br>(Compared to CDP's 180 seconds)." },
+            { q: "What IEEE standard defines LLDP?", a: "<strong>IEEE 802.1AB</strong><br><br>It is vendor-neutral, meaning it works across Cisco, Juniper, HP, etc." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-cyan-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-cyan-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-cyan-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('cdp_lldp_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+    });
+</script>
+</body>
+</html>

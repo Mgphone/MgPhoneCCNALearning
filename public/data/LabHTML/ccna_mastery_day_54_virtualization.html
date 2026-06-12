@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Mastery: Virtualization & VirtualBox</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #fafafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Sidebar Custom Styling */
+.sidebar-nav { background-color: #0f111a; }
+.brand-header { background-color: #151824; }
+
+/* Chart Container */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 320px; 
+}
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-radius: 0.375rem; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;}
+.nav-active { background-color: #4f46e5; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); } 
+.nav-inactive { color: #94a3b8; }
+.nav-inactive:hover { background-color: rgba(255,255,255,0.05); color: #e2e8f0; }
+.nav-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Accordions */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px solid #f1f5f9; }
+
+/* Code Blocks */
+.cli-window { 
+    background-color: #1e1e1e; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #334155; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.6;
+}
+.cli-prompt { color: #4ade80; font-weight: bold; } 
+.cli-comment { color: #94a3b8; font-style: italic; }
+
+/* Tracker Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #4f46e5 !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+
+@keyframes pulseGlow { 0% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); } 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.8); } }
+
+/* 3D Flip Utilities */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-indigo-200">
+
+<!-- Sidebar Navigation -->
+<nav class="sidebar-nav border-r border-slate-800 w-full md:w-64 flex-shrink-0 md:h-full flex flex-col shadow-2xl z-20 transition-all">
+    <div class="brand-header p-6 border-b border-slate-800 flex items-center gap-3">
+        <svg class="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>
+        <div>
+            <h1 class="text-sm font-bold text-white tracking-wide">CCNA Mastery</h1>
+            <p class="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mt-0.5">Day 54 Lab</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-6 px-4 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            VM Theory
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            Architecture
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            VM Settings
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            Lab Walkthrough
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            Terminology
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-6 md:p-10 relative scroll-smooth bg-white">
+    <!-- Header Banner -->
+    <header class="mb-10 max-w-5xl mx-auto">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Virtualization</span>
+            <span class="text-slate-400 text-sm">Jeremy's IT Lab Day 54</span>
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">Oracle VirtualBox & Linux VMs</h2>
+        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded-r-lg">
+            <p class="text-indigo-900 text-sm md:text-base leading-relaxed">
+                Step away from the router CLI! Today we explore <strong>Type 2 Hypervisors</strong> by installing Oracle VirtualBox on a Host OS (Windows) and provisioning a virtual machine running a Guest OS (Ubuntu Linux). This provides the foundation for running advanced network emulators like GNS3 or CML later on.
+            </p>
+        </div>
+    </header>
+
+    <!-- SECTION 1: THEORY / CHART -->
+    <div id="view-theory" class="view-section active max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
+                Type 2 Hypervisors & Resource Allocation
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                <div class="space-y-6">
+                    <p class="text-sm text-slate-600">A hypervisor abstracts physical hardware (CPU, RAM, Storage) so it can be shared among multiple isolated Virtual Machines (VMs).</p>
+                    
+                    <ul class="space-y-4 text-sm text-slate-700">
+                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
+                            <strong class="text-indigo-700 mb-1">Type 2 (Hosted) Hypervisor</strong>
+                            <span>Software like VirtualBox or VMware Workstation runs as an application <em>on top of</em> a pre-existing Host OS (like Windows or macOS). It relies on the Host OS to manage the hardware.</span>
+                        </li>
+                        <li class="flex flex-col bg-violet-50 p-4 rounded border border-violet-100">
+                            <strong class="text-violet-700 mb-1">The Guest OS</strong>
+                            <span>The operating system installed inside the virtual machine (e.g., Ubuntu Linux). It believes it is running on a dedicated physical computer.</span>
+                        </li>
+                        <li class="flex flex-col bg-amber-50 p-4 rounded border border-amber-100">
+                            <strong class="text-amber-700 mb-1">Resource Provisioning</strong>
+                            <span>When creating a VM, you carve out chunks of your physical hardware (e.g., 1GB of RAM, 10GB of Disk Space) to be exclusively dedicated to the Guest OS while it is running.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-700 mb-2 text-sm">Example RAM Allocation (16GB Host)</h4>
+                    <p class="text-xs text-slate-500 mb-4">The hypervisor reserves a portion of the Host's RAM for the Guest VM.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="ramChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="view-tracker" class="view-section max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Type 2 Virtualization Architecture
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Explore the software stack. Unlike Type 1 (Bare-metal), a Type 2 hypervisor requires a Host OS to sit between it and the physical hardware.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-50 p-2 rounded-lg border border-slate-200 justify-center">
+                <button onclick="playArchStep(1)" id="btn-sec-1" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-indigo-600 transition">1. Physical Hardware</button>
+                <button onclick="playArchStep(2)" id="btn-sec-2" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-violet-600 transition">2. Host OS + Apps</button>
+                <button onclick="playArchStep(3)" id="btn-sec-3" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-green-600 transition">3. Type 2 Hypervisor & VM</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[420px] relative overflow-hidden">
+                
+                <div class="w-full max-w-lg flex flex-col justify-end gap-2 relative mt-4 h-[300px]">
+                    
+                    <!-- Layer 3: Apps & VMs (Top) -->
+                    <div class="flex w-full gap-2 h-32 opacity-30 transition-opacity duration-500" id="layer-3">
+                        <div class="w-1/3 bg-slate-700 rounded-t-lg border-2 border-slate-500 flex items-center justify-center font-bold text-slate-300">
+                            Host Apps<br><span class="text-xs font-normal">(Chrome, etc)</span>
+                        </div>
+                        <div class="w-2/3 bg-indigo-900 rounded-t-lg border-2 border-indigo-500 flex flex-col items-center justify-center relative p-2 shadow-[0_0_15px_rgba(79,70,229,0.3)]">
+                            <span class="absolute top-2 left-3 text-xs font-bold text-indigo-300">Type 2 Hypervisor (VirtualBox)</span>
+                            <div class="w-11/12 h-16 bg-green-900 border-2 border-green-500 mt-4 rounded flex items-center justify-center font-bold text-green-300 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                                Guest OS VM<br><span class="text-xs font-normal">(Ubuntu Linux)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 2: Host OS (Middle) -->
+                    <div class="w-full h-16 bg-blue-900 rounded border-2 border-blue-500 flex items-center justify-center font-bold text-blue-200 opacity-30 transition-opacity duration-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]" id="layer-2">
+                        Host Operating System (Windows 10/11)
+                    </div>
+
+                    <!-- Layer 1: Hardware (Bottom) -->
+                    <div class="w-full h-16 bg-slate-800 rounded-b-lg border-2 border-slate-600 flex items-center justify-center font-bold text-slate-400 transition-opacity duration-500" id="layer-1">
+                        Physical Hardware (CPU, RAM, Disk, NIC)
+                    </div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="sec-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800 border border-slate-600 p-4 rounded shadow-xl">
+                    Click step 1 to view the foundation of the architecture.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS (Adapted for VirtualBox Settings) -->
+    <div id="view-config" class="view-section max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-5 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    VM Provisioning Parameters
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Since there is no Cisco CLI in this lab, review the parameters Jeremy configured in the VirtualBox GUI.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-1 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-5 py-2.5 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">General & Memory</button>
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Hard Disk & Storage</button>
+            </div>
+
+            <!-- Tab 1 -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Define the basic identity and RAM allocation for the Ubuntu VM.</p>
+                <div class="cli-window">
+                    <span class="cli-comment"># VirtualBox -> New Virtual Machine</span><br><br>
+
+                    <span class="cli-prompt">[Name and Operating System]</span><br>
+                    <span class="text-white">Name:</span> Ubuntu 20.04<br>
+                    <span class="text-white">Type:</span> Linux <span class="cli-comment">(Auto-detected)</span><br>
+                    <span class="text-white">Version:</span> Ubuntu (64-bit) <span class="cli-comment">(Auto-detected)</span><br><br>
+
+                    <span class="cli-prompt">[Memory Size]</span><br>
+                    <span class="cli-comment"># The hypervisor will reserve this much RAM from your host PC</span><br>
+                    <span class="text-white">Base Memory:</span> 1024 MB (1 GB)<br>
+                    <span class="cli-comment"># Note: 1GB is enough for a minimal installation, but 2GB-4GB is recommended for smooth GUI operation.</span>
+                </div>
+            </div>
+
+            <!-- Tab 2 -->
+            <div id="config-r2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Create a virtual hard disk and mount the installation media (ISO file).</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">[Hard Disk Creation]</span><br>
+                    <span class="text-white">Action:</span> Create a virtual hard disk now<br>
+                    <span class="text-white">File Type:</span> VDI (VirtualBox Disk Image)<br>
+                    <span class="text-white">Allocation:</span> Dynamically allocated <span class="cli-comment">(Grows as it fills up)</span><br>
+                    <span class="text-white">Size:</span> 10.00 GB<br><br>
+
+                    <span class="cli-prompt">[Storage / Optical Drive]</span><br>
+                    <span class="cli-comment"># Go to Settings -> Storage -> Empty Optical Drive</span><br>
+                    <span class="text-white">Action:</span> Choose a disk file...<br>
+                    <span class="text-white">Selected File:</span> ubuntu-20.04-desktop-amd64.iso<br>
+                    <span class="cli-comment"># This simulates inserting a CD/DVD into the virtual machine so it can install the OS on the blank 10GB drive.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+                📝 Lab Walkthrough Checklist
+            </h3>
+            <p class="text-slate-500 text-sm mb-6 border-b border-slate-100 pb-6">Check off the steps to track the chronological flow of creating a VM.</p>
+
+            <div class="space-y-3">
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('vm_qa1', this)">
+                            <span class="text-sm">1. Download Oracle VirtualBox & Ubuntu ISO</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Download and install VirtualBox (for Windows hosts) from virtualbox.org. Also, download the Ubuntu LTS ISO file from ubuntu.com (An ISO is an image of the installation CD/DVD).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('vm_qa2', this)">
+                            <span class="text-sm">2. Create a New Virtual Machine</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Open VirtualBox, click "New". Name it "Ubuntu 20.04". Allocate 1GB (1024MB) of RAM. Create a 10GB Dynamically Allocated Virtual Hard Disk (VDI).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('vm_qa3', this)">
+                            <span class="text-sm">3. Mount the ISO File</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Before booting, go to Settings -> Storage. Click the "Empty" optical drive, click the disk icon, and choose the Ubuntu ISO file you downloaded. This acts as the bootable installation media.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('vm_qa4', this)">
+                            <span class="text-sm">4. Boot and Install Ubuntu</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Click "Start" to turn the VM on. The VM boots from the ISO. Follow the Ubuntu GUI installation wizard (Choose Minimal Installation, Erase Disk to install Ubuntu, and create a user account).</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE (Now Terminology Matrix) -->
+    <div id="view-reference" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                Terminology Matrix
+            </h3>
+            
+            <div class="mb-6 relative">
+                <svg class="absolute inset-y-0 left-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search terms..." class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-5 py-3 font-semibold tracking-wide w-1/4">Term</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide w-1/4">Category</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide">Definition</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-bold text-indigo-600 whitespace-nowrap">Type 1 Hypervisor</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Architecture</span></td>
+                            <td class="px-5 py-3 text-slate-600">A "bare-metal" hypervisor that runs directly on physical hardware without a Host OS (e.g., VMware ESXi).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-bold text-indigo-600 whitespace-nowrap">Type 2 Hypervisor</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Architecture</span></td>
+                            <td class="px-5 py-3 text-slate-600">A "hosted" hypervisor that runs as an application on top of an existing Host OS (e.g., Oracle VirtualBox).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-bold text-indigo-600 whitespace-nowrap">Host OS</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Component</span></td>
+                            <td class="px-5 py-3 text-slate-600">The primary operating system installed directly on the physical computer (e.g., Windows 10/11 on your laptop).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-bold text-indigo-600 whitespace-nowrap">Guest OS</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Component</span></td>
+                            <td class="px-5 py-3 text-slate-600">The operating system running inside the virtual machine environment (e.g., the Ubuntu Linux installed in the lab).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-bold text-indigo-600 whitespace-nowrap">ISO File</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">File Type</span></td>
+                            <td class="px-5 py-3 text-slate-600">A disk image file that contains the entire contents of a CD/DVD, commonly used to distribute OS installers.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-bold text-indigo-600 whitespace-nowrap">VDI</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">File Type</span></td>
+                            <td class="px-5 py-3 text-slate-600">VirtualBox Disk Image. The file format VirtualBox uses to simulate a physical hard drive for the VM.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching terms found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Flashcards
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('ramChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Host OS Allocation (15 GB)', 'Guest VM Allocation (1 GB)'],
+                datasets: [
+                    {
+                        data: [15, 1], 
+                        backgroundColor: ['#3b82f6', '#10b981'], // Blue for Host, Green for Guest
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { 
+                                return ` ${context.label}`; 
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
+        });
+        
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
+
+        if(viewId === 'view-theory') { initChart(); } 
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-indigo-600', 'border-indigo-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-indigo-600', 'border-indigo-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Tracker Logic ---
+    function playArchStep(stepIndex) {
+        // Button styling
+        document.getElementById('btn-sec-1').classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        document.getElementById('btn-sec-2').classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        document.getElementById('btn-sec-3').classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        document.getElementById('btn-sec-'+stepIndex).classList.add('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        
+        const layer1 = document.getElementById('layer-1');
+        const layer2 = document.getElementById('layer-2');
+        const layer3 = document.getElementById('layer-3');
+        const desc = document.getElementById('sec-desc');
+
+        // Reset
+        layer1.classList.remove('shadow-[0_0_15px_rgba(71,85,105,0.5)]', 'border-slate-400');
+        layer2.classList.remove('opacity-100');
+        layer2.classList.add('opacity-30');
+        layer3.classList.remove('opacity-100');
+        layer3.classList.add('opacity-30');
+
+        if (stepIndex === 1) {
+            layer1.classList.add('shadow-[0_0_15px_rgba(71,85,105,0.5)]', 'border-slate-400');
+            desc.innerHTML = "<span class='text-slate-400 font-bold'>Step 1 (Hardware):</span> The physical components of your computer (CPU, RAM, Hard Drive, Network Card). Both the Host OS and Virtual Machines ultimately rely on these resources.";
+        } else if (stepIndex === 2) {
+            layer2.classList.remove('opacity-30');
+            layer2.classList.add('opacity-100');
+            desc.innerHTML = "<span class='text-blue-400 font-bold'>Step 2 (Host OS):</span> In a Type 2 architecture, a standard Operating System (like Windows or macOS) is installed directly on the hardware. It manages all physical resources.";
+        } else if (stepIndex === 3) {
+            layer2.classList.remove('opacity-30');
+            layer2.classList.add('opacity-100');
+            layer3.classList.remove('opacity-30');
+            layer3.classList.add('opacity-100');
+            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 3 (Hypervisor & VM):</span> Oracle VirtualBox is installed as an application on the Host OS. It abstracts the hardware and provides it to the Guest OS (Ubuntu VM), isolating it from the rest of the host.";
+        }
+    }
+
+    // --- Features ---
+    function initFeatures() {
+        // Load checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1] && localStorage.getItem(match[1]) === 'true') {
+                cb.checked = true;
+            }
+        });
+
+        // Flashcards data
+        const flashcards = [
+            { q: "What is a Type 2 Hypervisor?", a: "A <strong>hosted</strong> hypervisor that runs as an application on top of an existing Host Operating System (e.g., Oracle VirtualBox, VMware Workstation)." },
+            { q: "What is the difference between a Host OS and a Guest OS?", a: "The <strong>Host OS</strong> runs directly on the physical hardware. The <strong>Guest OS</strong> runs inside a virtual machine created by the hypervisor." },
+            { q: "Why do we mount an ISO file when creating a new VM?", a: "An ISO file is a virtual <strong>CD/DVD disk image</strong>. Mounting it allows the blank virtual machine to boot up and run the OS installation wizard." },
+            { q: "Is knowing how to use VirtualBox required for the CCNA exam?", a: "<strong>No.</strong> The CCNA expects you to know the <em>theory</em> of virtualization (Type 1 vs Type 2), but not the practical GUI steps of VirtualBox." },
+            { q: "What does 'Dynamically Allocated' mean when creating a virtual hard disk?", a: "It means the virtual disk file will only use space on your physical hard drive as it actually fills up with data, rather than reserving the full 10GB immediately." },
+            { q: "Why should a network engineer learn about Type 2 Hypervisors?", a: "Because they are frequently used to run advanced network emulation tools, such as the <strong>GNS3 VM</strong> or <strong>Cisco CML</strong>, directly on a personal laptop." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-60 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-300">Question ${index + 1}</span>
+                                <h5 class="text-sm md:text-base font-semibold text-slate-700">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-indigo-500 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-indigo-50 border border-indigo-100 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-indigo-400">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem(id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playArchStep(1); // Default tracker state
+    });
+</script>
+</body>
+</html>

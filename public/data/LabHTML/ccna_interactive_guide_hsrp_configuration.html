@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Interactive Guide: HSRP Configuration</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Mandatory Chart Container Styling */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 350px; 
+}
+@media (min-width: 768px) { .chart-container { height: 320px; } }
+
+/* View Management */
+.tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.tab-content.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+.nav-active { background-color: #f0f9ff; color: #0284c7; border-left-color: #0284c7; font-weight: 600; } /* Sky Theme */
+.nav-inactive { color: #64748b; }
+.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+/* Accordion Animations */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Code Block Styling */
+.cli-window { 
+    background-color: #0f172a; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #1e293b; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.5;
+}
+.cli-prompt { color: #38bdf8; font-weight: bold; } /* Sky 400 */
+.cli-comment { color: #64748b; font-style: italic; }
+
+/* Interactive Tracker Node Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #0284c7 !important; box-shadow: 0 0 15px rgba(2, 132, 199, 0.5); }
+.node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+.node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+.node-active-hsrp { border-color: #10b981 !important; box-shadow: 0 0 15px rgba(16, 185, 129, 0.6); }
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 5px rgba(2, 132, 199, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(2, 132, 199, 0.8); }
+}
+
+@keyframes flowTraffic {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 0%; }
+}
+.traffic-flow {
+    background: linear-gradient(90deg, rgba(2,132,199,1) 0%, rgba(224,242,254,1) 50%, rgba(2,132,199,1) 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1s linear infinite;
+}
+
+/* 3D Flip Utilities for Flashcards */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-sky-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-sky-500">🛡️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-sky-400 font-semibold tracking-wide uppercase mt-1">HSRP Configuration</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-sky-600 text-white shadow-md">
+            <span class="text-xl">📊</span> FHRP Concepts
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔄</span> Failover Simulator
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Hot Standby Router Protocol (HSRP)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-sky-500 pl-4 bg-sky-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Guarantee high availability for your end hosts. HSRP is a Cisco-proprietary First Hop Redundancy Protocol (FHRP) that allows multiple physical routers to share a single Virtual IP (VIP) and Virtual MAC address, ensuring that if the active default gateway fails, a standby router immediately takes over.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">🧠</span> HSRP Mechanics & Terminology
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">Core Components</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-sky-700">Active & Standby Roles</strong>
+                                <span>The router with the highest <strong>priority</strong> (default 100) becomes the Active router. If priorities tie, the highest IP address wins. The Active router responds to ARP requests for the VIP.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-sky-700">Virtual IP (VIP) & Virtual MAC</strong>
+                                <span>PCs are configured to use the VIP as their gateway. The Active router generates a Virtual MAC (e.g., <code>0000.0c9f.f001</code> for v2 group 1) linked to this VIP. If a failover occurs, the Standby router assumes control of this exact same MAC and IP.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-sky-700">Preemption</strong>
+                                <span>By default, if a failed Active router comes back online, it does <em>not</em> take its job back. You must explicitly configure <code>standby preempt</code> to force it to reclaim the Active role based on its higher priority.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">HSRP Version 1 vs. Version 2</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Why we use `standby version 2` in modern networks.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="hsrpChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-sky-50 p-3 rounded border border-sky-200 text-sky-900 shadow-sm">
+                        <strong>Important:</strong> HSRP versions must match across routers! If R1 is v2 and R2 is v1, they cannot read each other's Hello packets. Both will assume the other is dead and claim the "Active" role, causing an IP conflict.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">🔄</span> HSRP Failover & Preemption Simulator
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Watch how PC1 maintains uninterrupted internet access (8.8.8.8) even when its primary physical gateway fails, seamlessly transitioning to the standby router.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playHsrpStep(1)" id="btn-hsrp-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Normal Operations</button>
+                <button onclick="playHsrpStep(2)" id="btn-hsrp-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Primary Router Fails</button>
+                <button onclick="playHsrpStep(3)" id="btn-hsrp-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Standby Takes Over</button>
+                <button onclick="playHsrpStep(4)" id="btn-hsrp-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Preemption (Recovery)</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[480px] relative overflow-hidden">
+                
+                <div class="relative w-full max-w-lg h-[350px] mx-auto mt-4">
+                    
+                    <!-- Cloud (Internet) -->
+                    <div id="node-internet" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-16 rounded bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 transition-all shadow-lg">8.8.8.8</div>
+
+                    <!-- R1 (Active) -->
+                    <div id="node-r1" class="absolute top-[35%] left-8 transform -translate-y-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-20 transition-all shadow-lg">
+                        R1
+                        <div class="absolute -top-6 text-[10px] bg-slate-800 px-2 py-0.5 rounded font-mono shadow border border-slate-600">Prio: 200</div>
+                        <div id="status-r1" class="absolute -bottom-4 text-[10px] bg-emerald-600 px-2 py-0.5 rounded font-bold shadow border border-emerald-400">ACTIVE</div>
+                    </div>
+                    
+                    <!-- R2 (Standby) -->
+                    <div id="node-r2" class="absolute top-[35%] right-8 transform -translate-y-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-20 transition-all shadow-lg">
+                        R2
+                        <div class="absolute -top-6 text-[10px] bg-slate-800 px-2 py-0.5 rounded font-mono shadow border border-slate-600">Prio: 50</div>
+                        <div id="status-r2" class="absolute -bottom-4 text-[10px] bg-amber-600 px-2 py-0.5 rounded font-bold shadow border border-amber-400">STANDBY</div>
+                    </div>
+
+                    <!-- Switch 1 -->
+                    <div id="node-sw1" class="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-32 h-12 rounded-md bg-slate-700 text-white font-bold flex items-center justify-center text-sm border-2 border-slate-500 z-10 transition-all shadow-lg">SW1</div>
+
+                    <!-- PC1 -->
+                    <div id="node-pc1" class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-12 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-400 z-10 transition-all shadow-md">
+                        PC1
+                        <div class="absolute -left-20 top-1/2 transform -translate-y-1/2 text-[9px] bg-sky-900 text-sky-200 px-1 py-0.5 rounded border border-sky-600 font-mono whitespace-nowrap">GW: 10.0.1.254 (VIP)</div>
+                    </div>
+
+                    <!-- Links -->
+                    <div id="link-r1-int" class="absolute top-8 left-[25%] w-[120px] h-1 bg-slate-600 origin-bottom-left -rotate-[25deg] transition-all z-0"></div>
+                    <div id="link-r2-int" class="absolute top-8 right-[25%] w-[120px] h-1 bg-slate-600 origin-bottom-right rotate-[25deg] transition-all z-0"></div>
+                    
+                    <div id="link-sw-r1" class="absolute bottom-[35%] left-[25%] w-[120px] h-1 bg-slate-600 origin-bottom-right rotate-[25deg] transition-all z-0"></div>
+                    <div id="link-sw-r2" class="absolute bottom-[35%] right-[25%] w-[120px] h-1 bg-slate-600 origin-bottom-left -rotate-[25deg] transition-all z-0"></div>
+                    
+                    <div id="link-pc-sw" class="absolute bottom-12 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-slate-600 transition-all z-0"></div>
+
+                    <!-- Virtual IP Float -->
+                    <div id="vip-badge" class="absolute top-[35%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-sky-500 text-white px-3 py-1 rounded-full font-mono text-xs font-bold border-2 border-sky-300 shadow-[0_0_15px_rgba(14,165,233,0.6)] transition-all duration-700 z-30 flex flex-col items-center">
+                        VIP: .254
+                        <span class="text-[8px] font-normal">0000.0C9F.F001</span>
+                    </div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="hsrp-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl min-h-[60px] flex items-center justify-center">
+                    Click step 1 to begin the HSRP simulation.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-sky-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure HSRP version 2, set priorities, and establish preemption.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-sky-600 border-b-2 border-sky-600 transition-colors">R1 (Primary/Active)</button>
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R2 (Backup/Standby)</button>
+                <button onclick="switchDeviceTab('mismatch', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Troubleshooting: Version Mismatch</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Assign the Virtual IP (VIP), ensure R1 is elected as the Active router by raising its priority to 200, and ensure it can reclaim the role if it reboots.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br><br>
+                    
+                    <span class="cli-comment">! Enable HSRP Version 2 (Must match on all routers)</span><br>
+                    <span class="cli-prompt">R1(config-if)#</span> standby version 2<br><br>
+
+                    <span class="cli-comment">! Configure the Virtual IP (VIP) for Group 1</span><br>
+                    <span class="cli-prompt">R1(config-if)#</span> standby 1 ip 10.0.1.254<br><br>
+
+                    <span class="cli-comment">! Set priority higher than the default (100) to guarantee it becomes Active</span><br>
+                    <span class="cli-prompt">R1(config-if)#</span> standby 1 priority 200<br><br>
+
+                    <span class="cli-comment">! Enable preemption so R1 takes over again if it crashes and recovers</span><br>
+                    <span class="cli-prompt">R1(config-if)#</span> standby 1 preempt<br><br>
+                    
+                    <span class="cli-comment">%HSRP-5-STATECHANGE: GigabitEthernet0/0 Grp 1 state Standby -> Active</span>
+                </div>
+            </div>
+
+            <!-- R2 Tab -->
+            <div id="config-r2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure R2 to listen for the VIP and remain in standby mode unless R1 fails.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R2&gt;</span> enable<br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br>
+                    <span class="cli-prompt">R2(config)#</span> interface g0/0<br><br>
+
+                    <span class="cli-comment">! Must match R1's version</span><br>
+                    <span class="cli-prompt">R2(config-if)#</span> standby version 2<br><br>
+
+                    <span class="cli-comment">! Must match R1's Virtual IP and Group number</span><br>
+                    <span class="cli-prompt">R2(config-if)#</span> standby 1 ip 10.0.1.254<br><br>
+
+                    <span class="cli-comment">! Lower the priority (Optional, default 100 already loses to R1's 200)</span><br>
+                    <span class="cli-prompt">R2(config-if)#</span> standby 1 priority 50<br><br>
+
+                    <span class="cli-comment">%HSRP-5-STATECHANGE: GigabitEthernet0/0 Grp 1 state Speak -> Standby</span>
+                </div>
+            </div>
+
+            <!-- Mismatch Tab -->
+            <div id="config-mismatch" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Scenario:</strong> You forgot to type <code>standby version 2</code> on R2. R1 is running v2, but R2 is running v1.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! Because the versions don't match, they cannot read each other's Hello packets.</span><br>
+                    <span class="cli-comment">! Both routers assume the other is dead, and BOTH try to become the Active router.</span><br><br>
+                    
+                    <span class="cli-comment">! The console will flood with duplicate IP address warnings:</span><br>
+                    <span class="cli-comment text-amber-400">%IP-4-DUPADDR: Duplicate address 10.0.1.254 on GigabitEthernet0/0, sourced by 0000.0c9f.f001</span><br>
+                    <span class="cli-comment text-amber-400">%IP-4-DUPADDR: Duplicate address 10.0.1.254 on GigabitEthernet0/0, sourced by 0000.0c9f.f001</span><br><br>
+
+                    <span class="cli-comment">! To fix it, simply align the versions on R2:</span><br>
+                    <span class="cli-prompt">R2(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R2(config-if)#</span> standby version 2<br>
+                    <span class="cli-comment">%HSRP-5-STATECHANGE: GigabitEthernet0/0 Grp 1 state Active -> Standby</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TAB 4: Lab Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete the troubleshooting tasks.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('acc-1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-sky-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('hsrp_qa1', this)">
+                            <span class="pr-6">1. Run a traceroute from PC1 to 8.8.8.8. Which IP address responds?</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Before any failure, PC1's default gateway is the VIP (10.0.1.254), which is currently held by R1.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">C:\&gt;</span> tracert 8.8.8.8<br>
+                                <span class="cli-comment">  1     1 ms     1 ms     1 ms  10.0.1.253</span>
+                            </div>
+                            <p class="font-bold text-sky-700">Notice:</p>
+                            <p>Even though the PC sent the packet to the Virtual IP (.254), the traceroute response comes back from the <strong>physical interface IP address</strong> of the active router (.253 for R1). This is incredibly useful for network engineers to verify exactly <em>which</em> physical router is currently processing the HSRP traffic.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('acc-2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-sky-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('hsrp_qa2', this)">
+                            <span>2. Turn off R1. Does the ping to 8.8.8.8 still work?</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Answer: Yes.</strong></p>
+                            <p>When R1 is powered off, it stops sending HSRP Hello messages. After the Hold timer expires (default 10 seconds), R2 promotes itself from Standby to Active. It takes over the Virtual MAC and Virtual IP. The ping from the PC drops 1 or 2 packets during this brief window, then resumes successfully.</p>
+                            <p>If you run a traceroute now, the first hop will show <code>10.0.1.252</code> (R2's physical IP).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('acc-3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-sky-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('hsrp_qa3', this)">
+                            <span>3. Turn R1 back on. Without checking the CLI, how do you know if it took back control?</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p><strong>Answer: Run a traceroute from the PC.</strong></p>
+                            <p>Because we explicitly configured <code>standby 1 preempt</code> on R1, the moment it finishes booting and sees R2's priority is lower (50 vs 200), it forces R2 back into Standby mode and reclaims the Active role.</p>
+                            <p>A new <code>tracert 8.8.8.8</code> from PC1 will immediately show <code>10.0.1.253</code> as the first hop again, proving R1 is back in charge.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('acc-4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-sky-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" onclick="event.stopPropagation(); saveProgress('hsrp_qa4', this)">
+                            <span class="pr-6">4. (Bonus Lab Note) Can you run HSRP on a Switch instead of a Router?</span>
+                        </div>
+                        <span class="text-2xl text-sky-600 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="acc-4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Answer: Yes, on a Layer 3 Multilayer Switch.</strong></p>
+                            <p>In modern enterprise networks, the default gateway for PCs is often a Switch Virtual Interface (SVI) located on a core or distribution switch, rather than a traditional router. You can configure HSRP directly on the SVIs.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">DSwitch1(config)#</span> interface vlan 10<br>
+                                <span class="cli-prompt">DSwitch1(config-if)#</span> ip address 10.0.10.253 255.255.255.0<br>
+                                <span class="cli-prompt">DSwitch1(config-if)#</span> standby 10 ip 10.0.10.254
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">standby version 2</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enables HSRPv2. Must be typed before other standby commands to ensure compatibility.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">standby [grp] ip [address]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Defines the Virtual IP (VIP) for the specified HSRP group.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">standby [grp] priority [0-255]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets election priority. Default is 100. Highest priority becomes Active.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">standby [grp] preempt</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Allows a router with a higher priority to immediately overthrow the current Active router.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">show standby</td>
+                            <td class="px-6 py-4"><span class="bg-sky-50 text-sky-800 text-xs px-2 py-1 rounded border border-sky-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays state (Active/Standby), VIP, Virtual MAC, and preemption settings.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-sky-700 whitespace-nowrap">tracert [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-emerald-50 text-emerald-800 text-xs px-2 py-1 rounded border border-emerald-200">Windows CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Traces path. Useful for identifying which physical router is currently acting as the VIP gateway.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-sky-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of HSRP versions and terminology.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('hsrpChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Supported Groups', 'Multicast Address'],
+                datasets: [
+                    {
+                        label: 'HSRP Version 1',
+                        data: [255, 2], // Simplified representation. Groups: 0-255. Address: 224.0.0.2 (represented as 2)
+                        backgroundColor: '#94a3b8', // Slate
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'HSRP Version 2',
+                        data: [4095, 102], // Groups 0-4095. Address 224.0.0.102 (represented as 102)
+                        backgroundColor: '#0284c7', // Sky
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        display: false,
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                if(context.dataIndex === 0) {
+                                    return context.datasetIndex === 0 ? " Max Groups: 255" : " Max Groups: 4095";
+                                } else {
+                                    return context.datasetIndex === 0 ? " Mcast: 224.0.0.2" : " Mcast: 224.0.0.102 (IPv6 Supported)";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-sky-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-sky-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playHsrpStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-sky-600', 'border-sky-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-sky-600', 'border-sky-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- HSRP Simulator Logic ---
+    function playHsrpStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-hsrp-'+i);
+            if(btn) {
+                btn.classList.remove('bg-sky-600', 'text-white', 'border-sky-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-hsrp-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-sky-600', 'text-white', 'border-sky-600');
+        }
+
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        const sw1 = document.getElementById('node-sw1');
+        const pc1 = document.getElementById('node-pc1');
+        
+        const statR1 = document.getElementById('status-r1');
+        const statR2 = document.getElementById('status-r2');
+        
+        const linkR1 = document.getElementById('link-r1-int');
+        const linkR2 = document.getElementById('link-r2-int');
+        const linkSwR1 = document.getElementById('link-sw-r1');
+        const linkSwR2 = document.getElementById('link-sw-r2');
+        const linkPcSw = document.getElementById('link-pc-sw');
+        
+        const vipBadge = document.getElementById('vip-badge');
+        const desc = document.getElementById('hsrp-desc');
+
+        // Reset visual classes
+        [r1, r2, sw1, pc1].forEach(n => {
+            n.classList.remove('node-highlight', 'node-dim', 'node-error', 'node-active-hsrp');
+        });
+        
+        [linkR1, linkR2, linkSwR1, linkSwR2, linkPcSw].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|bg-slate-600|bg-red-500|opacity-30/g, '').trim() + " bg-slate-600 opacity-30";
+        });
+
+        if (stepIndex === 1) {
+            // Normal
+            r1.classList.add('node-active-hsrp');
+            statR1.innerText = "ACTIVE"; statR1.className = "absolute -bottom-4 text-[10px] bg-emerald-600 px-2 py-0.5 rounded font-bold shadow border border-emerald-400 text-white";
+            statR2.innerText = "STANDBY"; statR2.className = "absolute -bottom-4 text-[10px] bg-amber-600 px-2 py-0.5 rounded font-bold shadow border border-amber-400 text-white";
+            
+            // Move VIP to R1
+            vipBadge.style.left = "25%";
+            vipBadge.style.top = "15%";
+
+            [linkPcSw, linkSwR1, linkR1].forEach(l => l.classList.replace('bg-slate-600', 'traffic-flow'));
+            [linkPcSw, linkSwR1, linkR1].forEach(l => l.classList.remove('opacity-30'));
+
+            desc.innerHTML = "<span class='text-sky-400 font-bold'>Step 1 (Normal Operations):</span> R1 has a priority of 200, so it wins the election. R1 holds the Virtual IP (10.0.1.254) and Virtual MAC. PC1's traffic flows exclusively through R1 to the internet. R2 listens passively for Hello packets.";
+        } else if (stepIndex === 2) {
+            // R1 Fails
+            r1.classList.add('node-error');
+            statR1.innerText = "FAILED"; statR1.className = "absolute -bottom-4 text-[10px] bg-red-900 px-2 py-0.5 rounded font-bold shadow border border-red-500 text-slate-400";
+            
+            [linkSwR1, linkR1].forEach(l => {
+                l.classList.replace('bg-slate-600', 'bg-red-500');
+                l.classList.remove('opacity-30');
+            });
+            
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 2 (Primary Router Fails):</span> R1 suffers a hardware failure. The links drop. R1 stops multicasting HSRP Hello packets. The network experiences a brief outage (default 10 seconds) while R2 waits for the Hold timer to expire.";
+        } else if (stepIndex === 3) {
+            // Standby takes over
+            r1.classList.add('node-error');
+            statR1.innerText = "FAILED"; statR1.className = "absolute -bottom-4 text-[10px] bg-red-900 px-2 py-0.5 rounded font-bold shadow border border-red-500 text-slate-400";
+            
+            r2.classList.add('node-active-hsrp');
+            statR2.innerText = "ACTIVE"; statR2.className = "absolute -bottom-4 text-[10px] bg-emerald-600 px-2 py-0.5 rounded font-bold shadow border border-emerald-400 text-white";
+
+            // Move VIP to R2
+            vipBadge.style.left = "75%";
+            vipBadge.style.top = "15%";
+
+            [linkPcSw, linkSwR2, linkR2].forEach(l => l.classList.replace('bg-slate-600', 'traffic-flow'));
+            [linkPcSw, linkSwR2, linkR2].forEach(l => l.classList.remove('opacity-30'));
+
+            desc.innerHTML = "<span class='text-amber-400 font-bold'>Step 3 (Failover):</span> R2 realizes R1 is dead. It promotes itself to Active and assumes control of the VIP and Virtual MAC address. Gratuitous ARPs are sent to update switch MAC tables. PC1's traffic resumes, now flowing through R2!";
+        } else if (stepIndex === 4) {
+            // Preemption
+            r1.classList.add('node-active-hsrp');
+            statR1.innerText = "ACTIVE"; statR1.className = "absolute -bottom-4 text-[10px] bg-emerald-600 px-2 py-0.5 rounded font-bold shadow border border-emerald-400 text-white";
+            statR2.innerText = "STANDBY"; statR2.className = "absolute -bottom-4 text-[10px] bg-amber-600 px-2 py-0.5 rounded font-bold shadow border border-amber-400 text-white";
+
+            // Move VIP to R1
+            vipBadge.style.left = "25%";
+            vipBadge.style.top = "15%";
+
+            [linkPcSw, linkSwR1, linkR1].forEach(l => l.classList.replace('bg-slate-600', 'traffic-flow'));
+            [linkPcSw, linkSwR1, linkR1].forEach(l => l.classList.remove('opacity-30'));
+
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Step 4 (Preemption Recovery):</span> R1 is repaired and boots up. Because <code>standby 1 preempt</code> is configured, R1 immediately checks priorities. Seeing its 200 beats R2's 50, it forces R2 back to Standby and steals the VIP back. Traffic flows normally again.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('hsrp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What does HSRP stand for?", a: "<strong>Hot Standby Router Protocol</strong><br><br>It is a Cisco-proprietary First Hop Redundancy Protocol (FHRP)." },
+            { q: "What is the default priority for an HSRP router?", a: "<strong>100</strong><br><br>The router with the highest priority becomes the Active router." },
+            { q: "What happens if a failed active router reboots, but preemption is NOT enabled?", a: "It will <strong>remain in Standby mode</strong>. The current active router (even with a lower priority) keeps the role until it fails." },
+            { q: "What happens if R1 is running HSRP version 2, and R2 is running version 1?", a: "They cannot understand each other's Hello packets. Both will assume the other is dead and claim the Active role, causing a <strong>Duplicate IP address conflict</strong>." },
+            { q: "What format does an HSRP version 1 virtual MAC address use?", a: "<code>0000.0C07.ACxx</code><br><br>(Where xx is the group number in hex)." },
+            { q: "What format does an HSRP version 2 virtual MAC address use?", a: "<code>0000.0C9F.Fxxx</code><br><br>(Where xxx is the group number in hex, supporting up to 4095 groups)." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-sky-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-sky-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-sky-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('hsrp_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playHsrpStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: Standard ACLs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #fdf4ff; color: #c026d3; border-left-color: #c026d3; font-weight: 600; } /* Fuchsia Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #e879f9; font-weight: bold; } /* Fuchsia 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #c026d3 !important; box-shadow: 0 0 15px rgba(192, 38, 211, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+        .node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+        
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(192, 38, 211, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(192, 38, 211, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(192,38,211,1) 0%, rgba(250,232,255,1) 50%, rgba(192,38,211,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+        .traffic-flow-denied {
+            background: linear-gradient(90deg, rgba(239,68,68,1) 0%, rgba(254,226,226,1) 50%, rgba(239,68,68,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-fuchsia-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-fuchsia-500">🛡️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-fuchsia-400 font-semibold tracking-wide uppercase mt-1">Standard ACLs</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-fuchsia-600 text-white shadow-md">
+            <span class="text-xl">📊</span> ACL Theory & Rules
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Traffic Filter Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Standard Access Control Lists (ACLs)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-fuchsia-500 pl-4 bg-fuchsia-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Control network traffic by selectively permitting or denying packets. Standard ACLs operate purely on the Source IP address. Master configuring Numbered vs. Named ACLs, the Implicit Deny rule, and proper ACL placement.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">🧠</span> Core ACL Rules & Mechanics
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The Golden Rules of Standard ACLs</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-fuchsia-700">Filter By Source IP Only</strong>
+                                <span>Standard ACLs cannot filter by destination IP, protocol, or port numbers. They only look at where the packet came from.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-fuchsia-700">Placement: Closest to Destination</strong>
+                                <span>Because they only filter by source, placing a Standard ACL near the source router would block that host from reaching <em>any</em> network. Place them on the router closest to the target destination.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-fuchsia-700">The Implicit Deny</strong>
+                                <span>Every ACL ends with an invisible <code>deny any</code> rule. If a packet doesn't match any of your <code>permit</code> statements, it will be automatically dropped. You must have at least one <code>permit</code> statement for an ACL to allow any traffic.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Standard vs. Extended ACL Features</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Comparing the filtering capabilities of Standard and Extended Access Lists.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="aclChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-fuchsia-50 p-3 rounded border border-fuchsia-200 text-fuchsia-900 shadow-sm">
+                        Standard ACL ranges: <strong>1-99</strong> & <strong>1300-1999</strong>.<br>
+                        Extended ACL ranges: <strong>100-199</strong> & <strong>2000-2699</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">🔍</span> Traffic Filter Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how outbound ACLs applied to R1 and R2 selectively permit or deny traffic based purely on the Source IP address. Click through the ping scenarios below.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playAclStep(1)" id="btn-acl-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. PC1 to Srv1 (Permit)</button>
+                <button onclick="playAclStep(2)" id="btn-acl-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. PC2 to Srv1 (Deny)</button>
+                <button onclick="playAclStep(3)" id="btn-acl-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. PC3 to Srv2 (Deny)</button>
+                <button onclick="playAclStep(4)" id="btn-acl-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. PC1 to PC3 (Deny)</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Topology -->
+                <div class="relative w-full max-w-2xl h-72 mx-auto mt-4">
+                    
+                    <!-- PCs (Left) -->
+                    <div id="node-pc1" class="absolute top-4 left-0 w-16 h-12 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-400 z-10 shadow-md transition-all">PC1<span class="text-[9px] font-normal font-mono">1.1</span></div>
+                    <div id="node-pc2" class="absolute top-20 left-0 w-16 h-12 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-400 z-10 shadow-md transition-all">PC2<span class="text-[9px] font-normal font-mono">1.2</span></div>
+                    <div id="node-pc3" class="absolute bottom-4 left-0 w-16 h-12 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-400 z-10 shadow-md transition-all">PC3<span class="text-[9px] font-normal font-mono">2.1</span></div>
+
+                    <!-- R1 (Center Left) -->
+                    <div id="node-r1" class="absolute top-1/2 left-[25%] transform -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">R1</div>
+                    
+                    <!-- R2 (Center Right) -->
+                    <div id="node-r2" class="absolute top-1/2 right-[25%] transform -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">R2</div>
+                    
+                    <!-- Servers (Right) -->
+                    <div id="node-srv1" class="absolute top-8 right-0 w-16 h-16 rounded bg-teal-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-teal-500 z-10 shadow-md transition-all">Srv1<span class="text-[9px] font-normal font-mono">1.100</span></div>
+                    <div id="node-srv2" class="absolute bottom-8 right-0 w-16 h-16 rounded bg-teal-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-teal-500 z-10 shadow-md transition-all">Srv2<span class="text-[9px] font-normal font-mono">2.100</span></div>
+
+                    <!-- Links -->
+                    <!-- R1 to PCs -->
+                    <div id="link-pc12-r1" class="absolute top-[25%] left-16 w-[100px] h-1 bg-slate-600 transform origin-left rotate-12 transition-all z-0"></div>
+                    <div id="link-pc3-r1" class="absolute bottom-10 left-16 w-[100px] h-1 bg-slate-600 transform origin-left -rotate-12 transition-all z-0"></div>
+                    
+                    <!-- R1 to R2 -->
+                    <div id="link-r1-r2" class="absolute top-1/2 left-[35%] w-[170px] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+                    
+                    <!-- R2 to Servers -->
+                    <div id="link-r2-srv1" class="absolute top-[25%] right-16 w-[100px] h-1 bg-slate-600 transform origin-right -rotate-12 transition-all z-0"></div>
+                    <div id="link-r2-srv2" class="absolute bottom-[25%] right-16 w-[100px] h-1 bg-slate-600 transform origin-right rotate-12 transition-all z-0"></div>
+
+                    <!-- ACL Shields -->
+                    <div id="shield-r2-g00" class="absolute top-12 right-[25%] w-6 h-6 flex items-center justify-center z-20 transition-all opacity-0"><span class="text-2xl drop-shadow-md">🛡️</span></div>
+                    <div id="shield-r2-g01" class="absolute bottom-12 right-[25%] w-6 h-6 flex items-center justify-center z-20 transition-all opacity-0"><span class="text-2xl drop-shadow-md">🛡️</span></div>
+                    <div id="shield-r1-g01" class="absolute bottom-10 left-[25%] w-6 h-6 flex items-center justify-center z-20 transition-all opacity-0"><span class="text-2xl drop-shadow-md">🛡️</span></div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="acl-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate ACL routing logic.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-fuchsia-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure Standard Numbered and Named ACLs, apply them to interfaces, and set up OSPF.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-fuchsia-600 border-b-2 border-fuchsia-600 transition-colors">Router 2 (Named ACLs)</button>
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Router 1 (Numbered ACLs)</button>
+            </div>
+
+            <!-- R2 Tab -->
+            <div id="config-r2" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Restrict traffic to Server 1 (permit only PC1/PC3) and Server 2 (deny 172.16.2.0/24 subnet). Uses Standard Named ACLs.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R2&gt;</span> enable<br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Setup Named ACL for Server 1's LAN</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ip access-list standard 2_192.168.1.0/24<br>
+                    <span class="cli-prompt">R2(config-std-nacl)#</span> permit 172.16.1.1<br>
+                    <span class="cli-prompt">R2(config-std-nacl)#</span> permit 172.16.2.1<br>
+                    <span class="cli-comment">! Good practice: explicitly write the implicit deny for readability</span><br>
+                    <span class="cli-prompt">R2(config-std-nacl)#</span> deny any<br>
+                    <span class="cli-prompt">R2(config-std-nacl)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Apply outbound on the interface facing Server 1</span><br>
+                    <span class="cli-prompt">R2(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R2(config-if)#</span> ip access-group 2_192.168.1.0/24 out<br>
+                    <span class="cli-prompt">R2(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Setup Named ACL for Server 2's LAN</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ip access-list standard 2_192.168.2.0/24<br>
+                    <span class="cli-comment">! Deny PC3/PC4's entire subnet using a wildcard mask</span><br>
+                    <span class="cli-prompt">R2(config-std-nacl)#</span> deny 172.16.2.0 0.0.0.255<br>
+                    <span class="cli-prompt">R2(config-std-nacl)#</span> permit any<br>
+                    <span class="cli-prompt">R2(config-std-nacl)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Apply outbound on the interface facing Server 2</span><br>
+                    <span class="cli-prompt">R2(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R2(config-if)#</span> ip access-group 2_192.168.2.0/24 out
+                </div>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Stop the 172.16.1.0/24 and 172.16.2.0/24 subnets from communicating. Uses Standard Numbered ACLs.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Numbered ACLs (1-99) use a single-line command structure</span><br>
+                    <span class="cli-comment">! Deny Subnet 1, permit everything else</span><br>
+                    <span class="cli-prompt">R1(config)#</span> access-list 1 deny 172.16.1.0 0.0.0.255<br>
+                    <span class="cli-prompt">R1(config)#</span> access-list 1 permit any<br><br>
+
+                    <span class="cli-comment">! Deny Subnet 2, permit everything else</span><br>
+                    <span class="cli-prompt">R1(config)#</span> access-list 2 deny 172.16.2.0 0.0.0.255<br>
+                    <span class="cli-prompt">R1(config)#</span> access-list 2 permit any<br><br>
+
+                    <span class="cli-comment">! Apply ACL 1 outbound facing Subnet 2 (G0/1)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip access-group 1 out<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Apply ACL 2 outbound facing Subnet 1 (G0/0)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip access-group 2 out
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-fuchsia-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-fuchsia-600 rounded border-slate-300 focus:ring-fuchsia-500" onclick="event.stopPropagation(); saveProgress('acl_qa1', this)">
+                            <span class="pr-6">1. Enable OSPF on R1 and R2 to allow full connectivity before building ACLs.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Before restricting traffic, you must ensure the routers have complete routing tables.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R1(config)#</span> router ospf 1<br>
+                                <span class="cli-prompt">R1(config-router)#</span> network 172.16.0.0 0.0.255.255 area 0<br>
+                                <span class="cli-prompt">R1(config-router)#</span> network 203.0.113.0 0.0.0.3 area 0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-fuchsia-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-fuchsia-600 rounded border-slate-300 focus:ring-fuchsia-500" onclick="event.stopPropagation(); saveProgress('acl_qa2', this)">
+                            <span>2. Only PC1 and PC3 can access Server 1's LAN (192.168.1.0/24).</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>We use a Standard Named ACL on R2, applied outbound on G0/0 facing Server 1.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R2(config)#</span> ip access-list standard 2_192.168.1.0/24<br>
+                                <span class="cli-prompt">R2(config-std-nacl)#</span> permit 172.16.1.1<br>
+                                <span class="cli-prompt">R2(config-std-nacl)#</span> permit 172.16.2.1<br>
+                                <span class="cli-prompt">R2(config-std-nacl)#</span> deny any<br>
+                                <span class="cli-prompt">R2(config-std-nacl)#</span> interface g0/0<br>
+                                <span class="cli-prompt">R2(config-if)#</span> ip access-group 2_192.168.1.0/24 out
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-fuchsia-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-fuchsia-600 rounded border-slate-300 focus:ring-fuchsia-500" onclick="event.stopPropagation(); saveProgress('acl_qa3', this)">
+                            <span>3. Ensure hosts in 172.16.2.0/24 cannot access Server 2's LAN.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>We apply another Standard Named ACL outbound on R2's G0/1 interface. This time, we deny the entire subnet using a wildcard mask, but we MUST permit all other traffic, or the implicit deny will break everything else.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R2(config-std-nacl)#</span> deny 172.16.2.0 0.0.0.255<br>
+                                <span class="cli-prompt">R2(config-std-nacl)#</span> permit any
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-fuchsia-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-fuchsia-600 rounded border-slate-300 focus:ring-fuchsia-500" onclick="event.stopPropagation(); saveProgress('acl_qa4', this)">
+                            <span class="pr-6">4. Verify your ACLs by reviewing the hit counters.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>After running pings from the PCs, execute the following command to see exactly how many packets matched each permit/deny statement:</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R2#</span> show access-lists<br>
+                                <span class="cli-comment">Standard IP access list 2_192.168.1.0/24</span><br>
+                                <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;10 permit 172.16.1.1 (4 matches)</span><br>
+                                <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;20 permit 172.16.2.1</span><br>
+                                <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;30 deny any (8 matches)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">access-list [1-99] [permit|deny] [ip] [mask]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a Standard Numbered ACL rule on a single line.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">ip access-list standard [name]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enters Standard Named ACL sub-configuration mode.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">ip access-group [name/num] [in|out]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Applies the specified ACL to the interface in the designated direction.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">permit any</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">ACL Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Allows all traffic. Prevents the Implicit Deny from dropping unspecified traffic.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">show access-lists</td>
+                            <td class="px-6 py-4"><span class="bg-fuchsia-50 text-fuchsia-800 text-xs px-2 py-1 rounded border border-fuchsia-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays all configured ACLs, their sequence numbers, and packet hit counters.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-fuchsia-700 whitespace-nowrap">ping -t [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Windows PC CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Pings continuously until stopped (Ctrl+C). Useful for testing live ACL rule changes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-fuchsia-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of Standard ACL rules and syntax.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('aclChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Filters by Source IP', 'Filters by Dest IP', 'Filters by Protocol/Port'],
+                datasets: [
+                    {
+                        label: 'Standard ACL',
+                        data: [1, 0, 0],
+                        backgroundColor: '#d946ef', // Fuchsia 500
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Extended ACL',
+                        data: [1, 1, 1],
+                        backgroundColor: '#94a3b8', // Slate 400
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 1.2, 
+                        ticks: { stepSize: 1, callback: val => val === 1 ? 'Yes' : (val === 0 ? 'No' : '') },
+                        grid: { color: '#f1f5f9' },
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw === 1 ? ` ${context.dataset.label}: Yes` : ` ${context.dataset.label}: No`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-fuchsia-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-fuchsia-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playAclStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-fuchsia-600', 'border-fuchsia-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-fuchsia-600', 'border-fuchsia-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- ACL Simulator Logic ---
+    function playAclStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-acl-'+i);
+            if(btn) {
+                btn.classList.remove('bg-fuchsia-600', 'text-white', 'border-fuchsia-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-acl-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-fuchsia-600', 'text-white', 'border-fuchsia-600');
+        }
+
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        const p1 = document.getElementById('node-pc1');
+        const p2 = document.getElementById('node-pc2');
+        const p3 = document.getElementById('node-pc3');
+        const s1 = document.getElementById('node-srv1');
+        const s2 = document.getElementById('node-srv2');
+        
+        const l12 = document.getElementById('link-pc12-r1');
+        const l3 = document.getElementById('link-pc3-r1');
+        const trans = document.getElementById('link-r1-r2');
+        const ls1 = document.getElementById('link-r2-srv1');
+        const ls2 = document.getElementById('link-r2-srv2');
+        
+        const sh2g00 = document.getElementById('shield-r2-g00');
+        const sh2g01 = document.getElementById('shield-r2-g01');
+        const sh1g01 = document.getElementById('shield-r1-g01');
+
+        const desc = document.getElementById('acl-desc');
+
+        // Reset Visuals
+        [r1, r2, p1, p2, p3, s1, s2].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'node-error'));
+        [l12, l3, trans, ls1, ls2].forEach(l => {
+            l.className = l.className.replace(/traffic-flow-denied|traffic-flow|bg-slate-600/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(239,68,68,0.5)]', 'shadow-[0_0_10px_rgba(192,38,211,0.5)]');
+        });
+        [sh2g00, sh2g01, sh1g01].forEach(sh => {
+            sh.classList.replace('opacity-100', 'opacity-0');
+            sh.classList.remove('animate-pulse');
+        });
+
+        if (stepIndex === 1) {
+            [p1, r1, r2, s1].forEach(n => n.classList.add('node-highlight'));
+            [p2, p3, s2].forEach(n => n.classList.add('node-dim'));
+            
+            [l12, trans, ls1].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(192,38,211,0.5)]');
+            });
+            sh2g00.classList.replace('opacity-0', 'opacity-100');
+
+            desc.innerHTML = "<span class='text-fuchsia-400 font-bold'>Step 1 (Permitted):</span> PC1 pings Server 1. The packet hits R2 and is processed by the outbound Named ACL on G0/0. The ACL has the statement <code>permit 172.16.1.1</code>. The traffic is allowed through the shield to Server 1.";
+        } else if (stepIndex === 2) {
+            [r1, r2].forEach(n => n.classList.add('node-highlight'));
+            p2.classList.add('node-highlight');
+            s1.classList.add('node-error');
+            [p1, p3, s2].forEach(n => n.classList.add('node-dim'));
+            
+            [l12, trans].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(192,38,211,0.5)]');
+            });
+            ls1.classList.replace('bg-slate-600', 'traffic-flow-denied');
+            ls1.classList.add('shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+            
+            sh2g00.classList.replace('opacity-0', 'opacity-100');
+            sh2g00.classList.add('animate-pulse');
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 2 (Implicit Deny):</span> PC2 pings Server 1. The packet hits the same outbound ACL on R2. There is no permit statement for PC2. It hits the invisible <code>deny any</code> rule at the bottom and is dropped. R2 replies to PC2 with 'Destination host unreachable'.";
+        } else if (stepIndex === 3) {
+            [r1, r2].forEach(n => n.classList.add('node-highlight'));
+            p3.classList.add('node-highlight');
+            s2.classList.add('node-error');
+            [p1, p2, s1].forEach(n => n.classList.add('node-dim'));
+            
+            [l3, trans].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(192,38,211,0.5)]');
+            });
+            ls2.classList.replace('bg-slate-600', 'traffic-flow-denied');
+            ls2.classList.add('shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+
+            sh2g01.classList.replace('opacity-0', 'opacity-100');
+            sh2g01.classList.add('animate-pulse');
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 3 (Explicit Deny):</span> PC3 (172.16.2.1) pings Server 2. It hits the outbound Named ACL on R2's G0/1 interface. The ACL explicitly states <code>deny 172.16.2.0 0.0.0.255</code>. The traffic is dropped by the shield.";
+        } else if (stepIndex === 4) {
+            r1.classList.add('node-highlight');
+            p1.classList.add('node-highlight');
+            p3.classList.add('node-error');
+            [r2, p2, s1, s2].forEach(n => n.classList.add('node-dim'));
+            
+            l12.classList.replace('bg-slate-600', 'traffic-flow');
+            l12.classList.add('shadow-[0_0_10px_rgba(192,38,211,0.5)]');
+            
+            l3.classList.replace('bg-slate-600', 'traffic-flow-denied');
+            l3.classList.add('shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+
+            sh1g01.classList.replace('opacity-0', 'opacity-100');
+            sh1g01.classList.add('animate-pulse');
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 4 (Inter-Subnet Block):</span> PC1 pings PC3. R1 routes the packet from G0/0 to G0/1. It hits Numbered ACL 1 applied outbound on G0/1 (<code>deny 172.16.1.0 0.0.0.255</code>). The traffic is dropped before ever leaving R1.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('acl_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is the standard ACL numbering range?", a: "<strong>1-99</strong> and <strong>1300-1999</strong>." },
+            { q: "What rule exists at the bottom of every Access Control List?", a: "The <strong>Implicit Deny</strong> rule.<br><br>If a packet does not match any of the preceding rules in the list, it is automatically dropped." },
+            { q: "Where should Standard ACLs be placed in the network topology?", a: "As close to the <strong>Destination</strong> as possible.<br><br>Because they only filter by Source IP, placing them near the source would block that host from reaching ANY network." },
+            { q: "What command applies an ACL to an interface?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>ip access-group [name/number] [in/out]</code>" },
+            { q: "What does the wildcard mask `0.0.0.255` match?", a: "It matches an entire <strong>/24 subnet</strong>. It mandates that the first 3 octets must match exactly, while the last octet can be anything." },
+            { q: "What is the difference between Numbered and Named ACLs?", a: "Numbered uses <code>access-list [number]</code> from global config. Named uses <code>ip access-list standard [name]</code> and enters a dedicated sub-configuration mode." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-fuchsia-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-fuchsia-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-fuchsia-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('acl_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playAclStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: FTP & TFTP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #eef2ff; color: #4f46e5; border-left-color: #4f46e5; font-weight: 600; } /* Indigo Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #818cf8; font-weight: bold; } /* Indigo 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #4f46e5 !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(79,70,229,1) 0%, rgba(224,231,255,1) 50%, rgba(79,70,229,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-indigo-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-indigo-500">💾</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-indigo-400 font-semibold tracking-wide uppercase mt-1">FTP & TFTP Ops</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-indigo-600 text-white shadow-md">
+            <span class="text-xl">📊</span> File Mgmt Concepts
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔄</span> IOS Upgrade Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">FTP & TFTP File Management</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-indigo-500 pl-4 bg-indigo-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Learn how to maintain and upgrade Cisco devices by transferring IOS image files and configuration backups across the network using the Trivial File Transfer Protocol (TFTP) and the File Transfer Protocol (FTP).
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🧠</span> Core Operations & Memory Types
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">TFTP vs. FTP</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-indigo-700">TFTP (Trivial FTP)</strong>
+                                <span>Uses UDP Port 69. Very fast, lightweight, and simple. No authentication required. Excellent for quick local transfers, but insecure.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-indigo-700">FTP (File Transfer Protocol)</strong>
+                                <span>Uses TCP Ports 20 & 21. More reliable due to TCP overhead, and supports basic username/password authentication. (Note: Still sends credentials in plain-text).</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-indigo-700">SCP / SFTP (Not in this lab)</strong>
+                                <span>Modern best practice uses Secure Copy or Secure FTP, which run over SSH (TCP 22) to fully encrypt file transfers and credentials.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-amber-900 mb-2">The Restore "Gotcha": Merge vs. Replace</h4>
+                        <p class="text-sm text-amber-800 mb-2">When pulling a configuration backup from a server, the destination dictates the behavior:</p>
+                        <ul class="list-disc pl-5 text-sm text-amber-800 space-y-1">
+                            <li><strong>To NVRAM (startup-config):</strong> The incoming file completely <em>replaces</em> the old configuration.</li>
+                            <li><strong>To DRAM (running-config):</strong> The incoming file <em>merges</em> with the currently active configuration, potentially leaving old, unwanted commands behind.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Cisco Router Memory Components</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Understanding where files are saved during transfers.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        IOS images are stored in <strong>Flash</strong>. Active configurations run in <strong>DRAM</strong>. Saved configurations persist in <strong>NVRAM</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🔄</span> IOS Upgrade Lifecycle Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe the steps required to safely upgrade the operating system (IOS image) on a Cisco router using an external TFTP/FTP server.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playUpgradeStep(1)" id="btn-upg-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Copy Image to Flash</button>
+                <button onclick="playUpgradeStep(2)" id="btn-upg-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Set Boot System</button>
+                <button onclick="playUpgradeStep(3)" id="btn-upg-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Reload Router</button>
+                <button onclick="playUpgradeStep(4)" id="btn-upg-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Verify & Clean Up</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <div class="flex w-full max-w-2xl justify-around items-center h-48 relative">
+                    <!-- Router Node -->
+                    <div id="node-router" class="w-32 h-32 rounded-lg bg-slate-700 text-white flex flex-col items-center justify-center border-4 border-slate-500 z-10 shadow-lg transition-all relative">
+                        <span class="font-bold text-lg">Router 1</span>
+                        <div class="mt-2 bg-slate-800 border border-slate-600 rounded p-1 w-24 text-center">
+                            <span class="text-[9px] text-slate-400 block uppercase tracking-wider font-bold">Flash Memory</span>
+                            <span id="flash-1" class="text-[10px] text-emerald-400 font-mono block">IOS_v15.1.bin</span>
+                            <span id="flash-2" class="text-[10px] text-indigo-400 font-mono block opacity-0">IOS_v15.5.bin</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Network Link -->
+                    <div id="link-transfer" class="absolute left-[30%] w-[40%] h-2 bg-slate-600 z-0 flex items-center justify-center transition-all">
+                        <span id="pkt-transfer" class="w-8 h-4 bg-white rounded hidden absolute shadow-[0_0_10px_#fff]"></span>
+                    </div>
+
+                    <!-- Server Node -->
+                    <div id="node-server" class="w-24 h-32 rounded-lg bg-slate-700 text-white flex flex-col items-center justify-center border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        <span class="text-2xl mb-1">🗄️</span>
+                        <span class="font-bold text-sm">TFTP/FTP</span>
+                        <span class="text-[10px] text-indigo-300 font-mono mt-1">IOS_v15.5.bin</span>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Overlay -->
+                <div id="upgrade-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl min-h-[60px] flex items-center justify-center">
+                    Click step 1 to begin the IOS upgrade simulation.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-indigo-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to transfer files, configure boot variables, and backup configurations.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">R1 (TFTP Upgrade)</button>
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R2 (FTP Upgrade)</button>
+                <button onclick="switchDeviceTab('boson', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Backup & Restore (Bonus)</button>
+            </div>
+
+            <!-- R1 TFTP Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Download a new IOS image via TFTP, set it as the boot image, reload the router, and delete the old file.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    
+                    <span class="cli-comment">! 1. Download the new image from the TFTP server into local flash memory</span><br>
+                    <span class="cli-prompt">R1#</span> copy tftp flash<br>
+                    <span class="cli-comment">Address or name of remote host []?</span> 10.0.0.1<br>
+                    <span class="cli-comment">Source filename []?</span> c1900-universalk9-mz.SPA.155-3.M4a.bin<br>
+                    <span class="cli-comment">Destination filename [c1900-universalk9-mz.SPA.155-3.M4a.bin]?</span> <span class="cli-comment italic">&lt;Enter&gt;</span><br>
+                    <span class="cli-comment">Accessing tftp://10.0.0.1/...</span><br>
+                    <span class="cli-comment">Loading c1900-universalk9... !!!!!!!!!!!!!!!!!!!!!!!!!!</span><br>
+                    <span class="cli-comment">[OK]</span><br><br>
+
+                    <span class="cli-comment">! 2. Tell the router to boot using the new image file</span><br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br>
+                    <span class="cli-prompt">R1(config)#</span> boot system flash c1900-universalk9-mz.SPA.155-3.M4a.bin<br>
+                    <span class="cli-prompt">R1(config)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 3. Save config and reload to apply the new IOS</span><br>
+                    <span class="cli-prompt">R1#</span> copy running-config startup-config<br>
+                    <span class="cli-prompt">R1#</span> reload<br>
+                    <span class="cli-comment">Proceed with reload? [confirm]</span> <span class="cli-comment italic">&lt;Enter&gt;</span><br><br>
+
+                    <span class="cli-comment">! 4. (After boot) Verify version and delete the old IOS file to free up space</span><br>
+                    <span class="cli-prompt">R1#</span> show version<br>
+                    <span class="cli-prompt">R1#</span> delete flash:c1900-universalk9-mz.SPA.151-4.M4.bin
+                </div>
+            </div>
+
+            <!-- R2 FTP Tab -->
+            <div id="config-r2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Perform the same upgrade, but utilize FTP which requires authentication credentials.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R2&gt;</span> enable<br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! 1. Provide the router with FTP credentials before attempting the transfer</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ip ftp username jeremy<br>
+                    <span class="cli-prompt">R2(config)#</span> ip ftp password ccna<br>
+                    <span class="cli-prompt">R2(config)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 2. Download the image using FTP</span><br>
+                    <span class="cli-prompt">R2#</span> copy ftp flash<br>
+                    <span class="cli-comment">Address or name of remote host []?</span> 10.0.0.1<br>
+                    <span class="cli-comment">Source filename []?</span> c1900-universalk9-mz.SPA.155-3.M4a.bin<br>
+                    <span class="cli-comment">Destination filename [c1900-universalk9-mz.SPA.155-3.M4a.bin]?</span> <span class="cli-comment italic">&lt;Enter&gt;</span><br>
+                    <span class="cli-comment">Accessing ftp://10.0.0.1/...</span><br>
+                    <span class="cli-comment">Loading c1900-universalk9... !!!!!!!!!!!!!!!!!!!!!!!!!!</span><br>
+                    <span class="cli-comment">[OK]</span><br><br>
+
+                    <span class="cli-comment">! 3. Configure boot sequence and reload</span><br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br>
+                    <span class="cli-prompt">R2(config)#</span> boot system flash c1900-universalk9-mz.SPA.155-3.M4a.bin<br>
+                    <span class="cli-prompt">R2(config)#</span> exit<br>
+                    <span class="cli-prompt">R2#</span> write memory<br>
+                    <span class="cli-prompt">R2#</span> reload
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 p-3 mt-4 text-xs text-indigo-800 rounded shadow-sm">
+                    <strong>Packet Tracer Quirk:</strong> FTP file transfers in PT are simulated to be significantly slower than TFTP. Be patient while the exclamation marks load.
+                </div>
+            </div>
+
+            <!-- Boson Backup Tab -->
+            <div id="config-boson" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Backup the active configuration to a remote server, and safely restore it later.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R4&gt;</span> enable<br><br>
+
+                    <span class="cli-comment">! 1. Backup the active running configuration to a TFTP Server</span><br>
+                    <span class="cli-prompt">R4#</span> copy running-config tftp<br>
+                    <span class="cli-comment">Address or name of remote host []?</span> 192.168.1.2<br>
+                    <span class="cli-comment">Destination filename [r4-confg]?</span> r4config<br><br>
+
+                    <span class="cli-comment">! 2. (Sometime later) Restore the configuration from the server</span><br>
+                    <span class="cli-comment">! BEST PRACTICE: Restore to startup-config (NVRAM) so it completely REPLACES the old file.</span><br>
+                    <span class="cli-prompt">R4#</span> copy tftp startup-config<br>
+                    <span class="cli-comment">Address or name of remote host []?</span> 192.168.1.2<br>
+                    <span class="cli-comment">Source filename []?</span> r4config<br>
+                    <span class="cli-comment">Destination filename [startup-config]?</span> <span class="cli-comment italic">&lt;Enter&gt;</span><br><br>
+
+                    <span class="cli-comment">! 3. Load the newly restored configuration into active memory</span><br>
+                    <span class="cli-prompt">R4#</span> copy startup-config running-config
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('tftp_qa1', this)">
+                            <span class="pr-6">1. Copy the new IOS image file from Server 1 to R1's flash memory using TFTP.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>First, verify the current version using <code>show version</code> and check space using <code>show flash:</code>. Then execute the copy command from Privileged EXEC mode.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R1#</span> copy tftp flash<br>
+                                <span class="cli-comment">Address:</span> 10.0.0.1<br>
+                                <span class="cli-comment">Source:</span> c1900-universalk9-mz.SPA.155-3.M4a.bin
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('tftp_qa2', this)">
+                            <span>2. Configure R1 to boot using the new IOS image, save the configuration, and reload.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>You must instruct the router which file in flash it should load on startup.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> boot system flash c1900-universalk9-mz.SPA.155-3.M4a.bin<br>
+                                <span class="cli-prompt">R1(config)#</span> end<br>
+                                <span class="cli-prompt">R1#</span> write memory<br>
+                                <span class="cli-prompt">R1#</span> reload
+                            </div>
+                            <p class="text-red-600 font-bold mt-2">Crucial: If you forget to save the configuration before reloading, the `boot system` command is lost, and the router will boot the old image again.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('tftp_qa3', this)">
+                            <span>3. Delete the old IOS image file from R1's flash memory.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>After verifying the new image loaded correctly with <code>show version</code>, free up memory by removing the old `.bin` file.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> delete flash:c1900-universalk9-mz.SPA.151-4.M4.bin
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('tftp_qa4', this)">
+                            <span class="pr-6">4. Perform the same upgrade on R2 using FTP instead of TFTP.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Because FTP requires authentication, you must configure the router with credentials before issuing the copy command.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R2(config)#</span> ip ftp username jeremy<br>
+                                <span class="cli-prompt">R2(config)#</span> ip ftp password ccna<br>
+                                <span class="cli-prompt">R2(config)#</span> end<br>
+                                <span class="cli-prompt">R2#</span> copy ftp flash
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">copy [source] [destination]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">The universal command to move files. E.g., `copy tftp flash`, `copy run tftp`, `copy start run`.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">show version</td>
+                            <td class="px-6 py-4"><span class="bg-indigo-50 text-indigo-800 text-xs px-2 py-1 rounded border border-indigo-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the currently loaded IOS image version and system uptime.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">show flash:</td>
+                            <td class="px-6 py-4"><span class="bg-indigo-50 text-indigo-800 text-xs px-2 py-1 rounded border border-indigo-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Lists the files stored in Flash memory, including their exact filenames and sizes.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">boot system flash [filename]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Instructs the router which IOS image to load upon the next reboot.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">delete flash:[filename]</td>
+                            <td class="px-6 py-4"><span class="bg-indigo-50 text-indigo-800 text-xs px-2 py-1 rounded border border-indigo-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Permanently removes a file from flash memory to free up space.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">ip ftp username/password</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Provides credentials for the router to use when connecting to an FTP server.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of Cisco memory components and file transfers.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('memoryChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Flash (OS)', 'NVRAM (Startup)', 'DRAM (Running)'],
+                datasets: [
+                    {
+                        label: 'Persists Across Reboot?',
+                        data: [1, 1, 0], // 1 = Yes, 0 = No
+                        backgroundColor: ['#4f46e5', '#8b5cf6', '#94a3b8'], // Indigo, Violet, Slate
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 1.2, 
+                        ticks: { stepSize: 1, callback: val => val === 1 ? 'Yes (Persistent)' : (val === 0 ? 'No (Volatile)' : '') },
+                        grid: { color: '#f1f5f9' },
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw === 1 ? ` Persistent Storage` : ` Volatile Storage`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-indigo-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-indigo-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-indigo-600', 'border-indigo-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-indigo-600', 'border-indigo-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Simulator Logic ---
+    function playUpgradeStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-upg-'+i);
+            if(btn) {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-upg-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+        }
+
+        const router = document.getElementById('node-router');
+        const server = document.getElementById('node-server');
+        const link = document.getElementById('link-transfer');
+        const pkt = document.getElementById('pkt-transfer');
+        
+        const f1 = document.getElementById('flash-1'); // Old image
+        const f2 = document.getElementById('flash-2'); // New image
+        const desc = document.getElementById('upgrade-desc');
+
+        // Reset visual classes
+        [router, server].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'border-emerald-500', 'border-slate-500'));
+        router.classList.add('border-slate-500');
+        server.classList.add('border-slate-500');
+        link.className = "absolute left-[30%] w-[40%] h-2 bg-slate-600 z-0 flex items-center justify-center transition-all";
+        pkt.classList.add('hidden');
+        pkt.style.animation = "none";
+
+        if (stepIndex === 1) {
+            [router, server].forEach(n => n.classList.add('node-highlight'));
+            link.classList.replace('bg-slate-600', 'bg-indigo-500');
+            link.classList.add('shadow-[0_0_10px_rgba(99,102,241,0.5)]');
+            
+            pkt.classList.remove('hidden');
+            pkt.style.animation = "slideFlow 1.5s linear infinite reverse"; // Server to Router
+            
+            f1.classList.replace('opacity-0', 'opacity-100');
+            f2.classList.replace('opacity-100', 'opacity-0');
+
+            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 1 (Copy to Flash):</span> Using <code>copy tftp flash</code>, the router pulls the new IOS image file across the network and stores it persistently alongside the old image in its Flash memory.";
+            
+            // Simulate completion
+            setTimeout(() => {
+                f2.classList.replace('opacity-0', 'opacity-100');
+                f2.classList.add('animate-pulse');
+            }, 1000);
+        } else if (stepIndex === 2) {
+            router.classList.add('node-highlight');
+            server.classList.add('node-dim');
+            f2.classList.remove('animate-pulse');
+            f1.classList.replace('opacity-0', 'opacity-100');
+            f2.classList.replace('opacity-0', 'opacity-100');
+            f2.classList.add('font-bold', 'text-indigo-400');
+            
+            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 2 (Set Boot Variable):</span> The router now holds two IOS images. <code>boot system flash [new-file]</code> instructs the router to prefer the new version during the next boot sequence. (Must save config after!)";
+        } else if (stepIndex === 3) {
+            router.classList.replace('border-slate-500', 'border-emerald-500');
+            router.classList.add('shadow-[0_0_15px_rgba(16,185,129,0.5)]');
+            server.classList.add('node-dim');
+            f1.classList.replace('opacity-0', 'opacity-100');
+            f2.classList.replace('opacity-0', 'opacity-100');
+            
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Step 3 (Reload):</span> The router reboots. The ROM bootstrap program reads the saved configuration, finds the new boot variable, decompresses the new IOS image from Flash, and loads it into active RAM.";
+        } else if (stepIndex === 4) {
+            router.classList.replace('border-slate-500', 'border-emerald-500');
+            server.classList.add('node-dim');
+            f1.classList.replace('opacity-100', 'opacity-0'); // Delete old
+            f2.classList.replace('opacity-0', 'opacity-100');
+
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Step 4 (Delete Old Image):</span> After verifying the new IOS is running via <code>show version</code>, the administrator issues <code>delete flash:[old-file]</code> to free up hardware storage space.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ftp_tftp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What port and protocol does TFTP use?", a: "<strong>UDP Port 69</strong><br><br>It is connectionless and unauthenticated." },
+            { q: "What ports and protocol does FTP use?", a: "<strong>TCP Ports 20 & 21</strong><br><br>It provides reliable data transfer and basic authentication." },
+            { q: "What happens if you copy a file to `startup-config`?", a: "The incoming file completely <strong>replaces</strong> the existing configuration in NVRAM." },
+            { q: "What happens if you copy a file to `running-config`?", a: "The incoming file <strong>merges</strong> with the active configuration in DRAM. Old commands are not removed unless explicitly overwritten." },
+            { q: "Where does the Cisco IOS Operating System reside?", a: "In <strong>Flash Memory</strong>. It is decompressed and loaded into RAM during the boot process." },
+            { q: "What command is required after downloading a new IOS image?", a: "<code class='bg-white px-1 border rounded font-mono text-slate-800'>boot system flash [filename]</code><br><br>Followed immediately by saving the configuration to ensure it persists." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-indigo-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-indigo-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-indigo-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ftp_tftp_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playUpgradeStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

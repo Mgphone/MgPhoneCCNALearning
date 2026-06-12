@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCNA Mastery: Dynamic ARP Inspection</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Base Typography and Backgrounds */
+body { 
+    background-color: #fafafc; 
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1e293b;
+}
+
+/* Sidebar Custom Styling */
+.sidebar-nav { background-color: #0f111a; }
+.brand-header { background-color: #151824; }
+
+/* Chart Container */
+.chart-container { 
+    position: relative; 
+    width: 100%; 
+    max-width: 500px; 
+    margin-left: auto; 
+    margin-right: auto; 
+    height: 35vh; 
+    min-height: 250px;
+    max-height: 320px; 
+}
+
+/* View Management */
+.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+.view-section.active { display: block; opacity: 1; }
+
+/* Navigation Buttons */
+.nav-btn { transition: all 0.2s ease; border-radius: 0.375rem; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;}
+.nav-active { background-color: #4f46e5; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); } 
+.nav-inactive { color: #94a3b8; }
+.nav-inactive:hover { background-color: rgba(255,255,255,0.05); color: #e2e8f0; }
+.nav-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Accordions */
+.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px solid #f1f5f9; }
+
+/* Code Blocks */
+.cli-window { 
+    background-color: #1e1e1e; 
+    color: #e2e8f0; 
+    font-family: 'Courier New', Courier, monospace; 
+    padding: 1.25rem; 
+    border-radius: 0.5rem; 
+    overflow-x: auto; 
+    font-size: 0.875rem; 
+    border: 1px solid #334155; 
+    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+    line-height: 1.6;
+}
+.cli-prompt { color: #4ade80; font-weight: bold; } 
+.cli-comment { color: #94a3b8; font-style: italic; }
+
+/* Tracker Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #4f46e5 !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+.node-attack { animation: pulseRed 0.5s infinite alternate; border-color: #ef4444 !important; }
+
+@keyframes pulseGlow { 0% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); } 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.8); } }
+@keyframes pulseRed { 0% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); } 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 1); } }
+
+@keyframes flowTraffic { 0% { background-position: 0% 0%; } 100% { background-position: 100% 0%; } }
+.traffic-flow-indigo {
+    background: linear-gradient(90deg, #4f46e5 0%, #c7d2fe 50%, #4f46e5 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1.5s linear infinite;
+}
+.traffic-flow-red {
+    background: linear-gradient(90deg, #ef4444 0%, #fecaca 50%, #ef4444 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1s linear infinite;
+}
+
+/* 3D Flip Utilities */
+.perspective { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-indigo-200">
+
+<!-- Sidebar Navigation -->
+<nav class="sidebar-nav border-r border-slate-800 w-full md:w-64 flex-shrink-0 md:h-full flex flex-col shadow-2xl z-20 transition-all">
+    <div class="brand-header p-6 border-b border-slate-800 flex items-center gap-3">
+        <svg class="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+        <div>
+            <h1 class="text-sm font-bold text-white tracking-wide">CCNA Mastery</h1>
+            <p class="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mt-0.5">Day 51 Lab</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-6 px-4 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            DAI Theory
+        </button>
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            Spoof Visualizer
+        </button>
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Device Configs
+        </button>
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            Lab Walkthrough
+        </button>
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            Command Matrix
+        </button>
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-6 md:p-10 relative scroll-smooth bg-white">
+    <!-- Header Banner -->
+    <header class="mb-10 max-w-5xl mx-auto">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Security Control</span>
+            <span class="text-slate-400 text-sm">Jeremy's IT Lab Day 51</span>
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">Dynamic ARP Inspection (DAI)</h2>
+        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded-r-lg">
+            <p class="text-indigo-900 text-sm md:text-base leading-relaxed">
+                Stop Man-in-the-Middle (MitM) attacks caused by ARP Spoofing/Poisoning. DAI relies on the DHCP Snooping binding database to inspect all ARP packets on untrusted ports, ensuring the Sender IP matches the corresponding Sender MAC address.
+            </p>
+        </div>
+    </header>
+
+    <!-- SECTION 1: THEORY / CHART -->
+    <div id="view-theory" class="view-section active max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                DAI Validation & Rate Limiting
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                <div class="space-y-6">
+                    <p class="text-sm text-slate-600">Dynamic ARP Inspection works hand-in-hand with DHCP Snooping. Like snooping, it uses the concept of Trusted and Untrusted ports.</p>
+                    
+                    <ul class="space-y-4 text-sm text-slate-700">
+                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
+                            <strong class="text-indigo-700 mb-1">How it validates (The Database)</strong>
+                            <span>When an ARP packet enters an untrusted port, DAI checks the <strong>Sender MAC</strong> and <strong>Sender IP</strong> against the DHCP Snooping binding table. If there is no match, the packet is dropped and logged.</span>
+                        </li>
+                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
+                            <strong class="text-indigo-700 mb-1">Advanced Validations</strong>
+                            <span>By default, only the IP-to-MAC mapping is checked. You can enable deeper checks to validate the Destination MAC, Source MAC, and IP fields within the ARP body against the Ethernet header.</span>
+                        </li>
+                        <li class="flex flex-col bg-red-50 p-4 rounded border border-red-100">
+                            <strong class="text-red-700 mb-1">Rate Limiting (15 PPS)</strong>
+                            <span>To prevent CPU overload, untrusted ports are rate-limited to <strong>15 ARP packets per second</strong> by default. If exceeded, the port is placed into an err-disabled state. (Trusted ports have no limit).</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <h4 class="text-center font-bold text-slate-700 mb-2 text-sm">Default ARP Rate Limits (Packets/Sec)</h4>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="rateLimitChart"></canvas>
+                    </div>
+                    <p class="text-[10px] text-slate-400 text-center mt-2 italic">*Note: In Packet Tracer, trusted ports sometimes incorrectly show a 15 PPS limit due to a simulator bug. On real Cisco gear, trusted ports are unrestricted.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="view-tracker" class="view-section max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                ARP Spoofing Visualizer
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how SW1 uses the DHCP Snooping Binding Table to inspect and block a malicious ARP Reply from an attacker.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-50 p-2 rounded-lg border border-slate-200 justify-center">
+                <button onclick="playDaiStep(1)" id="btn-sec-1" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-indigo-600 transition">1. Valid ARP Request</button>
+                <button onclick="playDaiStep(2)" id="btn-sec-2" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-red-600 transition">2. Attacker Spoofs Router</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
+                
+                <div class="relative w-full max-w-lg h-72 mx-auto mt-4">
+                    <!-- Switch (Center) -->
+                    <div id="node-switch" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-24 rounded bg-slate-800 text-white font-bold flex flex-col items-center justify-center border-2 border-indigo-500 z-10 shadow-[0_0_15px_rgba(79,70,229,0.4)]">
+                        <span class="text-lg">SW1 (DAI Active)</span>
+                        <div class="mt-2 text-[8px] font-mono bg-slate-900 border border-slate-600 p-1 rounded text-left leading-tight w-11/12 text-slate-300">
+                            <strong>Binding DB:</strong><br>
+                            MAC: AAAA -> IP: 10.0.0.10<br>
+                            MAC: RRRR -> IP: 10.0.0.1
+                        </div>
+                    </div>
+                    
+                    <!-- Valid PC (Bottom Left) -->
+                    <div id="node-client" class="absolute bottom-4 left-4 w-28 h-16 rounded bg-slate-700 text-slate-300 font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        PC 1
+                        <span class="text-[9px] font-mono font-normal">MAC: AAAA | IP: .10</span>
+                    </div>
+
+                    <!-- Attacker (Top Left) -->
+                    <div id="node-rogue" class="absolute top-4 left-4 w-28 h-16 rounded bg-slate-700 text-slate-300 font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        Attacker
+                        <span class="text-[9px] font-mono font-normal text-red-400">MAC: BBBB | IP: .50</span>
+                    </div>
+
+                    <!-- Router (Right) -->
+                    <div id="node-router" class="absolute top-1/2 right-4 transform -translate-y-1/2 w-28 h-16 rounded bg-slate-700 text-slate-300 font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        Router 1
+                        <span class="text-[9px] font-mono font-normal text-green-400">MAC: RRRR | IP: .1</span>
+                    </div>
+
+                    <!-- Links -->
+                    <div id="link-pc-sw" class="absolute bottom-16 left-[6.5rem] w-20 h-1 bg-slate-600 origin-bottom-left -rotate-[25deg] transition-all z-0"></div>
+                    <div id="link-rogue-sw" class="absolute top-16 left-[6.5rem] w-20 h-1 bg-slate-600 origin-top-left rotate-[25deg] transition-all z-0"></div>
+                    <div id="link-sw-rtr" class="absolute top-1/2 left-[calc(50%+96px)] transform -translate-y-1/2 w-24 h-1 bg-slate-600 transition-all z-0"></div>
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="sec-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800 border border-slate-600 p-4 rounded shadow-xl">
+                    Click step 1 to visualize a valid ARP request passing through DAI.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="view-config" class="view-section max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-5 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Device Configurations
+                </h3>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-1 overflow-x-auto">
+                <button onclick="switchDeviceTab('sw1-prereq', this)" class="device-tab-btn active px-5 py-2.5 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">1. Snooping Prerequisite</button>
+                <button onclick="switchDeviceTab('sw1-dai', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">2. Dynamic ARP Config</button>
+                <button onclick="switchDeviceTab('sw1-verify', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">3. Verification</button>
+            </div>
+
+            <!-- Tab 1 -->
+            <div id="config-sw1-prereq" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Set up DHCP Snooping (DAI depends completely on the DHCP Snooping binding table).</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! Enable DHCP Snooping globally and per-vlan</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> ip dhcp snooping<br>
+                    <span class="cli-prompt">SW1(config)#</span> ip dhcp snooping vlan 1<br><br>
+
+                    <span class="cli-comment">! Disable Option 82 to prevent dropped packets (per Jeremy's recommendation)</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> no ip dhcp snooping information option<br><br>
+
+                    <span class="cli-comment">! Trust the port facing the DHCP server</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface g0/2<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> ip dhcp snooping trust
+                </div>
+            </div>
+
+            <!-- Tab 2 -->
+            <div id="config-sw1-dai" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Enable DAI for VLAN 1, enable advanced validation checks, and trust uplinks.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! Enable DAI for the target VLAN</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> ip arp inspection vlan 1<br><br>
+
+                    <span class="cli-comment">! Enable advanced checks in a single line (Dest MAC, IP, Src MAC)</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> ip arp inspection validate dst-mac ip src-mac<br><br>
+
+                    <span class="cli-comment">! Trust uplink ports connecting to other switches or the router</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface range g0/1 - 2<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> ip arp inspection trust
+                </div>
+            </div>
+
+            <!-- Tab 3 -->
+            <div id="config-sw1-verify" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Verify the operational state of DAI and review interface trust levels.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! View global DAI configuration and validation states</span><br>
+                    <span class="cli-prompt">SW1#</span> show ip arp inspection<br>
+                    <span class="text-slate-400">...</span><br>
+                    <span class="text-slate-400"> Vlan     Configuration    Operation   ACL Match          Static ACL</span><br>
+                    <span class="text-slate-400"> ----     -------------    ---------   ---------          ----------</span><br>
+                    <span class="text-slate-400">    1     Enabled          Active</span><br><br>
+
+                    <span class="cli-comment">! View Trust state and Rate Limits per interface</span><br>
+                    <span class="cli-prompt">SW1#</span> show ip arp inspection interfaces<br>
+                    <span class="text-slate-400"> Interface        Trust State     Rate (pps)    Burst Interval</span><br>
+                    <span class="text-slate-400"> ---------------  -----------     ----------    --------------</span><br>
+                    <span class="text-slate-400"> Fa0/1            Untrusted               15                 1</span><br>
+                    <span class="text-slate-400"> Gi0/1            Trusted               None               N/A</span><br>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="view-qa" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+                📝 Lab Walkthrough Checklist
+            </h3>
+            <p class="text-slate-500 text-sm mb-6 border-b border-slate-100 pb-6">Check off the steps as you complete the DAI configuration in your lab.</p>
+
+            <div class="space-y-3">
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('dai_qa1', this)">
+                            <span class="text-sm">1. Configure DHCP Server and Snooping (Prerequisite)</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>DAI relies completely on the DHCP binding table to know which IP belongs to which MAC. You must enable `ip dhcp snooping` and trust your uplinks before proceeding.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('dai_qa2', this)">
+                            <span class="text-sm">2. Enable DAI for VLAN 1</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Like snooping, DAI must be explicitly enabled for the VLANs operating on the switch using the command: <code>ip arp inspection vlan 1</code>.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('dai_qa3', this)">
+                            <span class="text-sm">3. Establish Trusted Interfaces for DAI</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Enter the interfaces connected to other switches or the router, and run <code>ip arp inspection trust</code>. Untrusted ports are for end-devices (PCs) only.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('dai_qa4', this)">
+                            <span class="text-sm">4. (Optional) Enable advanced validation checks</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>To ensure total ARP integrity, use <code>ip arp inspection validate dst-mac ip src-mac</code> to force the switch to check the ARP payload against the Ethernet header fields.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="view-reference" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                Command Matrix
+            </h3>
+            
+            <div class="mb-6 relative">
+                <svg class="absolute inset-y-0 left-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search commands..." class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-5 py-3 font-semibold tracking-wide w-1/3">Command</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide w-1/4">Device/Mode</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">ip arp inspection vlan [id]</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Global Config</span></td>
+                            <td class="px-5 py-3 text-slate-600">Enables Dynamic ARP Inspection for the specified VLAN(s).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">ip arp inspection trust</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Interface Config</span></td>
+                            <td class="px-5 py-3 text-slate-600">Configures the interface to bypass ARP inspection. (For uplinks)</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">ip arp inspection validate src-mac dst-mac ip</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Global Config</span></td>
+                            <td class="px-5 py-3 text-slate-600">Enables advanced payload checking. All three must be entered on the same line to activate all three.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">ip arp inspection limit rate [pps]</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Interface Config</span></td>
+                            <td class="px-5 py-3 text-slate-600">Changes the default rate limit of ARP packets allowed per second (Default: 15).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">show ip arp inspection</td>
+                            <td class="px-5 py-3"><span class="bg-indigo-50 text-indigo-800 text-xs px-2 py-1 rounded">Priv EXEC</span></td>
+                            <td class="px-5 py-3 text-slate-600">Shows global DAI configuration and which validation checks are active.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">show ip arp inspection interfaces</td>
+                            <td class="px-5 py-3"><span class="bg-indigo-50 text-indigo-800 text-xs px-2 py-1 rounded">Priv EXEC</span></td>
+                            <td class="px-5 py-3 text-slate-600">Shows trust states and rate limits for all interfaces.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="view-flashcards" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Flashcards
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    let rateChartInstance = null;
+
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('rateLimitChart').getContext('2d');
+        rateChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Untrusted Ports', 'Trusted Ports'],
+                datasets: [
+                    {
+                        label: 'Allowed ARP Packets / Second',
+                        data: [15, 100], // 100 representing "Unlimited" visually
+                        backgroundColor: ['#ef4444', '#10b981'], // Red for limited, Green for unlimited
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100, 
+                        ticks: { 
+                            callback: function(value) {
+                                if (value === 15) return '15 pps';
+                                if (value === 100) return 'Unlimited';
+                                return null;
+                            }
+                        },
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { 
+                                return context.raw === 100 ? ` Unlimited` : ` Limit: ${context.raw} Packets/sec`; 
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function navigate(viewId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
+        });
+        
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
+
+        if(viewId === 'view-theory') { initChart(); } 
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-indigo-600', 'border-indigo-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-indigo-600', 'border-indigo-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Tracker Logic ---
+    function playDaiStep(stepIndex) {
+        // Button styling
+        document.getElementById('btn-sec-1').classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        document.getElementById('btn-sec-2').classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        document.getElementById('btn-sec-'+stepIndex).classList.add('ring-2', 'ring-indigo-500', 'border-indigo-500');
+
+        const switchNode = document.getElementById('node-switch');
+        const rogueNode = document.getElementById('node-rogue');
+        
+        const linkPc = document.getElementById('link-pc-sw');
+        const linkRogue = document.getElementById('link-rogue-sw');
+        const linkRtr = document.getElementById('link-sw-rtr');
+        const desc = document.getElementById('sec-desc');
+
+        // Reset Styles
+        switchNode.classList.remove('border-red-500', 'shadow-[0_0_15px_rgba(239,68,68,0.4)]');
+        switchNode.classList.add('border-indigo-500', 'shadow-[0_0_15px_rgba(79,70,229,0.4)]');
+        rogueNode.classList.remove('node-attack');
+        
+        linkPc.className = "absolute bottom-16 left-[6.5rem] w-20 h-1 bg-slate-600 origin-bottom-left -rotate-[25deg] transition-all z-0";
+        linkRogue.className = "absolute top-16 left-[6.5rem] w-20 h-1 bg-slate-600 origin-top-left rotate-[25deg] transition-all z-0";
+        linkRtr.className = "absolute top-1/2 left-[calc(50%+96px)] transform -translate-y-1/2 w-24 h-1 bg-slate-600 transition-all z-0";
+
+        if (stepIndex === 1) {
+            linkPc.className = "absolute bottom-16 left-[6.5rem] w-20 h-2 traffic-flow-indigo origin-bottom-left -rotate-[25deg] transition-all z-0";
+            linkRtr.className = "absolute top-1/2 left-[calc(50%+96px)] transform -translate-y-1/2 w-24 h-2 traffic-flow-indigo transition-all z-0";
+            
+            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 1 (Valid ARP):</span> PC1 sends an ARP Reply. SW1 intercepts it on the untrusted port, checks the DHCP binding DB, and verifies MAC <code>AAAA</code> matches IP <code>.10</code>. The packet is forwarded to the router.";
+        } else if (stepIndex === 2) {
+            rogueNode.classList.add('node-attack');
+            switchNode.classList.remove('border-indigo-500', 'shadow-[0_0_15px_rgba(79,70,229,0.4)]');
+            switchNode.classList.add('border-red-500', 'shadow-[0_0_15px_rgba(239,68,68,0.4)]');
+            
+            linkRogue.className = "absolute top-16 left-[6.5rem] w-20 h-3 traffic-flow-red origin-top-left rotate-[25deg] transition-all z-0";
+            
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 2 (Spoofing Blocked):</span> The Attacker sends an ARP Reply claiming to be the Router (IP: <code>.1</code>, MAC: <code>BBBB</code>). SW1 checks the DB. IP <code>.1</code> does not belong to MAC <code>BBBB</code>. The spoofed ARP is <strong>dropped and logged</strong>.";
+        }
+    }
+
+    // --- Features ---
+    function initFeatures() {
+        // Copy buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                btn.innerText = 'Copied!';
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // Load checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1] && localStorage.getItem(match[1]) === 'true') {
+                cb.checked = true;
+            }
+        });
+
+        // Flashcards data
+        const flashcards = [
+            { q: "What kind of attack does Dynamic ARP Inspection prevent?", a: "<strong>ARP Spoofing / ARP Poisoning</strong> (which leads to Man-in-the-Middle attacks)." },
+            { q: "What prerequisite feature MUST be configured before DAI can work on untrusted ports?", a: "<strong>DHCP Snooping</strong>. DAI relies entirely on the DHCP Snooping Binding Database to verify valid IP-to-MAC mappings." },
+            { q: "What happens if the ARP rate limit is exceeded on an untrusted port?", a: "The switch places the interface into an <strong>err-disabled</strong> state to protect the CPU." },
+            { q: "What is the default ARP rate limit on an untrusted port?", a: "<strong>15 packets per second.</strong>" },
+            { q: "When using the `validate` command, what three advanced checks can be enabled?", a: "<strong>src-mac</strong>, <strong>dst-mac</strong>, and <strong>ip</strong>.<br>It compares the ARP body payload against the Ethernet header." },
+            { q: "How do you enable all three advanced validation checks?", a: "They must be entered in a <strong>single command line</strong>. E.g.:<br><code>ip arp inspection validate src-mac dst-mac ip</code>" }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-56 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-300">Q${index + 1}</span>
+                                <h5 class="text-sm md:text-base font-semibold text-slate-700">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-indigo-500 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-indigo-50 border border-indigo-100 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-indigo-400">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem(id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playDaiStep(1); // Default tracker state
+    });
+</script>
+</body>
+</html>

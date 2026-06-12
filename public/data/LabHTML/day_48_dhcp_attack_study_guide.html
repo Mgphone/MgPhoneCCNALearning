@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Day 48 - DHCP Exhaustion Attack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom styling for flashcards */
+        details > summary { 
+            list-style: none; 
+        }
+        details > summary::-webkit-details-marker { 
+            display: none; 
+        }
+        details[open] summary ~ * { 
+            animation: sweep .3s ease-in-out; 
+        }
+        @keyframes sweep {
+            0%    {opacity: 0; transform: translateY(-10px)}
+            100%  {opacity: 1; transform: translateY(0)}
+        }
+        
+        /* Cisco CLI Code block styling */
+        .cli-block {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1e1e1e;
+            color: #4ade80; /* Tailwind green-400 */
+        }
+        .cli-prompt { color: #f8fafc; } /* Tailwind slate-50 */
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 leading-relaxed">
+
+    <!-- Header Section -->
+    <header class="bg-blue-900 text-white py-12 shadow-md">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="flex items-center gap-3 mb-2 text-blue-200 text-sm font-semibold tracking-wider uppercase">
+                <span>CCNA 200-301 Complete Course</span>
+                <span>•</span>
+                <span>Day 48</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">DHCP Exhaustion Attack (Kali Linux Demo)</h1>
+            <p class="text-xl text-blue-100 max-w-2xl">Understanding network vulnerabilities: How an attacker starves a DHCP server and causes a Denial of Service (DoS).</p>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-12 space-y-12">
+
+        <!-- 1. Executive Summary -->
+        <section class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                1. Executive Summary
+            </h2>
+            <p class="text-slate-600 text-lg">
+                This lab provides a hands-on demonstration of a <strong>DHCP Exhaustion (Starvation) attack</strong> using the Yersinia tool in Kali Linux. By flooding a DHCP server with fake DHCP Discover messages paired with spoofed MAC addresses, an attacker can rapidly consume all available IP addresses in the DHCP pool. This results in a Denial of Service (DoS), preventing legitimate users from acquiring IP addresses and accessing the network.
+            </p>
+        </section>
+
+        <!-- 2. Conceptual Breakdown -->
+        <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-6 border-b pb-2">2. Conceptual Breakdown</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                    <h3 class="font-bold text-blue-900 mb-2">The Vulnerability (DORA)</h3>
+                    <p class="text-sm text-blue-800">Normally, DHCP follows four steps: <strong>Discover, Offer, Request, Acknowledge</strong>. When the server receives a Discover message, it implicitly trusts the client and temporarily reserves an IP address when sending the Offer. The protocol lacks built-in authentication for these requests.</p>
+                </div>
+                <div class="bg-red-50 p-6 rounded-xl border border-red-100">
+                    <h3 class="font-bold text-red-900 mb-2">MAC Spoofing</h3>
+                    <p class="text-sm text-red-800">If an attacker repeatedly sent requests from the same MAC address, the server would just offer the same IP. To circumvent this, the attacker continually <strong>spoofs (fakes) random source MAC addresses</strong>, tricking the server into believing thousands of unique hosts are joining the network.</p>
+                </div>
+            </div>
+            <div class="mt-6 bg-slate-100 p-6 rounded-xl border border-slate-200">
+                <h3 class="font-bold text-slate-900 mb-2">The Consequence: APIPA Fallback</h3>
+                <p class="text-slate-700 text-sm">Once the DHCP pool is completely exhausted, legitimate hosts are denied IP addresses. On Windows machines, failure to reach a DHCP server triggers a fallback mechanism called APIPA (Automatic Private IP Addressing), auto-assigning an address in the <code>169.254.x.x</code> range. This prevents communication beyond the local link.</p>
+            </div>
+        </section>
+
+        <!-- 3. Step-by-Step Configuration Guide -->
+        <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-6 border-b pb-2">3. Step-by-Step Attack & Recovery Flow</h2>
+            
+            <div class="space-y-6">
+                <!-- Step 1 -->
+                <div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-2">Step 1: Verify Initial DHCP Status (Pre-Attack)</h3>
+                    <p class="text-slate-600 text-sm mb-3">Before the attack, verify that the router has available IP addresses and an empty binding table.</p>
+                    <div class="cli-block p-4 rounded-lg shadow-inner overflow-x-auto">
+                        <span class="cli-prompt">R1#</span> show ip dhcp pool<br>
+                        <span class="cli-prompt">R1#</span> show ip dhcp binding
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-2">Step 2: Launch the DHCP Starvation Attack</h3>
+                    <p class="text-slate-600 text-sm mb-3">On the Kali Linux attacker machine, open the Yersinia tool in GUI mode to initiate the flooding of DISCOVER packets.</p>
+                    <div class="cli-block p-4 rounded-lg shadow-inner overflow-x-auto">
+                        <span class="text-blue-400">kali@kali:~$</span> yersinia -G<br>
+                        <span class="text-slate-400 text-xs italic"># (In GUI: Select DHCP -> Launch Attack -> "sending DISCOVER packet")</span>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-2">Step 3: Observe the Damage</h3>
+                    <p class="text-slate-600 text-sm mb-3">Return to the router. The pool will now show all available addresses as leased.</p>
+                    <div class="cli-block p-4 rounded-lg shadow-inner overflow-x-auto">
+                        <span class="cli-prompt">R1#</span> show ip dhcp binding
+                    </div>
+                    <blockquote class="mt-3 border-l-4 border-yellow-500 bg-yellow-50 p-4 text-sm text-yellow-800 rounded-r-lg">
+                        <strong>Exam Note:</strong> When checking the binding table during an attack, you will see a massive list of IP addresses leased out to random, spoofed MAC addresses.
+                    </blockquote>
+                </div>
+
+                <!-- Step 4 -->
+                <div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-2">Step 4: Legitimate Client Failure & Recovery</h3>
+                    <p class="text-slate-600 text-sm mb-3">PC1 fails to get an IP and defaults to an APIPA address. To fix this, disconnect the attacker, clear the poisoned bindings on the router, and force the PC to renew its IP.</p>
+                    <div class="cli-block p-4 rounded-lg shadow-inner overflow-x-auto mb-2">
+                        <span class="cli-prompt">C:\&gt;</span> ipconfig /all <span class="text-slate-400 text-xs italic"># PC1 shows 169.254.x.x</span>
+                    </div>
+                    <div class="cli-block p-4 rounded-lg shadow-inner overflow-x-auto mb-2">
+                        <span class="cli-prompt">R1#</span> clear ip dhcp binding * <span class="text-slate-400 text-xs italic"># Clears the poisoned table</span>
+                    </div>
+                    <div class="cli-block p-4 rounded-lg shadow-inner overflow-x-auto">
+                        <span class="cli-prompt">C:\&gt;</span> ipconfig /renew <span class="text-slate-400 text-xs italic"># PC1 successfully grabs an IP</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Command Reference Table -->
+        <section>
+            <h2 class="text-2xl font-bold text-slate-900 mb-6 border-b pb-2">4. Command Reference Table</h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                    <thead class="bg-slate-100 text-slate-700">
+                        <tr>
+                            <th class="px-4 py-3 font-semibold">Device</th>
+                            <th class="px-4 py-3 font-semibold">Command</th>
+                            <th class="px-4 py-3 font-semibold">Mode</th>
+                            <th class="px-4 py-3 font-semibold">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr>
+                            <td class="px-4 py-3 text-slate-600">Router</td>
+                            <td class="px-4 py-3 font-mono text-xs text-blue-600">show run | section dhcp</td>
+                            <td class="px-4 py-3 text-slate-600">Privileged EXEC</td>
+                            <td class="px-4 py-3 text-slate-600">Displays only the DHCP pool configuration from the running config.</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td class="px-4 py-3 text-slate-600">Router</td>
+                            <td class="px-4 py-3 font-mono text-xs text-blue-600">show ip dhcp pool</td>
+                            <td class="px-4 py-3 text-slate-600">Privileged EXEC</td>
+                            <td class="px-4 py-3 text-slate-600">Shows DHCP pool statistics, including total and currently leased addresses.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-slate-600">Router</td>
+                            <td class="px-4 py-3 font-mono text-xs text-blue-600">show ip dhcp binding</td>
+                            <td class="px-4 py-3 text-slate-600">Privileged EXEC</td>
+                            <td class="px-4 py-3 text-slate-600">Displays a table mapping leased IP addresses to their corresponding MAC addresses.</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td class="px-4 py-3 text-slate-600">Router</td>
+                            <td class="px-4 py-3 font-mono text-xs text-blue-600">clear ip dhcp binding *</td>
+                            <td class="px-4 py-3 text-slate-600">Privileged EXEC</td>
+                            <td class="px-4 py-3 text-slate-600">Clears all dynamically assigned IP addresses from the binding table.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-slate-600">Kali Linux</td>
+                            <td class="px-4 py-3 font-mono text-xs text-blue-600">yersinia -G</td>
+                            <td class="px-4 py-3 text-slate-600">Terminal</td>
+                            <td class="px-4 py-3 text-slate-600">Launches the graphical user interface (GUI) for the Yersinia attack tool.</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td class="px-4 py-3 text-slate-600">Windows PC</td>
+                            <td class="px-4 py-3 font-mono text-xs text-blue-600">ipconfig /renew</td>
+                            <td class="px-4 py-3 text-slate-600">Command Prompt</td>
+                            <td class="px-4 py-3 text-slate-600">Forces the PC to contact the DHCP server to request or renew an IP address.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. Verification & Troubleshooting -->
+        <section class="bg-slate-800 text-white p-8 rounded-2xl shadow-md">
+            <h2 class="text-2xl font-bold mb-4 border-b border-slate-600 pb-2">5. Verification & Troubleshooting</h2>
+            <ul class="space-y-4">
+                <li class="flex items-start gap-3">
+                    <svg class="w-6 h-6 text-green-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <strong class="block text-green-300">Spotting the Attack on the Network</strong>
+                        <span class="text-slate-300 text-sm">Run <code>show ip dhcp binding</code>. If the table is suddenly saturated with entries mapped to random, chaotic MAC addresses, an attacker is actively exhausting your pool.</span>
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <svg class="w-6 h-6 text-green-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <strong class="block text-green-300">Client Diagnosis</strong>
+                        <span class="text-slate-300 text-sm">If a user complains of "no internet" and their <code>ipconfig</code> output displays an IP address starting with <code>169.254.X.X</code>, their computer gave up waiting for a DHCP response and self-assigned an APIPA address.</span>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 6. Knowledge Check Flashcards -->
+        <section>
+            <h2 class="text-2xl font-bold text-slate-900 mt-8 mb-6">🧠 Knowledge Check Flashcards</h2>
+            
+            <details class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-4 cursor-pointer group hover:border-blue-300 transition-colors">
+                <summary class="font-bold text-slate-800 group-hover:text-blue-700 flex justify-between items-center outline-none">
+                    <span><b>Question:</b> What specific DHCP message does an attacker flood the server with during a Starvation attack?</span>
+                    <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <blockquote class="mt-4 border-l-4 border-blue-500 bg-blue-50 pl-4 py-3 pr-3 text-slate-700 rounded-r-lg">
+                    <strong>Answer:</strong> The attacker floods the server with DHCP <strong>DISCOVER</strong> messages.
+                </blockquote>
+            </details>
+
+            <details class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-4 cursor-pointer group hover:border-blue-300 transition-colors">
+                <summary class="font-bold text-slate-800 group-hover:text-blue-700 flex justify-between items-center outline-none">
+                    <span><b>Question:</b> Why must the attacker spoof the source MAC address during a DHCP Exhaustion attack?</span>
+                    <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <blockquote class="mt-4 border-l-4 border-blue-500 bg-blue-50 pl-4 py-3 pr-3 text-slate-700 rounded-r-lg">
+                    <strong>Answer:</strong> If the MAC address remained static, the DHCP server would recognize it as the same host and repeatedly offer the exact same single IP address. Spoofing tricks the server into thinking thousands of unique, new hosts are requesting IPs.
+                </blockquote>
+            </details>
+
+            <details class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-4 cursor-pointer group hover:border-blue-300 transition-colors">
+                <summary class="font-bold text-slate-800 group-hover:text-blue-700 flex justify-between items-center outline-none">
+                    <span><b>Question:</b> What IPv4 address range is automatically assigned to a Windows PC if it fails to reach a DHCP server?</span>
+                    <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <blockquote class="mt-4 border-l-4 border-blue-500 bg-blue-50 pl-4 py-3 pr-3 text-slate-700 rounded-r-lg">
+                    <strong>Answer:</strong> It falls back to the APIPA (Automatic Private IP Addressing) range, which is <code>169.254.0.0/16</code>.
+                </blockquote>
+            </details>
+
+            <details class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-4 cursor-pointer group hover:border-blue-300 transition-colors">
+                <summary class="font-bold text-slate-800 group-hover:text-blue-700 flex justify-between items-center outline-none">
+                    <span><b>Question:</b> What Cisco IOS command is used to remove all dynamically assigned IP addresses from the DHCP binding table?</span>
+                    <svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <blockquote class="mt-4 border-l-4 border-blue-500 bg-blue-50 pl-4 py-3 pr-3 text-slate-700 rounded-r-lg">
+                    <strong>Answer:</strong> <code>clear ip dhcp binding *</code>
+                </blockquote>
+            </details>
+
+        </section>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-8 text-center mt-12">
+        <p class="text-sm">Created for CCNA Study Preparation • Jeremy's IT Lab Companion</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: Voice VLANs & Leaking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #fff1f2; color: #e11d48; border-left-color: #e11d48; font-weight: 600; } /* Rose Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #fb7185; font-weight: bold; } /* Rose 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #e11d48 !important; box-shadow: 0 0 15px rgba(225, 29, 72, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+        .node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); color: white !important;}
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(225, 29, 72, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(225, 29, 72, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(225,29,72,1) 0%, rgba(255,228,230,1) 50%, rgba(225,29,72,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+        .traffic-flow-untagged {
+            background: linear-gradient(90deg, rgba(71,85,105,1) 0%, rgba(241,245,249,1) 50%, rgba(71,85,105,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-rose-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-rose-500">☎️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-rose-400 font-semibold tracking-wide uppercase mt-1">Voice VLANs</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-rose-600 text-white shadow-md">
+            <span class="text-xl">📊</span> IP Phone Mechanics
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Tagging Simulator
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Voice VLANs & VLAN Leaking</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-rose-500 pl-4 bg-rose-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Discover how Cisco IP Phones act as mini-switches, allowing a PC and a Phone to share a single physical switchport while keeping their traffic in separate, isolated VLANs. Additionally, explore the severe security vulnerability known as VLAN Leaking.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">🧠</span> IP Phones & 802.1Q Tagging
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The 3-Port Mini Switch</h4>
+                        <p class="text-sm text-slate-600 mb-4">A Cisco IP Phone contains a built-in 3-port switch to save wiring costs (you only need one wall jack for a desk):</p>
+                        <ul class="space-y-3 text-sm text-slate-700">
+                            <li class="flex items-start">
+                                <span class="bg-slate-200 text-slate-800 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-16 text-center shadow-sm">Port 1</span>
+                                <div>Connects to the upstream Cisco Switch.</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-slate-200 text-slate-800 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-16 text-center shadow-sm">Port 2</span>
+                                <div>Connects to the downstream PC.</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-rose-100 text-rose-800 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-16 text-center shadow-sm">Port 3</span>
+                                <div>Internal port connecting to the phone's voice hardware.</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-rose-50 border border-rose-200 p-5 rounded-xl shadow-sm">
+                        <h4 class="font-bold text-rose-900 mb-2">Tagging on an Access Port</h4>
+                        <p class="text-sm text-rose-800 mb-3">When you configure <code>switchport voice vlan [id]</code> on an access port, the switch uses CDP (Cisco Discovery Protocol) to instruct the phone to attach an <strong>802.1Q tag</strong> to its voice traffic.</p>
+                        <p class="text-sm text-rose-800">The PC's data traffic passes through the phone <strong>untagged</strong>. The switch places the untagged traffic into the Access VLAN, and the tagged traffic into the Voice VLAN.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Frame Structure Comparison</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">How the switchport interprets incoming traffic.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="frameChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        <strong>Hex 0x8100</strong> in the EtherType field indicates the presence of an 802.1Q VLAN tag.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mt-6 rounded shadow-sm">
+                <h4 class="font-bold text-amber-900 mb-1 flex items-center gap-2"><span>⚠️</span> Security Threat: VLAN Leaking</h4>
+                <p class="text-sm text-amber-800">If two connected switches have mismatched Native VLANs on a trunk (e.g., SW1 uses 20, SW2 uses 10), untagged traffic from VLAN 20 on SW1 will cross the trunk and be deposited into VLAN 10 on SW2. This allows devices in different subnets/VLANs to bypass the router, a major security flaw.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">🔍</span> Traffic & Tagging Simulator
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how a single switchport handles multiplexed traffic from both a PC and an IP Phone, and how a Native VLAN mismatch causes VLAN Leaking across a trunk.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playVoiceStep(1)" id="btn-voice-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. PC Data (Untagged)</button>
+                <button onclick="playVoiceStep(2)" id="btn-voice-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Phone Voice (Tagged)</button>
+                <button onclick="playVoiceStep(3)" id="btn-voice-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Normal Trunk (VLAN 10)</button>
+                <button onclick="playVoiceStep(4)" id="btn-voice-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Native Mismatch (Leaking)</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <div class="relative w-full max-w-3xl h-72 mx-auto mt-4">
+                    
+                    <!-- Left Side (PC & Phone) -->
+                    <div id="node-pc" class="absolute top-1/4 left-0 transform -translate-y-1/2 w-16 h-12 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        PC1<span class="text-[9px] text-slate-300 font-mono mt-0.5">VLAN 10</span>
+                    </div>
+                    <div id="node-phone" class="absolute bottom-1/4 left-16 transform translate-y-1/2 w-16 h-16 rounded-lg bg-rose-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-rose-500 z-20 shadow-lg transition-all">
+                        Phone<span class="text-[9px] text-rose-200 font-mono mt-0.5">VLAN 20</span>
+                    </div>
+
+                    <!-- Switches -->
+                    <div id="node-sw1" class="absolute top-1/2 left-[40%] transform -translate-x-1/2 -translate-y-1/2 w-24 h-20 rounded-lg bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">
+                        SW1
+                        <span class="text-[9px] bg-slate-800 px-1 rounded font-mono mt-1 border border-slate-600" id="sw1-native">Nat: 1</span>
+                    </div>
+                    
+                    <div id="node-sw2" class="absolute top-1/2 right-[20%] transform translate-x-1/2 -translate-y-1/2 w-24 h-20 rounded-lg bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">
+                        SW2
+                        <span class="text-[9px] bg-slate-800 px-1 rounded font-mono mt-1 border border-slate-600" id="sw2-native">Nat: 1</span>
+                    </div>
+
+                    <!-- Destination -->
+                    <div id="node-dest" class="absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-12 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        PC3<span class="text-[9px] text-slate-300 font-mono mt-0.5" id="dest-vlan">VLAN 10</span>
+                    </div>
+
+                    <!-- Links -->
+                    <div id="link-pc-phone" class="absolute top-[25%] left-16 w-8 h-1 bg-slate-600 origin-left rotate-[45deg] transition-all z-0"></div>
+                    <div id="link-phone-sw1" class="absolute top-1/2 left-32 w-[18%] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex justify-center items-center">
+                        <span id="tag-access" class="absolute -top-6 text-[10px] font-mono font-bold bg-slate-800 px-1 py-0.5 rounded opacity-0 transition-opacity whitespace-nowrap"></span>
+                    </div>
+                    
+                    <div id="link-sw1-sw2" class="absolute top-1/2 left-[48%] w-[35%] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex justify-center items-center">
+                        <span id="tag-trunk" class="absolute -top-6 text-[10px] font-mono font-bold bg-slate-800 px-1 py-0.5 rounded opacity-0 transition-opacity whitespace-nowrap"></span>
+                    </div>
+
+                    <div id="link-sw2-dest" class="absolute top-1/2 right-16 w-[12%] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="voice-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate Voice VLAN logic.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-rose-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure Voice VLANs, ROAS for multiple subnets, and Native VLAN trunks.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-rose-600 border-b-2 border-rose-600 transition-colors">SW1 (Voice VLAN)</button>
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R1 (ROAS)</button>
+                <button onclick="switchDeviceTab('leaking', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Boson Demo (VLAN Leaking)</button>
+            </div>
+
+            <!-- SW1 Tab -->
+            <div id="config-sw1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure the switchports connected to the phones to handle both Data (VLAN 10) and Voice (VLAN 20) traffic simultaneously.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">SW1&gt;</span> enable<br>
+                    <span class="cli-prompt">SW1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Apply configuration to the phone interfaces</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface range g1/0/2 - 3<br><br>
+
+                    <span class="cli-comment">! Assign the untagged Data VLAN for the PC</span><br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 10<br><br>
+
+                    <span class="cli-comment">! Assign the tagged Voice VLAN for the IP Phone</span><br>
+                    <span class="cli-comment">! (Uses CDP to tell the phone to tag its frames with 802.1Q ID 20)</span><br>
+                    <span class="cli-prompt">SW1(config-if-range)#</span> switchport voice vlan 20<br><br>
+                    
+                    <span class="cli-prompt">SW1(config-if-range)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure the trunk uplink to the router, allowing both VLANs</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface g1/0/1<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport mode trunk<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport trunk encapsulation dot1q<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport trunk allowed vlan 10,20
+                </div>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure Router-on-a-Stick to act as the default gateway for both the Data PC subnet and the Voice Phone subnet.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Enable physical interface</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface f0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure Data Subinterface (VLAN 10)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface f0/0.10<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> encapsulation dot1q 10<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> ip address 192.168.10.1 255.255.255.0<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Configure Voice Subinterface (VLAN 20)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface f0/0.20<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> encapsulation dot1q 20<br>
+                    <span class="cli-prompt">R1(config-subif)#</span> ip address 192.168.20.1 255.255.255.0
+                </div>
+            </div>
+
+            <!-- Leaking Tab -->
+            <div id="config-leaking" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> From the Boson Demo. Deliberately misconfigure the Native VLAN on a trunk link to observe VLAN Leaking.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! PC2 is in VLAN 20. PC3 is in VLAN 10. They share the 10.0.0.x/24 subnet.</span><br>
+                    <span class="cli-comment">! Normally they cannot ping each other without a router.</span><br><br>
+
+                    <span class="cli-comment">! On Switch 1 (Trunk Interface)</span><br>
+                    <span class="cli-prompt">SW1(config)#</span> interface f0/4<br>
+                    <span class="cli-prompt">SW1(config-if)#</span> switchport trunk native vlan 20<br>
+                    <span class="cli-comment">! CDP Warning: Native VLAN mismatch discovered on FastEthernet0/4 (20), with Switch2 FastEthernet0/1 (10).</span><br><br>
+
+                    <span class="cli-comment">! On Switch 2 (Trunk Interface)</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface f0/1<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> switchport trunk native vlan 10<br><br>
+
+                    <span class="cli-comment">! The Leak Result:</span><br>
+                    <span class="cli-comment">1. PC2 sends untagged frame to SW1. SW1 puts it in Access VLAN 20.</span><br>
+                    <span class="cli-comment">2. SW1 forwards it out trunk. Because Native VLAN = 20, SW1 sends it UNTAGGED.</span><br>
+                    <span class="cli-comment">3. SW2 receives untagged frame. Because its Native VLAN = 10, it places it in VLAN 10.</span><br>
+                    <span class="cli-comment">4. SW2 forwards it to PC3. The Ping succeeds! The traffic "leaked" across broadcast domains.</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('voice_qa1', this)">
+                            <span class="pr-6">1. Configure the switchports connected to the phones to handle Data (VLAN 10) and Voice (VLAN 20).</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>We configure the port as an access port for data, and then apply the voice vlan command.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">SW1(config)#</span> interface range g1/0/2 - 3<br>
+                                <span class="cli-prompt">SW1(config-if-range)#</span> switchport mode access<br>
+                                <span class="cli-prompt">SW1(config-if-range)#</span> switchport access vlan 10<br>
+                                <span class="cli-prompt">SW1(config-if-range)#</span> switchport voice vlan 20
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('voice_qa2', this)">
+                            <span>2. Use simulation mode to inspect a ping from PC1 vs a call from Phone 1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Answer:</strong></p>
+                            <ul class="list-disc pl-5 space-y-2">
+                                <li>When checking the outbound PDU of the <strong>PC1 Ping</strong> arriving at the switch, there is <strong>NO 802.1Q header</strong>. The switch receives it untagged and processes it as VLAN 10 traffic.</li>
+                                <li>When checking the outbound PDU of the <strong>Phone Call</strong> arriving at the switch, there <strong>IS an 802.1Q header</strong>. The TCI field shows <code>0014</code> (Hex for 20). The switch receives it tagged and processes it as VLAN 20 traffic.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('voice_qa3', this)">
+                            <span>3. (Bonus Lab) Configure mismatched Native VLANs to cause VLAN Leaking.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>This is a security vulnerability where traffic bleeds between isolated domains.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-comment">! On SW1:</span><br>
+                                <span class="cli-prompt">SW1(config-if)#</span> switchport trunk native vlan 20<br><br>
+                                <span class="cli-comment">! On SW2:</span><br>
+                                <span class="cli-prompt">SW2(config-if)#</span> switchport trunk native vlan 10
+                            </div>
+                            <p class="text-rose-700 italic mt-2">CDP will immediately generate console warnings complaining about a Native VLAN mismatch.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-rose-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500" onclick="event.stopPropagation(); saveProgress('voice_qa4', this)">
+                            <span class="pr-6">4. (Bonus Lab) Does a ping from PC2 (VLAN 20) to PC3 (VLAN 10) succeed with the mismatch?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Answer: YES.</strong></p>
+                            <p>Assuming they share the same IP subnet (10.0.0.0/24), the ping works. SW1 receives PC2's frame and sends it across the trunk. Since it belongs to SW1's Native VLAN (20), SW1 sends it completely untagged. SW2 receives an untagged frame on a trunk. SW2 assumes untagged frames belong to ITS Native VLAN (10). SW2 forwards the frame to PC3. Traffic successfully leaked across the broadcast domains!</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">switchport voice vlan [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures the interface to instruct the attached IP phone to tag its traffic with this VLAN ID.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">switchport trunk native vlan [id]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Defines which VLAN is sent untagged across the 802.1Q trunk.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">encapsulation dot1q [id]</td>
+                            <td class="px-6 py-4"><span class="bg-rose-50 text-rose-800 text-xs px-2 py-1 rounded border border-rose-200">Subinterface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures a router subinterface (ROAS) to listen for and tag packets with this VLAN ID.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-rose-700 whitespace-nowrap">show vlan brief</td>
+                            <td class="px-6 py-4"><span class="bg-rose-50 text-rose-800 text-xs px-2 py-1 rounded border border-rose-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays active VLANs. Note: Voice VLAN configurations will show the interface listed under BOTH the Access and Voice VLAN rows.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-rose-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of tagging and port states.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('frameChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Standard Frame (PC Data)', 'Tagged Frame (Phone Voice)'],
+                datasets: [
+                    {
+                        label: 'L2 Preamble/Dest/Src',
+                        data: [1, 1],
+                        backgroundColor: '#94a3b8',
+                        borderWidth: 0
+                    },
+                    {
+                        label: '802.1Q Tag (Hex 8100)',
+                        data: [0, 0.5],
+                        backgroundColor: '#e11d48', // Rose
+                        borderWidth: 0
+                    },
+                    {
+                        label: 'EtherType (IPv4/0800)',
+                        data: [0.5, 0.5],
+                        backgroundColor: '#64748b',
+                        borderWidth: 0
+                    },
+                    {
+                        label: 'L3 / Payload Data',
+                        data: [5, 5],
+                        backgroundColor: '#cbd5e1',
+                        borderWidth: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Horizontal stacked bar to look like a frame
+                scales: {
+                    x: { stacked: true, display: false },
+                    y: { stacked: true, grid: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) { return ` ${context.dataset.label}`; }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-rose-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-rose-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playVoiceStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-rose-600', 'border-rose-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-rose-600', 'border-rose-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Traffic Simulator Logic ---
+    function playVoiceStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-voice-'+i);
+            if(btn) {
+                btn.classList.remove('bg-rose-600', 'text-white', 'border-rose-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-voice-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-rose-600', 'text-white', 'border-rose-600');
+        }
+
+        const pc = document.getElementById('node-pc');
+        const phone = document.getElementById('node-phone');
+        const sw1 = document.getElementById('node-sw1');
+        const sw2 = document.getElementById('node-sw2');
+        const dest = document.getElementById('node-dest');
+        
+        const l_pc = document.getElementById('link-pc-phone');
+        const l_phone = document.getElementById('link-phone-sw1');
+        const l_trunk = document.getElementById('link-sw1-sw2');
+        const l_dest = document.getElementById('link-sw2-dest');
+        
+        const tagAcc = document.getElementById('tag-access');
+        const tagTrnk = document.getElementById('tag-trunk');
+        const desc = document.getElementById('voice-desc');
+
+        const nat1 = document.getElementById('sw1-native');
+        const nat2 = document.getElementById('sw2-native');
+        const dVlan = document.getElementById('dest-vlan');
+
+        // Reset Visuals
+        [pc, phone, sw1, sw2, dest].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'node-error'));
+        [l_pc, l_phone, l_trunk, l_dest].forEach(l => {
+            l.className = l.className.replace(/traffic-flow-untagged|traffic-flow|bg-slate-600/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(225,29,72,0.5)]', 'shadow-[0_0_10px_rgba(71,85,105,0.5)]');
+        });
+        tagAcc.classList.replace('opacity-100', 'opacity-0');
+        tagTrnk.classList.replace('opacity-100', 'opacity-0');
+        
+        nat1.innerText = "Nat: 1"; nat2.innerText = "Nat: 1"; nat1.classList.remove('text-rose-400'); nat2.classList.remove('text-rose-400');
+        dVlan.innerText = "VLAN 10";
+
+        if (stepIndex === 1) {
+            // PC Data
+            [pc, phone, sw1].forEach(n => n.classList.add('node-highlight'));
+            [sw2, dest].forEach(n => n.classList.add('node-dim'));
+            
+            l_pc.classList.replace('bg-slate-600', 'traffic-flow-untagged');
+            l_phone.classList.replace('bg-slate-600', 'traffic-flow-untagged');
+            l_phone.classList.add('shadow-[0_0_10px_rgba(71,85,105,0.5)]');
+            
+            tagAcc.classList.replace('opacity-0', 'opacity-100');
+            tagAcc.innerText = "UNTAGGED";
+            tagAcc.className = "absolute -top-6 text-[10px] font-mono font-bold bg-slate-200 text-slate-600 px-1 py-0.5 rounded opacity-100 transition-opacity whitespace-nowrap border border-slate-300 shadow-sm";
+
+            desc.innerHTML = "<span class='text-slate-400 font-bold'>Step 1 (PC Data):</span> PC1 sends a ping. The packet passes through the IP Phone completely untouched. It arrives at SW1 without an 802.1Q header. SW1 places this UNTAGGED frame into the configured Access VLAN (10).";
+        } else if (stepIndex === 2) {
+            // Phone Voice
+            pc.classList.add('node-dim');
+            [phone, sw1].forEach(n => n.classList.add('node-highlight'));
+            [sw2, dest].forEach(n => n.classList.add('node-dim'));
+            
+            l_phone.classList.replace('bg-slate-600', 'traffic-flow');
+            l_phone.classList.add('shadow-[0_0_10px_rgba(225,29,72,0.5)]');
+            
+            tagAcc.classList.replace('opacity-0', 'opacity-100');
+            tagAcc.innerText = "TAGGED: 20";
+            tagAcc.className = "absolute -top-6 text-[10px] font-mono font-bold bg-slate-800 text-rose-400 px-1 py-0.5 rounded opacity-100 transition-opacity whitespace-nowrap shadow-md border border-slate-600";
+
+            desc.innerHTML = "<span class='text-rose-400 font-bold'>Step 2 (Phone Voice):</span> The IP Phone generates Voice traffic. Because it learned via CDP that the Voice VLAN is 20, the phone inserts an 802.1Q Tag (ID: 20). SW1 receives the TAGGED frame on the access port and places it directly into VLAN 20.";
+        } else if (stepIndex === 3) {
+            // Normal Trunk
+            [phone, sw1, sw2, dest].forEach(n => n.classList.add('node-highlight'));
+            pc.classList.add('node-dim');
+            
+            l_phone.classList.replace('bg-slate-600', 'traffic-flow');
+            l_trunk.classList.replace('bg-slate-600', 'traffic-flow');
+            l_dest.classList.replace('bg-slate-600', 'traffic-flow');
+            dVlan.innerText = "VLAN 20";
+            
+            tagTrnk.classList.replace('opacity-0', 'opacity-100');
+            tagTrnk.innerText = "TAGGED: 20";
+            tagTrnk.className = "absolute -top-6 text-[10px] font-mono font-bold bg-slate-800 text-rose-400 px-1 py-0.5 rounded opacity-100 transition-opacity whitespace-nowrap shadow-md border border-slate-600";
+
+            desc.innerHTML = "<span class='text-rose-400 font-bold'>Step 3 (Normal Trunk):</span> The Voice traffic (VLAN 20) needs to cross the trunk to SW2. Because Native VLANs match (1), SW1 keeps the 802.1Q tag of 20 on the frame. SW2 reads the tag, places it in VLAN 20, and delivers it to the destination.";
+        } else if (stepIndex === 4) {
+            // Leaking
+            [phone, sw1, sw2, dest].forEach(n => n.classList.add('node-highlight'));
+            dest.classList.add('node-error');
+            pc.classList.add('node-dim');
+            
+            l_phone.classList.replace('bg-slate-600', 'traffic-flow');
+            l_trunk.classList.replace('bg-slate-600', 'traffic-flow-untagged');
+            l_dest.classList.replace('bg-slate-600', 'traffic-flow-untagged');
+            
+            nat1.innerText = "Nat: 20"; nat1.classList.add('text-rose-400');
+            nat2.innerText = "Nat: 10"; nat2.classList.add('text-rose-400');
+            dVlan.innerText = "VLAN 10";
+
+            tagTrnk.classList.replace('opacity-0', 'opacity-100');
+            tagTrnk.innerText = "UNTAGGED";
+            tagTrnk.className = "absolute -top-6 text-[10px] font-mono font-bold bg-slate-200 text-slate-600 px-1 py-0.5 rounded opacity-100 transition-opacity whitespace-nowrap border border-slate-300 shadow-sm";
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 4 (VLAN Leaking):</span> SW1's Native VLAN is 20. SW2's is 10. Voice traffic (VLAN 20) enters SW1. SW1 sends it UNTAGGED across the trunk. SW2 receives untagged traffic and dumps it into ITS Native VLAN (10). The traffic leaked across broadcast domains!";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('voice_vlan_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "How does a Cisco IP phone know which VLAN to tag its voice traffic with?", a: "The switch informs the phone via <strong>CDP (Cisco Discovery Protocol)</strong> messages when the link is established." },
+            { q: "Is traffic from the PC connected to the IP Phone tagged?", a: "<strong>No.</strong><br><br>The data traffic passes through the phone and arrives at the switch untagged. The switch places it into the configured Access VLAN." },
+            { q: "What is VLAN Leaking?", a: "A security flaw caused by <strong>mismatched Native VLANs</strong> on a trunk link. Untagged traffic leaving one Native VLAN arrives and is deposited into a completely different VLAN on the other side." },
+            { q: "What is an SVI?", a: "<strong>Switch Virtual Interface.</strong><br><br>A logical Layer 3 interface on a switch associated with a VLAN. Used as a default gateway for hosts in that VLAN." },
+            { q: "What Hexadecimal value in the EtherType field indicates an 802.1Q VLAN tag is present?", a: "<strong>0x8100</strong>" },
+            { q: "How many ports does a standard Cisco IP phone switch have?", a: "<strong>Three.</strong><br><br>One connects to the upstream switch, one to the downstream PC, and an internal port connects to the phone's voice components." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-rose-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-rose-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-rose-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('voice_vlan_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playVoiceStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

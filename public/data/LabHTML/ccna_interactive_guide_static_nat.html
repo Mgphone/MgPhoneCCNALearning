@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: Static NAT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #fffbeb; color: #d97706; border-left-color: #d97706; font-weight: 600; } /* Amber Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #fbbf24; font-weight: bold; } /* Amber 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #d97706 !important; box-shadow: 0 0 15px rgba(217, 119, 6, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+        .node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); color: white !important;}
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(217, 119, 6, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(217, 119, 6, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(217,119,6,1) 0%, rgba(254,243,199,1) 50%, rgba(217,119,6,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+        .traffic-flow-denied {
+            background: linear-gradient(90deg, rgba(239,68,68,1) 0%, rgba(254,226,226,1) 50%, rgba(239,68,68,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-amber-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-amber-500">🛡️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-amber-400 font-semibold tracking-wide uppercase mt-1">Static NAT</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-amber-600 text-white shadow-md">
+            <span class="text-xl">📊</span> NAT Concepts
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Translation Simulator
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Network Address Translation (NAT)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Private IP addresses (RFC 1918) are strictly forbidden from routing across the public Internet. Learn how to configure Static NAT on your edge routers to translate private internal IPs into globally routable public IP addresses.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">🧠</span> Core NAT Terminology
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The 4 NAT Terms</h4>
+                        <p class="text-sm text-slate-600 mb-4">Cisco defines IP addresses from the perspective of the router performing the translation.</p>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-amber-700">Inside Local</strong>
+                                <span>The actual private IP address assigned to a host on the internal network (e.g., PC1's <code>172.16.0.1</code>).</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-amber-700">Inside Global</strong>
+                                <span>The public IP address that represents the internal host to the outside world (e.g., <code>100.0.0.1</code>). This is what the Internet sees.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-slate-700">Outside Local</strong>
+                                <span>The IP address of the destination as it appears to the internal host. (Usually identical to Outside Global).</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-slate-700">Outside Global</strong>
+                                <span>The actual public IP address of the external destination (e.g., Google's <code>8.8.8.8</code>).</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-sm text-sm">
+                        <h4 class="font-bold text-amber-900 mb-1">Static Source NAT</h4>
+                        <p class="text-amber-800">In this lab, we configure a <strong>1-to-1 Static Mapping</strong>. Every single internal PC requires its own dedicated public IP address. While inefficient for large networks (which use PAT), it is vital for hosting internal servers that must be reachable from the internet.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Translation Efficiency: Static vs PAT</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Comparing the maximum number of internal hosts that can share a single Public IP address.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="natChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        Static NAT maps exactly 1 private IP to 1 public IP. Port Address Translation (PAT) uses source port numbers to map up to ~65,000 internal hosts to a single public IP.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">🔍</span> NAT Translation Simulator
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how R1 intercepts traffic, drops unroutable packets, and seamlessly rewrites the Source and Destination IP headers once Static NAT is configured.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playNatStep(1)" id="btn-nat-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Ping w/o NAT (Fails)</button>
+                <button onclick="playNatStep(2)" id="btn-nat-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Apply Static Config</button>
+                <button onclick="playNatStep(3)" id="btn-nat-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Outbound Translation</button>
+                <button onclick="playNatStep(4)" id="btn-nat-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Inbound Translation</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <div class="relative w-full max-w-2xl h-64 mx-auto mt-4">
+                    
+                    <!-- PC1 (Left) -->
+                    <div id="node-pc1" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-20 h-16 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        PC1<span class="text-[10px] text-amber-200 font-mono mt-1">172.16.0.1</span>
+                    </div>
+
+                    <!-- R1 (Center) -->
+                    <div id="node-r1" class="absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">
+                        R1
+                        <span class="text-[9px] bg-slate-800 px-1 rounded font-mono mt-1 border border-slate-600">NAT Engine</span>
+                    </div>
+                    
+                    <div class="absolute top-1/2 left-[23%] transform -translate-y-10 text-[9px] text-slate-400 font-mono">Inside (g0/1)</div>
+                    <div class="absolute top-1/2 left-[41%] transform -translate-y-10 text-[9px] text-slate-400 font-mono">Outside (g0/0)</div>
+
+                    <!-- ISP (Right Center) -->
+                    <div id="node-isp" class="absolute top-1/2 right-1/3 transform translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 shadow-lg transition-all">
+                        ISP<span class="text-[10px] text-slate-400 font-mono mt-1">Public</span>
+                    </div>
+
+                    <!-- DNS Server (Right) -->
+                    <div id="node-srv" class="absolute top-1/2 right-0 transform -translate-y-1/2 w-20 h-16 rounded bg-teal-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-teal-500 z-10 shadow-lg transition-all">
+                        DNS<span class="text-[10px] text-teal-200 font-mono mt-1">8.8.8.8</span>
+                    </div>
+
+                    <!-- Links -->
+                    <div id="link-pc-r1" class="absolute top-1/2 left-20 w-[14%] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+                    <div id="link-r1-isp" class="absolute top-1/2 left-[40%] w-[20%] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+                    <div id="link-isp-srv" class="absolute top-1/2 right-20 w-[14%] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+
+                    <!-- Animated Packet -->
+                    <div id="pkt-nat" class="absolute top-1/2 left-20 transform -translate-y-1/2 flex flex-col items-center justify-center z-30 hidden transition-all duration-1000 ease-in-out">
+                        <div class="w-4 h-4 bg-white rounded-full shadow-[0_0_10px_#fff]"></div>
+                        <div id="pkt-label" class="mt-2 text-[10px] font-mono font-bold bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-600 whitespace-nowrap shadow-lg"></div>
+                    </div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="nat-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate NAT routing logic.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-amber-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to define NAT interfaces and build 1-to-1 static mappings.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-amber-600 border-b-2 border-amber-600 transition-colors">R1 (Static NAT)</button>
+                <button onclick="switchDeviceTab('boson', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Boson Demo (R4)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Designate the trusted LAN as "inside", the untrusted internet as "outside", and map three private IPs to three public IPs.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! 1. Define the NAT interfaces</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip nat inside<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ip nat outside<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 2. Create the Static Mappings (Inside Local -> Inside Global)</span><br>
+                    <span class="cli-comment">! Syntax: ip nat inside source static [Private IP] [Public IP]</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ip nat inside source static 172.16.0.1 100.0.0.1<br>
+                    <span class="cli-prompt">R1(config)#</span> ip nat inside source static 172.16.0.2 100.0.0.2<br>
+                    <span class="cli-prompt">R1(config)#</span> ip nat inside source static 172.16.0.3 100.0.0.3<br><br>
+
+                    <span class="cli-comment">! 3. Verify the mappings were installed</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do show ip nat translations<br>
+                    <span class="cli-comment">Pro  Inside global     Inside local       Outside local      Outside global</span><br>
+                    <span class="cli-comment">---  100.0.0.1         172.16.0.1         ---                ---</span><br>
+                    <span class="cli-comment">---  100.0.0.2         172.16.0.2         ---                ---</span><br>
+                    <span class="cli-comment">---  100.0.0.3         172.16.0.3         ---                ---</span>
+                </div>
+            </div>
+
+            <!-- Boson Tab -->
+            <div id="config-boson" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Complete the Boson netsim lab by translating PC1 and PC3 on an edge router (Router 4).</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">Router4&gt;</span> enable<br>
+                    <span class="cli-prompt">Router4#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! 1. Define the NAT interfaces based on the topology</span><br>
+                    <span class="cli-prompt">Router4(config)#</span> interface fastethernet 0/1<br>
+                    <span class="cli-prompt">Router4(config-if)#</span> ip nat inside<br>
+                    <span class="cli-prompt">Router4(config-if)#</span> exit<br>
+                    <span class="cli-prompt">Router4(config)#</span> interface serial 0/0<br>
+                    <span class="cli-prompt">Router4(config-if)#</span> ip nat outside<br>
+                    <span class="cli-prompt">Router4(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! 2. Map PC1 and PC3 to the provided public IPs</span><br>
+                    <span class="cli-prompt">Router4(config)#</span> ip nat inside source static 192.168.1.2 180.10.1.15<br>
+                    <span class="cli-prompt">Router4(config)#</span> ip nat inside source static 192.168.1.3 180.10.1.16<br><br>
+
+                    <span class="cli-comment">! 3. Verify statistics</span><br>
+                    <span class="cli-prompt">Router4(config)#</span> do show ip nat statistics<br>
+                    <span class="cli-comment">Total active translations: 2 (2 static, 0 dynamic; 0 extended)</span><br>
+                    <span class="cli-comment">Outside interfaces: Serial0/0</span><br>
+                    <span class="cli-comment">Inside interfaces:  FastEthernet0/1</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('nat_qa1', this)">
+                            <span class="pr-6">1. Ping 8.8.8.8 from PC1 before configuring NAT. What happens?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p><strong>Answer:</strong> The ping times out. PC1 sends the ping using its private IP (172.16.0.1). R1 forwards it to the ISP, but the ISP immediately drops it because RFC 1918 private IP addresses are unroutable on the public internet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('nat_qa2', this)">
+                            <span>2. Configure the inside and outside NAT interfaces on R1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>You must tell the router which port faces the private LAN, and which faces the public Internet so it knows which direction to translate.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> interface g0/1<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ip nat inside<br>
+                                <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ip nat outside
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('nat_qa3', this)">
+                            <span>3. Statically map PC1, PC2, and PC3 to public IPs.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Use the <code>ip nat inside source static</code> command in global config mode.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> ip nat inside source static 172.16.0.1 100.0.0.1<br>
+                                <span class="cli-prompt">R1(config)#</span> ip nat inside source static 172.16.0.2 100.0.0.2<br>
+                                <span class="cli-prompt">R1(config)#</span> ip nat inside source static 172.16.0.3 100.0.0.3
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('nat_qa4', this)">
+                            <span class="pr-6">4. Verify NAT translations and check statistics.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>After pinging the internet successfully, use the show commands.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> show ip nat translations<br>
+                                <span class="cli-comment">Pro  Inside global     Inside local       Outside local      Outside global</span><br>
+                                <span class="cli-comment text-amber-400">icmp 100.0.0.1:1       172.16.0.1:1       8.8.8.8:1          8.8.8.8:1</span><br>
+                                <span class="cli-comment">---  100.0.0.1         172.16.0.1         ---                ---</span><br><br>
+                                <span class="cli-prompt">R1#</span> show ip nat statistics
+                            </div>
+                            <p class="text-slate-500 text-xs mt-2 italic">Notice how the active ping generated a dynamic ICMP translation row on top of the base static mapping.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa5', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('nat_qa5', this)">
+                            <span class="pr-6">5. Clear the translation table. Do the static entries disappear?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> clear ip nat translation *
+                            </div>
+                            <p><strong>Answer: No.</strong> Only the active dynamic connections (like the ICMP pings or DNS UDP lookups) are cleared from the table. The foundational static mappings (<code>--- 100.0.0.1 172.16.0.1</code>) remain permanently active.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">ip nat inside</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Designates the interface as facing the trusted, private internal network.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">ip nat outside</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Designates the interface as facing the untrusted, public external network.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">ip nat inside source static [loc] [glb]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a permanent 1-to-1 mapping between a private IP (local) and a public IP (global).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">show ip nat translations</td>
+                            <td class="px-6 py-4"><span class="bg-amber-50 text-amber-800 text-xs px-2 py-1 rounded border border-amber-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the active NAT table, showing inside/outside local and global mappings.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">show ip nat statistics</td>
+                            <td class="px-6 py-4"><span class="bg-amber-50 text-amber-800 text-xs px-2 py-1 rounded border border-amber-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays hit counts, configured inside/outside interfaces, and total active translations.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">clear ip nat translation *</td>
+                            <td class="px-6 py-4"><span class="bg-amber-50 text-amber-800 text-xs px-2 py-1 rounded border border-amber-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Manually clears all dynamic translation entries from the table. Static entries remain.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of NAT terminology and mechanics.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('natChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Static NAT', 'Dynamic NAT', 'PAT (Overload)'],
+                datasets: [{
+                    label: 'Max Internal Hosts per Public IP',
+                    data: [1, 1, 65000],
+                    backgroundColor: ['#f59e0b', '#d97706', '#b45309'], // Amber variants
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        type: 'logarithmic', // Crucial to show 1 and 65000 on the same visual scale
+                        beginAtZero: true, 
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'Hosts per IP (Log Scale)', font: {weight: 'bold', color: '#64748b'} },
+                        ticks: {
+                            callback: function(value, index, values) {
+                                if(value === 1 || value === 10 || value === 100 || value === 1000 || value === 10000 || value === 65000) {
+                                    return value;
+                                }
+                                return null;
+                            }
+                        }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` Ratio: ${context.raw} Host(s) per Public IP`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-amber-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-amber-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playNatStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-amber-600', 'border-amber-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-amber-600', 'border-amber-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- NAT Simulator Logic ---
+    function playNatStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-nat-'+i);
+            if(btn) {
+                btn.classList.remove('bg-amber-600', 'text-white', 'border-amber-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-nat-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-amber-600', 'text-white', 'border-amber-600');
+        }
+
+        const pc1 = document.getElementById('node-pc1');
+        const r1 = document.getElementById('node-r1');
+        const isp = document.getElementById('node-isp');
+        const srv = document.getElementById('node-srv');
+        
+        const l_pc = document.getElementById('link-pc-r1');
+        const l_isp = document.getElementById('link-r1-isp');
+        const l_srv = document.getElementById('link-isp-srv');
+        
+        const pkt = document.getElementById('pkt-nat');
+        const pktLbl = document.getElementById('pkt-label');
+        const desc = document.getElementById('nat-desc');
+
+        // Reset Visuals
+        [pc1, r1, isp, srv].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'node-error'));
+        [l_pc, l_isp, l_srv].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|traffic-flow-denied|bg-slate-600/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(217,119,6,0.5)]', 'shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+        });
+        pkt.classList.add('hidden');
+        pkt.style.animation = 'none';
+
+        if (stepIndex === 1) {
+            // Fails
+            [pc1, r1].forEach(n => n.classList.add('node-highlight'));
+            isp.classList.add('node-error');
+            srv.classList.add('node-dim');
+            
+            l_pc.classList.replace('bg-slate-600', 'traffic-flow');
+            l_isp.classList.replace('bg-slate-600', 'traffic-flow-denied');
+            l_isp.classList.add('shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+            
+            pkt.classList.remove('hidden');
+            pktLbl.innerText = "Src: 172.16.0.1";
+            pktLbl.classList.replace('text-amber-300', 'text-red-300');
+            
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 1 (Pre-NAT Failure):</span> PC1 sends a ping. R1 routes it to the ISP. The ISP immediately drops it because <code>172.16.0.1</code> is an RFC 1918 Private IP, which is strictly unroutable on the public internet.";
+        } else if (stepIndex === 2) {
+            // Apply Config
+            r1.classList.add('node-highlight');
+            [pc1, isp, srv].forEach(n => n.classList.add('node-dim'));
+            
+            desc.innerHTML = "<span class='text-amber-400 font-bold'>Step 2 (Configuration):</span> The administrator logs into R1. They tag G0/1 as <code>ip nat inside</code>, G0/0 as <code>ip nat outside</code>, and define the 1-to-1 static mapping: <code>ip nat inside source static 172.16.0.1 100.0.0.1</code>.";
+        } else if (stepIndex === 3) {
+            // Outbound
+            [pc1, r1, isp, srv].forEach(n => n.classList.add('node-highlight'));
+            [l_pc, l_isp, l_srv].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(217,119,6,0.5)]');
+            });
+            
+            pkt.classList.remove('hidden');
+            pkt.style.animation = "slideFlow 2s linear infinite";
+            pktLbl.classList.replace('text-red-300', 'text-amber-300');
+            
+            // Dynamic Label Update via setInterval mock
+            setTimeout(() => { pktLbl.innerText = "Src: 172.16.0.1"; }, 0);
+            setTimeout(() => { pktLbl.innerText = "Src: 100.0.0.1"; }, 1000);
+
+            desc.innerHTML = "<span class='text-amber-400 font-bold'>Step 3 (Outbound Translation):</span> PC1 sends a packet. R1 intercepts it on the 'inside' interface, rewrites the Source IP to the Inside Global address (<code>100.0.0.1</code>), and routes it out to the Internet. The ISP accepts it.";
+        } else if (stepIndex === 4) {
+            // Inbound
+            [srv, isp, r1, pc1].forEach(n => n.classList.add('node-highlight'));
+            [l_srv, l_isp, l_pc].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(217,119,6,0.5)]');
+                l.style.animationDirection = "reverse";
+            });
+            
+            pkt.classList.remove('hidden');
+            pkt.style.animation = "slideFlow 2s linear infinite reverse";
+            pktLbl.classList.replace('text-red-300', 'text-amber-300');
+            
+            setTimeout(() => { pktLbl.innerText = "Dst: 100.0.0.1"; }, 0);
+            setTimeout(() => { pktLbl.innerText = "Dst: 172.16.0.1"; }, 1000);
+
+            desc.innerHTML = "<span class='text-amber-400 font-bold'>Step 4 (Inbound Translation):</span> The DNS server replies to the public IP (100.0.0.1). R1 receives it on the 'outside' interface, checks its NAT table, rewrites the Destination IP back to the private address (172.16.0.1), and forwards it to PC1.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('nat_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What does 'Inside Local' refer to?", a: "The actual <strong>private IP address</strong> assigned to a host on the internal network (e.g., PC1's 172.16.0.1)." },
+            { q: "What does 'Inside Global' refer to?", a: "The <strong>public IP address</strong> that represents the internal host to the outside world (e.g., 100.0.0.1). This is what the Internet sees." },
+            { q: "Can private IP addresses be routed on the public internet?", a: "<strong>No.</strong><br><br>ISPs explicitly drop private IP ranges defined in RFC 1918." },
+            { q: "What command designates the interface facing the internet?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>ip nat outside</code>" },
+            { q: "What command maps exactly one private IP to one public IP?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>ip nat inside source static [local] [global]</code>" },
+            { q: "Does `clear ip nat translation *` delete your static mappings?", a: "<strong>No.</strong><br><br>It only flushes the dynamic active session entries (like an ongoing ICMP ping or DNS lookup). The base static configuration remains." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-amber-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-amber-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-amber-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('nat_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playNatStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: IPv6 Static Routing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #faf5ff; color: #9333ea; border-left-color: #9333ea; font-weight: 600; } /* Purple Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #c084fc; font-weight: bold; } /* Purple 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #9333ea !important; box-shadow: 0 0 15px rgba(147, 51, 234, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+        .node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(147, 51, 234, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(147, 51, 234, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(147,51,234,1) 0%, rgba(243,232,255,1) 50%, rgba(147,51,234,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+        .traffic-flow-backup {
+            background: linear-gradient(90deg, rgba(245,158,11,1) 0%, rgba(254,243,199,1) 50%, rgba(245,158,11,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-purple-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-purple-500">🛤️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-purple-400 font-semibold tracking-wide uppercase mt-1">IPv6 Static Routing</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-purple-600 text-white shadow-md">
+            <span class="text-xl">📊</span> SLAAC & Link-Local
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Failover Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">IPv6 Static & Floating Routes</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-purple-500 pl-4 bg-purple-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Master IPv6 manual routing. You will learn how to rely on SLAAC for host autoconfiguration, configure fully specified static routes using Link-Local Next-Hops, and manipulate Administrative Distance (AD) to create backup floating routes.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🧠</span> IPv6 Advanced Mechanics
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">Core Concepts</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-purple-700">SLAAC & NDP</strong>
+                                <span>Stateless Address Autoconfiguration (SLAAC) allows a PC to configure its own IPv6 address and gateway without a DHCP server. It relies on the router sending <strong>NDP Router Advertisements (RA)</strong>. The router will only send RAs if <code>ipv6 unicast-routing</code> is enabled.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-purple-700">Fully Specified Static Routes</strong>
+                                <span>If you use a Link-Local address (e.g., <code>FE80::1</code>) as your next-hop, you <strong>must</strong> also specify the exit interface. Example: <code>ipv6 route 2001:db8::/64 g0/0 fe80::1</code>. This is because link-local addresses are not globally unique.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-purple-700">Floating Static Routes</strong>
+                                <span>By appending a number at the end of a static route command, you change its <strong>Administrative Distance (AD)</strong>. A route with an AD of 5 will remain hidden as a backup until the primary route (default AD 1) fails.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Administrative Distance (AD) Scale</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Lower AD values are more trustworthy.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="adChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-purple-50 p-3 rounded border border-purple-200 text-purple-900 shadow-sm">
+                        We configure our backup IPv6 static route with an AD of 5. It will float in the background as long as the primary static route (AD 1) is active.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🔍</span> IPv6 Failover Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how a primary IPv6 static route fails over to a floating backup route when a physical link goes down.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playFailoverStep(1)" id="btn-fo-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. SLAAC Resolution</button>
+                <button onclick="playFailoverStep(2)" id="btn-fo-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Primary Route Active</button>
+                <button onclick="playFailoverStep(3)" id="btn-fo-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Link Failure</button>
+                <button onclick="playFailoverStep(4)" id="btn-fo-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Floating Route Injected</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Topology -->
+                <div class="relative w-full max-w-lg h-72 mx-auto mt-4">
+                    
+                    <!-- R2 (Top Center) -->
+                    <div id="node-r2" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 transition-all shadow-lg">R2<span class="text-[10px] text-slate-300 font-mono font-normal">Backup</span></div>
+                    
+                    <!-- R1 (Bottom Left) -->
+                    <div id="node-r1" class="absolute bottom-12 left-0 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 transition-all shadow-lg">R1</div>
+                    
+                    <!-- R3 (Bottom Right) -->
+                    <div id="node-r3" class="absolute bottom-12 right-0 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 transition-all shadow-lg">R3</div>
+
+                    <!-- PCs -->
+                    <div id="node-pc1" class="absolute bottom-12 left-0 transform -translate-x-20 w-12 h-12 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-400 z-10 shadow-md transition-all opacity-0">PC1</div>
+                    <div id="node-pc2" class="absolute bottom-12 right-0 transform translate-x-20 w-12 h-12 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-400 z-10 shadow-md transition-all opacity-0">PC2</div>
+
+                    <!-- Links -->
+                    <!-- R1 to R3 (Primary Bottom Link) -->
+                    <div id="link-r1-r3" class="absolute bottom-20 left-20 w-[240px] h-2 bg-slate-600 transition-all z-0 flex items-center justify-center"><span class="bg-slate-800 text-slate-400 text-[10px] px-1 rounded font-mono -translate-y-4 shadow border border-slate-600" id="lbl-r1-r3">Direct Link</span></div>
+                    
+                    <!-- R1 to R2 (Top Left) -->
+                    <div id="link-r1-r2" class="absolute top-16 left-12 w-[180px] h-1 bg-slate-600 origin-bottom-left rotate-[32deg] transition-all z-0"></div>
+                    
+                    <!-- R3 to R2 (Top Right) -->
+                    <div id="link-r3-r2" class="absolute top-16 right-12 w-[180px] h-1 bg-slate-600 origin-bottom-right -rotate-[32deg] transition-all z-0"></div>
+
+                    <!-- PC Links -->
+                    <div id="link-pc1-r1" class="absolute bottom-16 left-[-60px] w-[60px] h-1 bg-slate-600 transition-all z-0 opacity-0"></div>
+                    <div id="link-r3-pc2" class="absolute bottom-16 right-[-60px] w-[60px] h-1 bg-slate-600 transition-all z-0 opacity-0"></div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="failover-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to initialize the IPv6 network.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-purple-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure primary static routes and secondary floating routes via link-local addresses.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-purple-600 border-b-2 border-purple-600 transition-colors">Router 1 (R1)</button>
+                <button onclick="switchDeviceTab('r3', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Router 3 (R3)</button>
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Router 2 (Transit)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Route traffic to R3's LAN. Use the direct link as the primary path, and the link to R2 as the backup floating route.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Crucial: Enable global IPv6 routing to send NDP RAs for SLAAC</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ipv6 unicast-routing<br><br>
+
+                    <span class="cli-comment">! Primary Route: Pointing directly to R3</span><br>
+                    <span class="cli-comment">! Using a fully specified route with exit interface AND global unicast IP</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ipv6 route 2001:db8:0:3::/64 g0/1 2001:db8:0:13::2<br><br>
+
+                    <span class="cli-comment">! Backup Route: Pointing to R2</span><br>
+                    <span class="cli-comment">! Must specify exit interface because we are using R2's Link-Local address!</span><br>
+                    <span class="cli-comment">! The "5" at the end changes the Administrative Distance to make it a floating route.</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ipv6 route 2001:db8:0:3::/64 s0/0/0 fe80::202:16ff:fe17:1645 <span class="text-purple-400 font-bold">5</span><br><br>
+                    
+                    <span class="cli-comment">! Verify only the primary route is active</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do show ipv6 route<br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment">S   2001:DB8:0:3::/64 [1/0]</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;via 2001:DB8:0:13::2, GigabitEthernet0/1</span>
+                </div>
+            </div>
+
+            <!-- R3 Tab -->
+            <div id="config-r3" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Route return traffic to R1's LAN. Use the direct link as primary, and the link to R2 as the backup.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R3&gt;</span> enable<br>
+                    <span class="cli-prompt">R3#</span> configure terminal<br><br>
+                    
+                    <span class="cli-prompt">R3(config)#</span> ipv6 unicast-routing<br><br>
+
+                    <span class="cli-comment">! Primary Route: Pointing directly back to R1</span><br>
+                    <span class="cli-prompt">R3(config)#</span> ipv6 route 2001:db8:0:1::/64 g0/1 2001:db8:0:13::1<br><br>
+
+                    <span class="cli-comment">! Backup Route: Pointing to R2</span><br>
+                    <span class="cli-comment">! Appending "5" makes it a floating static route.</span><br>
+                    <span class="cli-prompt">R3(config)#</span> ipv6 route 2001:db8:0:1::/64 s0/0/0 fe80::201:97ff:fe7d:6601 <span class="text-purple-400 font-bold">5</span>
+                </div>
+            </div>
+
+            <!-- R2 Tab -->
+            <div id="config-r2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> As the transit backup router, R2 needs standard static routes pointing to both R1's LAN and R3's LAN using link-local next-hops.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R2&gt;</span> enable<br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br><br>
+                    
+                    <span class="cli-prompt">R2(config)#</span> ipv6 unicast-routing<br><br>
+
+                    <span class="cli-comment">! Route to R1's LAN</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ipv6 route 2001:db8:0:1::/64 s0/0/0 fe80::202:16ff:fe17:1645<br><br>
+
+                    <span class="cli-comment">! Route to R3's LAN</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ipv6 route 2001:db8:0:3::/64 s0/0/1 fe80::203:e4ff:fe4c:8c01
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('ipv6_s_qa1', this)">
+                            <span class="pr-6">1. Enable IPv6 routing on all routers. What does this do for the PCs?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Command: <code>ipv6 unicast-routing</code></p>
+                            <p><strong>Answer:</strong> Without this command, the routers will not forward IPv6 traffic. Furthermore, this command enables the routers to send out <strong>NDP Router Advertisement (RA)</strong> messages. The PCs listen for these RAs to learn the network prefix and automatically configure their own IPv6 addresses and default gateways using SLAAC.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('ipv6_s_qa2', this)">
+                            <span>2. Why does the Floating Static route command fail if you omit the exit interface?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>If you try to type <code>ipv6 route 2001:db8:0:3::/64 fe80::202:16ff:fe17:1645</code>, Cisco IOS will reject it with an error.</p>
+                            <p><strong>Answer:</strong> Link-Local addresses (FE80::) are only unique to the specific physical wire they reside on. The router's routing table cannot resolve which physical port to push the packet out of. You must use a <strong>fully specified route</strong> (e.g., <code>... g0/0 fe80::...</code>).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('ipv6_s_qa3', this)">
+                            <span>3. Verify the Floating Static Route is hidden.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>If you run <code>show ipv6 route</code>, you will only see the primary route (AD 1). To verify the floating route was typed correctly, you must inspect the running configuration:</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> show running-config | include ipv6 route<br>
+                                <span class="cli-comment">ipv6 route 2001:DB8:0:3::/64 GigabitEthernet0/1 2001:DB8:0:13::2</span><br>
+                                <span class="cli-comment">ipv6 route 2001:DB8:0:3::/64 Serial0/0/0 FE80::202:16FF:FE17:1645 5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-purple-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500" onclick="event.stopPropagation(); saveProgress('ipv6_s_qa4', this)">
+                            <span class="pr-6">4. Delete the primary link and trace the route from PC1 to PC2.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>In Packet Tracer, use the "delete" tool to sever the connection between R1 and R3. Then open PC1's command prompt.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">C:\&gt;</span> tracert 2001:db8:0:3:201:97ff:fe7d:6601<br>
+                                <span class="cli-comment">Tracing route to 2001:db8:0:3:201:97ff:fe7d:6601 over a maximum of 30 hops:</span><br>
+                                <span class="cli-comment">&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;1 ms&nbsp;&nbsp;&nbsp;&nbsp;1 ms&nbsp;&nbsp;&nbsp;&nbsp;1 ms&nbsp;&nbsp;2001:DB8:0:1::1</span><br>
+                                <span class="cli-comment">&nbsp;&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Request timed out.</span><br>
+                                <span class="cli-comment">&nbsp;&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp;2 ms&nbsp;&nbsp;&nbsp;&nbsp;2 ms&nbsp;&nbsp;&nbsp;&nbsp;2 ms&nbsp;&nbsp;2001:db8:0:3:201:97ff:fe7d:6601</span>
+                            </div>
+                            <p class="text-purple-600 font-bold mt-2">Notice the timeout at Hop 2! This is normal. R2 only has link-local addresses on its serial interfaces, which are not routable. It drops the ICMP TTL-exceeded response, but the actual ping packet still successfully reaches the destination (Hop 3).</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">ipv6 unicast-routing</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Globally enables IPv6 packet forwarding and NDP Router Advertisements.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">ipv6 route [net]/[prefix] [int] [ip] <span class="font-bold bg-purple-100 px-1 rounded">[AD]</span></td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a static route. Appending an AD > 1 creates a floating backup route.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">show ipv6 route</td>
+                            <td class="px-6 py-4"><span class="bg-purple-50 text-purple-800 text-xs px-2 py-1 rounded border border-purple-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the IPv6 routing table. Floating routes are hidden until primary fails.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">show ipv6 interface brief</td>
+                            <td class="px-6 py-4"><span class="bg-purple-50 text-purple-800 text-xs px-2 py-1 rounded border border-purple-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays assigned IPv6 addresses, crucial for finding neighbor Link-Local IPs.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">ipconfig</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Windows PC CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Used to view the SLAAC auto-configured IPv6 address and Gateway on a PC.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-purple-700 whitespace-nowrap">tracert [ipv6_addr]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Windows PC CMD</span></td>
+                            <td class="px-6 py-4 text-slate-600">Traces the path to the destination to verify if the backup floating route is being used.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-purple-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of SLAAC and floating route mechanics.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('adChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Connected', 'Static (Default)', 'Floating Static (Backup)', 'OSPF'],
+                datasets: [
+                    {
+                        label: 'Administrative Distance',
+                        data: [0, 1, 5, 110],
+                        backgroundColor: ['#10b981', '#3b82f6', '#9333ea', '#ec4899'], // Emerald, Blue, Purple, Pink
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 120, 
+                        ticks: { stepSize: 20 },
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'AD Value (Lower is Better)', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` AD: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-purple-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-purple-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-purple-600', 'border-purple-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-purple-600', 'border-purple-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Failover Simulator Logic ---
+    function playFailoverStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-fo-'+i);
+            if(btn) {
+                btn.classList.remove('bg-purple-600', 'text-white', 'border-purple-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-fo-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-purple-600', 'text-white', 'border-purple-600');
+        }
+
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        const r3 = document.getElementById('node-r3');
+        const pc1 = document.getElementById('node-pc1');
+        const pc2 = document.getElementById('node-pc2');
+        
+        const l13 = document.getElementById('link-r1-r3');
+        const l12 = document.getElementById('link-r1-r2');
+        const l32 = document.getElementById('link-r3-r2');
+        const lp1 = document.getElementById('link-pc1-r1');
+        const lp2 = document.getElementById('link-r3-pc2');
+        
+        const lbl13 = document.getElementById('lbl-r1-r3');
+        const desc = document.getElementById('failover-desc');
+
+        // Reset
+        [r1, r2, r3, pc1, pc2].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'node-error', 'opacity-0'));
+        [l13, l12, l32, lp1, lp2].forEach(l => {
+            l.className = l.className.replace(/traffic-flow-backup|traffic-flow|bg-slate-600|bg-red-500/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(239,68,68,0.5)]', 'shadow-[0_0_10px_rgba(147,51,234,0.5)]', 'opacity-0');
+        });
+        lbl13.innerText = "Direct Link";
+        lbl13.classList.remove('text-red-400');
+        lbl13.classList.add('text-slate-400');
+
+        if (stepIndex === 1) {
+            [pc1, r1, r3, pc2].forEach(n => n.classList.add('node-highlight'));
+            [lp1, lp2].forEach(l => l.classList.replace('bg-slate-600', 'bg-purple-400'));
+            r2.classList.add('node-dim');
+            l12.classList.add('node-dim'); l32.classList.add('node-dim');
+
+            desc.innerHTML = "<span class='text-purple-400 font-bold'>Step 1 (SLAAC Resolution):</span> <code>ipv6 unicast-routing</code> is enabled on R1 and R3. They begin sending NDP Router Advertisement messages. PC1 and PC2 receive these messages, learn the /64 prefix, and configure their own IPv6 addresses using EUI-64. Their default gateway is automatically set to the router's link-local address.";
+        } else if (stepIndex === 2) {
+            [pc1, r1, r3, pc2].forEach(n => n.classList.add('node-highlight'));
+            r2.classList.add('node-dim');
+            l12.classList.add('node-dim'); l32.classList.add('node-dim');
+            
+            [lp1, l13, lp2].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(147,51,234,0.5)]');
+            });
+            lbl13.innerText = "Active (AD 1)";
+
+            desc.innerHTML = "<span class='text-purple-400 font-bold'>Step 2 (Primary Route Active):</span> A direct static route to R3's LAN is configured on R1 (and vice versa) with the default AD of 1. Traffic flows smoothly across the direct link. The floating route via R2 (AD 5) remains hidden in the background.";
+        } else if (stepIndex === 3) {
+            [pc1, r1, r3, pc2].forEach(n => n.classList.add('node-highlight'));
+            r2.classList.add('node-dim');
+            l12.classList.add('node-dim'); l32.classList.add('node-dim');
+            
+            l13.classList.replace('bg-slate-600', 'bg-red-500');
+            l13.classList.add('shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+            lbl13.innerText = "FAILED";
+            lbl13.classList.remove('text-slate-400');
+            lbl13.classList.add('text-red-400');
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 3 (Link Failure):</span> The direct cable between R1 and R3 is severed. The interfaces go down. Cisco IOS immediately purges the primary static route (AD 1) from the routing table because its exit interface is no longer active.";
+        } else if (stepIndex === 4) {
+            [pc1, r1, r2, r3, pc2].forEach(n => n.classList.add('node-highlight'));
+            
+            [lp1, l12, l32, lp2].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow-backup');
+                l.classList.add('shadow-[0_0_10px_rgba(245,158,11,0.5)]');
+            });
+            
+            l13.classList.replace('bg-slate-600', 'bg-red-500');
+            l13.classList.add('opacity-20');
+            lbl13.innerText = "FAILED";
+            lbl13.classList.remove('text-slate-400');
+            lbl13.classList.add('text-red-400');
+
+            desc.innerHTML = "<span class='text-amber-500 font-bold'>Step 4 (Floating Route Injected):</span> With the primary route gone, the router looks at its configuration database and finds the backup route (AD 5). It immediately injects it into the active routing table. Traffic is seamlessly rerouted through R2!";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ipv6_static_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is SLAAC?", a: "<strong>Stateless Address Autoconfiguration</strong><br><br>It allows a host to automatically configure its own IPv6 address and gateway by listening to Router Advertisements (RAs) without needing a DHCP server." },
+            { q: "What global command must be issued before a router will send NDP Router Advertisements?", a: "<code class='bg-white border px-1 rounded font-mono text-slate-800'>ipv6 unicast-routing</code>" },
+            { q: "What is a 'Fully Specified' static route?", a: "A static route that includes <strong>both the exit interface and the next-hop IP address</strong>. It is mandatory when using a Link-Local address as the next-hop." },
+            { q: "How do you create a floating static route in Cisco IOS?", a: "Append an <strong>Administrative Distance (AD)</strong> greater than the primary route to the end of the <code>ip route</code> command (e.g., adding a '5')." },
+            { q: "Will a floating static route appear in `show ipv6 route` during normal operation?", a: "<strong>No.</strong><br><br>The routing table only shows the best active paths. The floating route remains hidden until the primary route fails." },
+            { q: "Why might a tracert fail on intermediate hops when traversing a backup path via R2?", a: "Because R2 only has <strong>Link-Local</strong> addresses configured on its serial interfaces, which are not routable globally. It drops the ICMP TTL-exceeded response, but the actual ping packet continues to the destination." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-purple-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-purple-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-purple-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ipv6_static_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playFailoverStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

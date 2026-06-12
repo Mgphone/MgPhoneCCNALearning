@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: QoS Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #eef2ff; color: #4f46e5; border-left-color: #4f46e5; font-weight: 600; } /* Indigo Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #818cf8; font-weight: bold; } /* Indigo 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #4f46e5 !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(79,70,229,1) 0%, rgba(224,231,255,1) 50%, rgba(79,70,229,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-indigo-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-indigo-500">🏷️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-indigo-400 font-semibold tracking-wide uppercase mt-1">QoS Configuration</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-indigo-600 text-white shadow-md">
+            <span class="text-xl">📊</span> MQC & DSCP Math
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> QoS Marking Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Quality of Service (QoS)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-indigo-500 pl-4 bg-indigo-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Not all network traffic is equal. Learn how to configure the Modular QoS CLI (MQC) to classify traffic (Class Maps), assign priority markings and bandwidth allocations (Policy Maps), and apply these rules to an interface (Service Policies).
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🧠</span> MQC & Packet Tracer Math
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The 3 Steps of MQC</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-indigo-700">1. Class-Map (Identification)</strong>
+                                <span>Used to identify <em>what</em> traffic we want to affect. Example: <code>match protocol http</code>. By default, class-maps use <code>match-all</code> logic (all statements must match). You can change this to <code>match-any</code>.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-indigo-700">2. Policy-Map (Action)</strong>
+                                <span>Used to define <em>what to do</em> with the matched traffic. We call the class-map and assign an action, such as <code>set ip dscp af31</code> or <code>priority percent 10</code>.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-indigo-700">3. Service-Policy (Application)</strong>
+                                <span>Ties the policy-map to a specific interface in a specific direction (e.g., <code>service-policy output my_policy</code>). Without this, the QoS rules sit dormant.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-indigo-50 p-5 rounded-xl border border-indigo-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-indigo-900 mb-2">PT Quirks: DSCP to Hex Conversions</h4>
+                        <p class="text-sm text-indigo-800 mb-3">When inspecting outbound PDUs in Packet Tracer, the 6-bit DSCP value is displayed in Hexadecimal. To verify your markings, you must understand the binary conversion:</p>
+                        <ul class="text-xs text-indigo-800 font-mono space-y-1 bg-white p-2 rounded border border-indigo-300">
+                            <li>CS2  &rarr; Bin: 010000 &rarr; Dec: 16 &rarr; <span class="font-bold text-indigo-600">Hex: 10</span></li>
+                            <li>AF31 &rarr; Bin: 011010 &rarr; Dec: 26 &rarr; <span class="font-bold text-indigo-600">Hex: 1A</span></li>
+                            <li>AF32 &rarr; Bin: 011100 &rarr; Dec: 28 &rarr; <span class="font-bold text-indigo-600">Hex: 1C</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Lab Policy Allocation</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Visualizing the minimum bandwidth guarantees configured in our Policy-Map.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="qosChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        The <code>priority</code> command assigns an LLQ (Low Latency Queue) strict priority, typically reserved for Voice/Real-Time traffic. The <code>bandwidth</code> command assigns a CBWFQ minimum guarantee.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🔍</span> QoS Marking Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how R1 intercepts traffic leaving PC1, matches it against our configured Class-Maps, and rewrites the DSCP header field before sending it to R2.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playQosStep(1)" id="btn-qos-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Standard Traffic</button>
+                <button onclick="playQosStep(2)" id="btn-qos-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Send ICMP</button>
+                <button onclick="playQosStep(3)" id="btn-qos-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Send HTTP</button>
+                <button onclick="playQosStep(4)" id="btn-qos-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Send HTTPS</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <div class="relative w-full max-w-lg h-64 mx-auto mt-4">
+                    
+                    <!-- Nodes -->
+                    <div id="node-pc1" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-lg bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-400 z-10 shadow-md transition-all">PC1</div>
+                    
+                    <div id="node-r1" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-blue-600 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-400 z-10 shadow-lg transition-all">
+                        R1<span class="text-[9px] bg-slate-800 px-1 rounded font-mono mt-1 border border-slate-600">MQC Policy</span>
+                    </div>
+
+                    <div id="node-r2" class="absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-full bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-400 z-10 shadow-md transition-all">R2</div>
+
+                    <!-- Links -->
+                    <div id="link-pc1-r1" class="absolute top-1/2 left-16 w-[160px] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+                    <div id="link-r1-r2" class="absolute top-1/2 right-16 w-[160px] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+
+                    <!-- Packets -->
+                    <div id="pkt-in" class="absolute top-1/2 left-[25%] transform -translate-x-1/2 -translate-y-1/2 w-20 h-10 bg-slate-800 border-2 border-slate-500 rounded flex items-center justify-center text-[10px] text-white font-mono shadow-lg transition-all hidden z-20">DSCP: 0x00</div>
+                    
+                    <div id="pkt-out" class="absolute top-1/2 right-[25%] transform translate-x-1/2 -translate-y-1/2 w-20 h-10 bg-slate-800 border-2 border-slate-500 rounded flex items-center justify-center text-[10px] text-white font-mono shadow-lg transition-all hidden z-20">DSCP: --</div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="qos-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate QoS marking logic.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-indigo-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to construct the Class-Maps, Policy-Map, and Service-Policy.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">R1 (MQC QoS Setup)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Classify HTTPS, HTTP, and ICMP traffic. Create a policy to prioritize and mark them appropriately, then apply it outbound towards R2.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! STEP 1: CLASS MAPS (Identify Traffic)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> class-map https_map<br>
+                    <span class="cli-prompt">R1(config-cmap)#</span> match protocol https<br>
+                    <span class="cli-prompt">R1(config-cmap)#</span> exit<br>
+                    <span class="cli-prompt">R1(config)#</span> class-map http_map<br>
+                    <span class="cli-prompt">R1(config-cmap)#</span> match protocol http<br>
+                    <span class="cli-prompt">R1(config-cmap)#</span> exit<br>
+                    <span class="cli-prompt">R1(config)#</span> class-map icmp_map<br>
+                    <span class="cli-prompt">R1(config-cmap)#</span> match protocol icmp<br>
+                    <span class="cli-prompt">R1(config-cmap)#</span> exit<br><br>
+
+                    <span class="cli-comment">! STEP 2: POLICY MAP (Define Actions)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> policy-map g0/0/0_out<br>
+                    <span class="cli-comment">! Assign actions to the HTTPS class</span><br>
+                    <span class="cli-prompt">R1(config-pmap)#</span> class https_map<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> set ip dscp af31<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> priority percent 10<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> exit<br>
+                    <span class="cli-comment">! Assign actions to the HTTP class</span><br>
+                    <span class="cli-prompt">R1(config-pmap)#</span> class http_map<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> set ip dscp af32<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> bandwidth percent 10<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> exit<br>
+                    <span class="cli-comment">! Assign actions to the ICMP class</span><br>
+                    <span class="cli-prompt">R1(config-pmap)#</span> class icmp_map<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> set ip dscp cs2<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> bandwidth percent 5<br>
+                    <span class="cli-prompt">R1(config-pmap-c)#</span> exit<br>
+                    <span class="cli-prompt">R1(config-pmap)#</span> exit<br><br>
+
+                    <span class="cli-comment">! STEP 3: SERVICE POLICY (Apply to Interface)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> service-policy output g0/0/0_out
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('qos_qa1', this)">
+                            <span class="pr-6">1. Create Class-Maps to identify HTTPS, HTTP, and ICMP traffic.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>We use the <code>match protocol</code> command to leverage NBAR (Network Based Application Recognition) to dynamically identify the traffic types.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R1(config)#</span> class-map https_map<br>
+                                <span class="cli-prompt">R1(config-cmap)#</span> match protocol https<br>
+                                <span class="cli-comment">! (Repeat for http_map and icmp_map)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('qos_qa2', this)">
+                            <span>2. Create a Policy-Map to assign DSCP values and bandwidth allocations.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Within the policy-map, you call the previously created class-maps. The <code>priority</code> command establishes a Strict Priority Queue (usually for Voice, though we used it for HTTPS here for practice). The <code>bandwidth</code> command establishes a minimum bandwidth guarantee during congestion.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> policy-map g0/0/0_out<br>
+                                <span class="cli-prompt">R1(config-pmap)#</span> class https_map<br>
+                                <span class="cli-prompt">R1(config-pmap-c)#</span> set ip dscp af31<br>
+                                <span class="cli-prompt">R1(config-pmap-c)#</span> priority percent 10
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('qos_qa3', this)">
+                            <span>3. Apply the Policy-Map to the outbound interface.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>The rules are dormant until applied using a <code>service-policy</code>.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> interface g0/0/0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> service-policy output g0/0/0_out
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-indigo-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('qos_qa4', this)">
+                            <span class="pr-6">4. Understand Per-Hop Behavior (PHB). What does R2 do with these marked packets?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p><strong>Answer: Nothing (by default).</strong></p>
+                            <p>We configured R1 to prioritize and mark the traffic before sending it to R2. However, when R2 receives these packets, it will see the DSCP markings, but unless R2 has its <strong>own</strong> Policy-Map configured to trust or act upon those markings, R2 will treat them exactly like default, unprioritized traffic. QoS must be configured end-to-end across the network to be fully effective.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">class-map [name]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a class-map to identify traffic. Defaults to `match-all` logic.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">class-map match-any [name]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a class-map where traffic only needs to hit ONE match statement to be classified.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">match protocol [protocol]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Class-Map Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Uses NBAR to identify specific traffic types (e.g., http, https, icmp).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">policy-map [name]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a policy-map to define QoS actions for specified classes.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">set ip dscp [value]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Policy-Map Class</span></td>
+                            <td class="px-6 py-4 text-slate-600">Modifies the IP header's DSCP field to tag the packet with a specific priority (e.g., af31, ef).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">priority percent [X]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Policy-Map Class</span></td>
+                            <td class="px-6 py-4 text-slate-600">Assigns traffic to a Low Latency Queue (LLQ) with a strict bandwidth guarantee.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">bandwidth percent [X]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Policy-Map Class</span></td>
+                            <td class="px-6 py-4 text-slate-600">Assigns traffic to a Class-Based Weighted Fair Queue (CBWFQ) with a minimum guarantee.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-indigo-700 whitespace-nowrap">service-policy [in/out] [name]</td>
+                            <td class="px-6 py-4"><span class="bg-sky-100 text-sky-800 text-xs px-2 py-1 rounded border border-sky-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Attaches the completed policy-map to an interface to activate the QoS rules.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-indigo-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of MQC and QoS configurations.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('qosChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['HTTPS (Priority 10%)', 'HTTP (CBWFQ 10%)', 'ICMP (CBWFQ 5%)', 'Default/Remaining (75%)'],
+                datasets: [
+                    {
+                        label: 'Interface Bandwidth Allocation',
+                        data: [10, 10, 5, 75],
+                        backgroundColor: ['#4f46e5', '#8b5cf6', '#06b6d4', '#cbd5e1'], // Indigo, Violet, Cyan, Slate
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-indigo-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-indigo-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-indigo-600', 'border-indigo-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-indigo-600', 'border-indigo-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- QoS Simulator Logic ---
+    function playQosStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-qos-'+i);
+            if(btn) {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-qos-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+        }
+
+        const pc1 = document.getElementById('node-pc1');
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        
+        const l1 = document.getElementById('link-pc1-r1');
+        const l2 = document.getElementById('link-r1-r2');
+        
+        const pktIn = document.getElementById('pkt-in');
+        const pktOut = document.getElementById('pkt-out');
+        const desc = document.getElementById('qos-desc');
+
+        // Reset
+        [pc1, r1, r2].forEach(n => n.classList.remove('node-highlight', 'node-dim'));
+        [l1, l2].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|bg-slate-600/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(79,70,229,0.5)]');
+        });
+        
+        pktIn.classList.add('hidden');
+        pktIn.style.animation = "none";
+        pktOut.classList.add('hidden');
+        pktOut.style.animation = "none";
+        pktOut.classList.remove('border-emerald-500', 'border-violet-500', 'border-cyan-500', 'border-slate-500');
+
+        if (stepIndex === 1) {
+            [pc1, r1, r2].forEach(n => n.classList.add('node-highlight'));
+            [l1, l2].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(79,70,229,0.5)]');
+            });
+            
+            pktIn.classList.remove('hidden');
+            pktIn.innerText = "DSCP: 0x00";
+            pktOut.classList.remove('hidden');
+            pktOut.classList.add('border-slate-500');
+            pktOut.innerText = "DSCP: 0x00";
+            
+            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 1 (Default Traffic):</span> PC1 sends standard traffic (e.g., DNS) that doesn't match our class-maps. R1 receives it with a default DSCP of 0, processes it, and forwards it to R2 completely unmodified.";
+        } else if (stepIndex === 2) {
+            [pc1, r1, r2].forEach(n => n.classList.add('node-highlight'));
+            [l1, l2].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(79,70,229,0.5)]');
+            });
+            
+            pktIn.classList.remove('hidden');
+            pktIn.innerText = "DSCP: 0x00";
+            pktOut.classList.remove('hidden');
+            pktOut.classList.add('border-cyan-500');
+            pktOut.innerText = "DSCP: 0x10";
+            
+            desc.innerHTML = "<span class='text-cyan-400 font-bold'>Step 2 (ICMP Match):</span> PC1 pings the server. The packet enters R1 with DSCP 0. R1's MQC matches it to <code>icmp_map</code>. R1 rewrites the IP header's DSCP field to <strong>CS2</strong> (Hex 10) and guarantees it 5% bandwidth before sending it out to R2.";
+        } else if (stepIndex === 3) {
+            [pc1, r1, r2].forEach(n => n.classList.add('node-highlight'));
+            [l1, l2].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(79,70,229,0.5)]');
+            });
+            
+            pktIn.classList.remove('hidden');
+            pktIn.innerText = "DSCP: 0x00";
+            pktOut.classList.remove('hidden');
+            pktOut.classList.add('border-violet-500');
+            pktOut.innerText = "DSCP: 0x1C";
+            
+            desc.innerHTML = "<span class='text-violet-400 font-bold'>Step 3 (HTTP Match):</span> PC1 accesses an HTTP website. R1 matches <code>http_map</code>. It rewrites the DSCP to <strong>AF32</strong> (Hex 1C) and guarantees it 10% bandwidth (CBWFQ) before forwarding.";
+        } else if (stepIndex === 4) {
+            [pc1, r1, r2].forEach(n => n.classList.add('node-highlight'));
+            [l1, l2].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(79,70,229,0.5)]');
+            });
+            
+            pktIn.classList.remove('hidden');
+            pktIn.innerText = "DSCP: 0x00";
+            pktOut.classList.remove('hidden');
+            pktOut.classList.add('border-indigo-500');
+            pktOut.innerText = "DSCP: 0x1A";
+            
+            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 4 (HTTPS Priority Match):</span> PC1 accesses a secure HTTPS website. R1 matches <code>https_map</code>. It rewrites the DSCP to <strong>AF31</strong> (Hex 1A) and pushes it into the Strict Priority Queue (LLQ) with 10% bandwidth allocation.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('qos_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What are the three steps of the Modular QoS CLI (MQC)?", a: "1. <strong>Class-map</strong> (Identify traffic)<br>2. <strong>Policy-map</strong> (Define actions)<br>3. <strong>Service-policy</strong> (Apply to interface)" },
+            { q: "What is the difference between `match-all` and `match-any` in a class map?", a: "<code>match-all</code> requires a packet to meet EVERY condition to be classified. <code>match-any</code> requires a packet to meet only ONE condition to be classified." },
+            { q: "What is the difference between `priority` and `bandwidth` commands in a policy map?", a: "<code>priority</code> assigns traffic to an LLQ (Strict Priority Queue), often used for delay-sensitive voice traffic. <code>bandwidth</code> assigns traffic to a CBWFQ, giving it a minimum bandwidth guarantee." },
+            { q: "Is QoS Per-Hop or End-to-End by default?", a: "QoS relies on <strong>Per-Hop Behavior (PHB)</strong>. If R1 marks a packet, R2 will see the mark, but R2 will not prioritize it unless R2 is ALSO configured with a QoS policy that trusts/acts on that mark." },
+            { q: "What hexadecimal value does Packet Tracer show for DSCP CS2?", a: "<strong>0x10</strong><br><br>CS2 = Bin 010000 = Dec 16 = Hex 10." },
+            { q: "What hexadecimal value does Packet Tracer show for DSCP AF31?", a: "<strong>0x1A</strong><br><br>AF31 = Bin 011010 = Dec 26 = Hex 1A." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-indigo-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-indigo-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-indigo-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('qos_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playQosStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

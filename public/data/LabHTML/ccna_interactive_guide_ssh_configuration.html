@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: SSH & VTY Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600; } /* Blue Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #60a5fa; font-weight: bold; } /* Blue 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #2563eb !important; box-shadow: 0 0 15px rgba(37, 99, 235, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+        .node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        
+        .traffic-flow-blue {
+            background: linear-gradient(90deg, rgba(37,99,235,1) 0%, rgba(219,234,254,1) 50%, rgba(37,99,235,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+        
+        .traffic-flow-green {
+            background: linear-gradient(90deg, rgba(16,185,129,1) 0%, rgba(209,250,229,1) 50%, rgba(16,185,129,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+        
+        .traffic-flow-red {
+            background: linear-gradient(90deg, rgba(239,68,68,1) 0%, rgba(254,226,226,1) 50%, rgba(239,68,68,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-blue-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-blue-500">🔐</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-blue-400 font-semibold tracking-wide uppercase mt-1">Remote Access & SSH</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-blue-600 text-white shadow-md">
+            <span class="text-xl">📊</span> VTY & Local Auth
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Connection Simulator
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Secure Shell (SSH) & Device Management</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-blue-500 pl-4 bg-blue-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Learn how to securely manage network devices remotely. This module covers configuring Local Authentication databases, locking down Console and VTY lines, generating RSA crypto keys, forcing SSH (TCP 22) over Telnet (TCP 23), and applying Access Control Lists to management interfaces.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">🧠</span> Secure Remote Access
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">Core VTY Security Concepts</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-blue-700">Telnet vs. SSH</strong>
+                                <span>Telnet sends all data, including passwords, in plain text. Secure Shell (SSH) establishes an encrypted tunnel using RSA keys before any authentication occurs. Never use Telnet in production.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-blue-700">Local Authentication</strong>
+                                <span>Instead of a single shared password for a line, you can create a local database of users (<code>username [name] secret [pass]</code>) and enforce its use by typing <code>login local</code> on the VTY lines.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-blue-700">VTY Line Restrictions</strong>
+                                <span>VTY (Virtual Teletype) lines handle remote connections. You can force them to reject unencrypted traffic by issuing <code>transport input ssh</code>. You can also attach an ACL using <code>access-class</code> to limit exactly <em>which</em> IP addresses are allowed to connect.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Telnet vs. SSH Comparison</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Comparing features and security scoring.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="sshChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-blue-50 p-3 rounded border border-blue-200 text-blue-900 shadow-sm">
+                        While SSH takes more steps to configure (Hostname, Domain Name, RSA Keys), the massive security benefit makes it mandatory.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">🔍</span> Remote Connection Simulator
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how Switch 2 responds to different remote management attempts based on our configured security rules (VTY restrictions and ACLs).</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playSshStep(1)" id="btn-ssh-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Direct Console</button>
+                <button onclick="playSshStep(2)" id="btn-ssh-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Telnet Attempt (PC1)</button>
+                <button onclick="playSshStep(3)" id="btn-ssh-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. SSH Connection (PC1)</button>
+                <button onclick="playSshStep(4)" id="btn-ssh-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Unauthorized SSH (R2)</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Topology -->
+                <div class="relative w-full max-w-lg h-64 mx-auto mt-4">
+                    
+                    <!-- SW2 (Target) -->
+                    <div id="node-sw2" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 shadow-lg transition-all">SW2<span id="sw2-lbl" class="text-[10px] text-slate-400 font-mono mt-1 border border-slate-600 px-1 rounded bg-slate-800">.253</span></div>
+                    
+                    <!-- PC1 (Authorized) -->
+                    <div id="node-pc1" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-400 z-10 shadow-md transition-all">PC1<span class="text-[9px] text-slate-300 font-mono">1.1</span></div>
+
+                    <!-- R2 (Unauthorized) -->
+                    <div id="node-r2" class="absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-full bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-400 z-10 shadow-md transition-all">R2<span class="text-[9px] text-slate-300 font-mono">2.2</span></div>
+
+                    <!-- Links -->
+                    <div id="link-pc1-sw2" class="absolute top-1/2 left-16 w-[120px] h-2 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex items-center justify-center"><span id="lbl-link1" class="text-[10px] font-bold px-1 rounded opacity-0 transition-opacity -translate-y-4"></span></div>
+                    
+                    <div id="link-sw2-r2" class="absolute top-1/2 right-16 w-[120px] h-2 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex items-center justify-center"><span id="lbl-link2" class="text-[10px] font-bold px-1 rounded opacity-0 transition-opacity -translate-y-4"></span></div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="ssh-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate connection logic.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-blue-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure local authentication, generate RSA keys, and lock down VTY lines.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('sw2', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors">Switch 2 (Target)</button>
+                <button onclick="switchDeviceTab('pc1', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">PC1 (Client)</button>
+                <button onclick="switchDeviceTab('boson', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Boson Demo (Bonus)</button>
+            </div>
+
+            <!-- SW2 Tab -->
+            <div id="config-sw2" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Secure SW2 with local authentication, enable an SVI for remote management, generate RSA keys, and restrict VTY access via ACL.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">Switch&gt;</span> enable<br>
+                    <span class="cli-prompt">Switch#</span> configure terminal<br>
+                    <span class="cli-prompt">Switch(config)#</span> hostname SW2<br><br>
+
+                    <span class="cli-comment">! Create local user and enable secret</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> enable secret ccna<br>
+                    <span class="cli-prompt">SW2(config)#</span> username jeremy secret ccna<br><br>
+
+                    <span class="cli-comment">! Setup Management IP</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> interface vlan 1<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> ip address 192.168.2.253 255.255.255.0<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> no shutdown<br>
+                    <span class="cli-prompt">SW2(config-if)#</span> exit<br>
+                    <span class="cli-prompt">SW2(config)#</span> ip default-gateway 192.168.2.254<br><br>
+
+                    <span class="cli-comment">! Secure Console Line</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> line console 0<br>
+                    <span class="cli-prompt">SW2(config-line)#</span> login local<br>
+                    <span class="cli-prompt">SW2(config-line)#</span> exec-timeout 5 0<br>
+                    <span class="cli-prompt">SW2(config-line)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Prepare for SSH</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> ip domain-name jeremysitlab.com<br>
+                    <span class="cli-prompt">SW2(config)#</span> crypto key generate rsa<br>
+                    <span class="cli-comment">How many bits in the modulus [512]: 2048</span><br><br>
+
+                    <span class="cli-comment">! Create an ACL permitting ONLY PC1</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> access-list 1 permit host 192.168.1.1<br><br>
+
+                    <span class="cli-comment">! Secure VTY Lines (Remote Access)</span><br>
+                    <span class="cli-prompt">SW2(config)#</span> line vty 0 15<br>
+                    <span class="cli-prompt">SW2(config-line)#</span> login local<br>
+                    <span class="cli-prompt">SW2(config-line)#</span> exec-timeout 5 0<br>
+                    <span class="cli-prompt">SW2(config-line)#</span> transport input ssh<br>
+                    <span class="cli-prompt">SW2(config-line)#</span> access-class 1 in
+                </div>
+            </div>
+
+            <!-- PC1 Tab -->
+            <div id="config-pc1" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Connect to the switch from a remote PC using the SSH command line client.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! On Windows PC1 (Command Prompt)</span><br>
+                    <span class="cli-comment">! Syntax: ssh -l [username] [ip_address]</span><br>
+                    <span class="cli-prompt">C:\&gt;</span> ssh -l jeremy 192.168.2.253<br><br>
+
+                    <span class="cli-comment">Password: </span><br>
+                    <span class="cli-prompt">SW2&gt;</span> enable<br>
+                    <span class="cli-comment">Password: </span><br>
+                    <span class="cli-prompt">SW2#</span><br><br>
+                    
+                    <span class="cli-comment">! The connection is fully encrypted.</span>
+                </div>
+            </div>
+
+            <!-- Boson Demo Tab -->
+            <div id="config-boson" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Extra SSH security commands demonstrated in the Boson Netsim preview.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Force the router to use SSH Version 2 (more secure than v1)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ip ssh version 2<br><br>
+
+                    <span class="cli-comment">! Set the SSH connection timeout (in seconds) for incomplete logins</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ip ssh time-out 90<br><br>
+
+                    <span class="cli-comment">! Create a user that automatically bypasses User EXEC and drops into Privileged EXEC mode</span><br>
+                    <span class="cli-prompt">R1(config)#</span> username admin privilege 15 password boson<br><br>
+
+                    <span class="cli-comment">! Verify SSH settings</span><br>
+                    <span class="cli-prompt">R1#</span> show ip ssh<br>
+                    <span class="cli-comment">SSH Enabled - version 2.0</span><br>
+                    <span class="cli-comment">Authentication timeout: 90 secs; Authentication retries: 3</span><br><br>
+
+                    <span class="cli-comment">! View active SSH connections to the router</span><br>
+                    <span class="cli-prompt">R1#</span> show ssh
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('ssh_qa1', this)">
+                            <span class="pr-6">1. Why configure an <code>enable secret</code> before allowing remote access?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p><strong>Answer:</strong> By default, if a Cisco device does not have an enable password/secret configured, it will <strong>refuse</strong> to let remote users (via Telnet or SSH) enter Privileged EXEC mode. This is a built-in security measure to prevent unauthorized remote users from gaining full control over an unsecured device.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('ssh_qa2', this)">
+                            <span>2. What two things must be configured before generating RSA crypto keys?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>If you try to run <code>crypto key generate rsa</code> on a fresh router, it will fail.</p>
+                            <p><strong>Answer:</strong> You must configure a <strong>Hostname</strong> (other than the default 'Router' or 'Switch') and an <strong>IP Domain Name</strong> (e.g., <code>ip domain-name cisco.com</code>). The router uses these two strings combined (e.g., <code>SW2.jeremysitlab.com</code>) as the identity to generate the unique mathematical encryption key.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('ssh_qa3', this)">
+                            <span>3. How do you force VTY lines to only accept SSH connections?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Under the VTY line configuration, use the transport command:</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW2(config)#</span> line vty 0 15<br>
+                                <span class="cli-prompt">SW2(config-line)#</span> transport input ssh
+                            </div>
+                            <p>Once this is entered, any attempt to connect via Telnet (Port 23) will be instantly refused by the device.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-blue-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" onclick="event.stopPropagation(); saveProgress('ssh_qa4', this)">
+                            <span class="pr-6">4. How do you apply an ACL to the VTY lines?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Normally, ACLs are applied to physical interfaces using <code>ip access-group</code>. However, for VTY lines, a different command is used.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">SW2(config)#</span> line vty 0 15<br>
+                                <span class="cli-prompt">SW2(config-line)#</span> access-class 1 in
+                            </div>
+                            <p class="text-blue-700 font-bold mt-2">This ensures that even if an attacker has the correct username and password, their connection will be dropped if their IP address is not explicitly permitted in ACL 1.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">username [user] secret [pass]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a local user account with a securely hashed password.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">ip domain-name [name]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Assigns a domain name to the router. Required before generating RSA keys.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">crypto key generate rsa</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Generates the public/private keypair used to encrypt SSH sessions.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">line vty 0 15</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enters configuration mode for the virtual terminal lines (remote access).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">login local</td>
+                            <td class="px-6 py-4"><span class="bg-blue-50 text-blue-800 text-xs px-2 py-1 rounded border border-blue-200">Line Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Forces the line to authenticate users against the local username database.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">transport input ssh</td>
+                            <td class="px-6 py-4"><span class="bg-blue-50 text-blue-800 text-xs px-2 py-1 rounded border border-blue-200">Line Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Restricts remote access exclusively to the secure SSH protocol (blocks Telnet).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">access-class [id] in</td>
+                            <td class="px-6 py-4"><span class="bg-blue-50 text-blue-800 text-xs px-2 py-1 rounded border border-blue-200">Line Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Applies an Access Control List (ACL) to the VTY lines to filter inbound connections.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-blue-700 whitespace-nowrap">ssh -l [user] [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-200 text-slate-800 text-xs px-2 py-1 rounded border border-slate-400">PC Command Prompt</span></td>
+                            <td class="px-6 py-4 text-slate-600">Initiates an SSH connection from a PC to the target IP address using the specified username.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-blue-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of VTY security and SSH mechanisms.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('sshChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Data Encryption', 'Auth Security', 'Setup Complexity'],
+                datasets: [
+                    {
+                        label: 'Telnet (Port 23)',
+                        data: [0, 1, 2],
+                        backgroundColor: '#ef4444', // Red 500
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'SSH (Port 22)',
+                        data: [10, 10, 8],
+                        backgroundColor: '#2563eb', // Blue 600
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 10, 
+                        display: false
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.dataset.label} Rating: ${context.raw}/10`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-blue-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-blue-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playSshStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-blue-600', 'border-blue-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-blue-600', 'border-blue-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Connection Simulator Logic ---
+    function playSshStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-ssh-'+i);
+            if(btn) {
+                btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-ssh-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+        }
+
+        const pc1 = document.getElementById('node-pc1');
+        const r2 = document.getElementById('node-r2');
+        const sw2 = document.getElementById('node-sw2');
+        const sw2lbl = document.getElementById('sw2-lbl');
+        
+        const link1 = document.getElementById('link-pc1-sw2');
+        const link2 = document.getElementById('link-sw2-r2');
+        
+        const lbl1 = document.getElementById('lbl-link1');
+        const lbl2 = document.getElementById('lbl-link2');
+        const desc = document.getElementById('ssh-desc');
+
+        // Reset visual classes
+        [pc1, r2, sw2].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'node-error'));
+        [link1, link2].forEach(l => {
+            l.className = l.className.replace(/traffic-flow-blue|traffic-flow-green|traffic-flow-red|bg-slate-600|bg-cyan-400|border-dashed/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(239,68,68,0.5)]', 'shadow-[0_0_10px_rgba(16,185,129,0.5)]', 'shadow-[0_0_10px_rgba(34,211,238,0.5)]');
+        });
+        [lbl1, lbl2].forEach(lbl => {
+            lbl.classList.replace('opacity-100', 'opacity-0');
+            lbl.classList.remove('text-cyan-400', 'text-emerald-400', 'text-red-400', 'bg-slate-800');
+            lbl.innerText = "";
+        });
+
+        if (stepIndex === 1) {
+            [pc1, sw2].forEach(n => n.classList.add('node-highlight'));
+            r2.classList.add('node-dim');
+            
+            link1.classList.replace('bg-slate-600', 'bg-cyan-400');
+            link1.classList.add('shadow-[0_0_10px_rgba(34,211,238,0.5)]');
+            
+            lbl1.classList.replace('opacity-0', 'opacity-100');
+            lbl1.classList.add('text-cyan-400', 'bg-slate-800');
+            lbl1.innerText = "Console";
+
+            desc.innerHTML = "<span class='text-cyan-400 font-bold'>Step 1 (Direct Console):</span> The administrator physically connects a light blue console cable from PC1's RS232 port to SW2's Console port. The <code>line con 0</code> configuration asks for the local database username and password.";
+        } else if (stepIndex === 2) {
+            [pc1, sw2].forEach(n => n.classList.add('node-highlight'));
+            sw2.classList.add('node-error'); // Red highlight to show rejection
+            r2.classList.add('node-dim');
+            
+            link1.classList.replace('bg-slate-600', 'traffic-flow-red');
+            link1.classList.add('shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+            
+            lbl1.classList.replace('opacity-0', 'opacity-100');
+            lbl1.classList.add('text-red-400', 'bg-slate-800');
+            lbl1.innerText = "Telnet Refused";
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 2 (Telnet Attempt):</span> PC1 tries to remotely connect via Telnet (TCP Port 23). Because the administrator configured <code>transport input ssh</code> on the VTY lines, SW2 immediately refuses the unencrypted connection.";
+        } else if (stepIndex === 3) {
+            [pc1, sw2].forEach(n => n.classList.add('node-highlight'));
+            r2.classList.add('node-dim');
+            
+            link1.classList.replace('bg-slate-600', 'traffic-flow-green');
+            link1.classList.add('shadow-[0_0_10px_rgba(16,185,129,0.5)]');
+            
+            lbl1.classList.replace('opacity-0', 'opacity-100');
+            lbl1.classList.add('text-emerald-400', 'bg-slate-800');
+            lbl1.innerText = "SSH Tunnel";
+
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Step 3 (SSH Connection):</span> PC1 issues <code>ssh -l jeremy 192.168.2.253</code>. It passes the ACL (since PC1's IP is permitted). SW2 responds using the generated RSA crypto keys to establish a secure, encrypted tunnel. The user logs in securely.";
+        } else if (stepIndex === 4) {
+            [r2, sw2].forEach(n => n.classList.add('node-highlight'));
+            sw2.classList.add('node-error');
+            pc1.classList.add('node-dim');
+            
+            link2.classList.replace('bg-slate-600', 'traffic-flow-red');
+            link2.classList.add('shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+            
+            lbl2.classList.replace('opacity-0', 'opacity-100');
+            lbl2.classList.add('text-red-400', 'bg-slate-800');
+            lbl2.innerText = "ACL Block";
+
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 4 (Unauthorized SSH):</span> R2 attempts an SSH connection to SW2. The connection hits the VTY line, but the <code>access-class 1 in</code> rule checks the source IP. R2's IP is not in the permit list, so the connection is silently dropped before authentication even begins.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ssh_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is the primary difference between Telnet and SSH?", a: "<strong>Encryption.</strong><br><br>SSH encrypts all traffic, including passwords, using RSA keys. Telnet sends everything in plain, readable text." },
+            { q: "What two configurations are mandatory before you can generate RSA keys?", a: "A <strong>hostname</strong> (other than the default) and an <strong>ip domain-name</strong>. The router combines these to generate a unique encryption identity." },
+            { q: "What command forces VTY lines to only accept encrypted SSH connections?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>transport input ssh</code><br><br>This actively rejects any Telnet attempts." },
+            { q: "What command applies an Access Control List (ACL) to secure the VTY lines?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>access-class [num/name] in</code><br><br>Notice it is <code>access-class</code> for VTY lines, NOT <code>ip access-group</code> as used on physical interfaces." },
+            { q: "What does the <code>login local</code> command do?", a: "It forces the line (Console or VTY) to authenticate users against the <strong>local username database</strong> created with the <code>username</code> command, rather than a single shared password." },
+            { q: "What command generates the encryption keys for SSH?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>crypto key generate rsa</code>" }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-blue-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-blue-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-blue-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ssh_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playSshStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

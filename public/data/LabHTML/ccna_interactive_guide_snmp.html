@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: SNMP Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #ecfdf5; color: #059669; border-left-color: #059669; font-weight: 600; } /* Emerald Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #34d399; font-weight: bold; } /* Emerald 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-emerald-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-emerald-500">📈</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-emerald-400 font-semibold tracking-wide uppercase mt-1">SNMP Operations</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-emerald-600 text-white shadow-md">
+            <span class="text-xl">📊</span> SNMP Architecture
+        </button>
+        <button onclick="switchTab('tab-mib', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔎</span> MIB Browser Simulator
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Simple Network Management Protocol (SNMP)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-emerald-500 pl-4 bg-emerald-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Learn how to monitor and remotely configure network devices. This module covers SNMP Agents, the Network Management Station (NMS), configuring Read-Only and Read-Write community strings, and querying variables in the Management Information Base (MIB).
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-emerald-500">🧠</span> SNMP Components & Operations
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The SNMP Framework</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-emerald-700">NMS (Network Management Station)</strong>
+                                <span>The central server (or PC) running management software. It polls devices for data and receives alerts.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-emerald-700">SNMP Agent</strong>
+                                <span>The software component running on the managed device (like a router or switch) that collects and stores data.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-emerald-700">MIB & OID</strong>
+                                <span>The <strong>Management Information Base (MIB)</strong> is a hierarchical database of variables on the device. An <strong>Object Identifier (OID)</strong> is a specific numerical path (e.g., 1.3.6.1.2.1.1.5) that points to a specific variable, like the router's hostname.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-emerald-700">Polling vs. Traps</strong>
+                                <span><strong>Get/Set:</strong> The NMS queries the agent (Polling) to read or write data. <br><strong>Traps/Informs:</strong> The agent autonomously sends an alert to the NMS when a specific event occurs (e.g., a link goes down).</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">SNMP Version Comparison</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Security features across the three main versions of SNMP.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="snmpChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        SNMPv1 and v2c use plain-text "Community Strings" as passwords. <strong>SNMPv3</strong> is highly recommended in production because it supports hashing (Auth) and encryption (Priv).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: INTERACTIVE MIB BROWSER -->
+    <div id="tab-mib" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-emerald-500">🔎</span> Interactive MIB Browser Simulator
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">
+                This tool simulates the Packet Tracer MIB Browser used by an NMS (PC1) to interact with the SNMP Agent on R1 (192.168.1.254). Use GET to read variables and SET to change them.
+            </p>
+
+            <div class="bg-slate-200 p-2 rounded-lg border border-slate-300 shadow-inner">
+                <!-- Mockup GUI -->
+                <div class="bg-slate-100 border border-slate-400 rounded flex flex-col font-sans">
+                    <div class="bg-slate-700 text-white px-3 py-1 text-sm font-bold flex justify-between rounded-t">
+                        <span>MIB Browser - 192.168.1.254</span>
+                        <span>X</span>
+                    </div>
+                    
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-300">
+                        <div class="col-span-1 border border-slate-300 bg-white rounded overflow-y-auto h-64 p-2 text-xs font-mono">
+                            <ul class="list-none ml-2">
+                                <li>[-] iso
+                                    <ul class="ml-4">
+                                        <li>[-] org
+                                            <ul class="ml-4">
+                                                <li>[-] dod
+                                                    <ul class="ml-4">
+                                                        <li>[-] internet
+                                                            <ul class="ml-4">
+                                                                <li>[-] mgmt
+                                                                    <ul class="ml-4">
+                                                                        <li>[-] mib-2
+                                                                            <ul class="ml-4">
+                                                                                <li>[-] system
+                                                                                    <ul class="ml-4 text-emerald-700 cursor-pointer">
+                                                                                        <li class="hover:bg-emerald-50 p-1 rounded" onclick="selectOid('sysUpTime', 'TimeTicks')">.sysUpTime</li>
+                                                                                        <li class="hover:bg-emerald-50 p-1 rounded font-bold bg-emerald-100" id="tree-sysname" onclick="selectOid('sysName', 'OctetString')">.sysName</li>
+                                                                                    </ul>
+                                                                                </li>
+                                                                                <li>[-] interfaces
+                                                                                    <ul class="ml-4 text-emerald-700 cursor-pointer">
+                                                                                        <li class="hover:bg-emerald-50 p-1 rounded" onclick="selectOid('ifNumber', 'Integer')">.ifNumber</li>
+                                                                                    </ul>
+                                                                                </li>
+                                                                            </ul>
+                                                                        </li>
+                                                                    </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="col-span-2 flex flex-col gap-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-xs font-bold text-slate-700 w-16">OID:</label>
+                                <input type="text" id="mib-oid" readonly value=".iso.org.dod.internet.mgmt.mib-2.system.sysName" class="w-full border border-slate-300 rounded px-2 py-1 text-xs font-mono bg-slate-200">
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <label class="text-xs font-bold text-slate-700 w-16">Operation:</label>
+                                <select id="mib-op" class="border border-slate-300 rounded px-2 py-1 text-xs" onchange="toggleSetField()">
+                                    <option value="get">Get</option>
+                                    <option value="set">Set</option>
+                                </select>
+                                <button onclick="executeSnmp()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1 rounded text-xs font-bold shadow transition-colors">Go</button>
+                            </div>
+
+                            <div id="set-panel" class="hidden flex items-center gap-2 border-t border-slate-200 pt-3">
+                                <label class="text-xs font-bold text-slate-700 w-16">Set Value:</label>
+                                <select id="mib-type" disabled class="border border-slate-300 rounded px-2 py-1 text-xs bg-slate-100 text-slate-500 w-32">
+                                    <option value="OctetString">OctetString</option>
+                                    <option value="TimeTicks">TimeTicks</option>
+                                    <option value="Integer">Integer</option>
+                                </select>
+                                <input type="text" id="mib-val" placeholder="e.g., R11" class="flex-grow border border-slate-300 rounded px-2 py-1 text-xs">
+                            </div>
+
+                            <div class="flex-grow border border-slate-300 bg-white rounded flex flex-col">
+                                <div class="bg-slate-200 px-2 py-1 text-xs font-bold border-b border-slate-300">Result Output</div>
+                                <div id="mib-output" class="p-2 text-xs font-mono text-slate-800 flex-grow h-24 overflow-y-auto">
+                                    <i>Select an operation and click Go.</i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-emerald-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure SNMP community strings, contact info, and traps.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition-colors">R1 (Basic Communities)</button>
+                <button onclick="switchDeviceTab('ccnp', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R1 (CCNP Boson Demo)</button>
+            </div>
+
+            <!-- R1 Basic Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure the router to respond to NMS polling by setting up Read-Only (RO) and Read-Write (RW) passwords (community strings).</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Create a Read-Only string (NMS can view data but not change it)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> snmp-server community cisco1 ro<br><br>
+
+                    <span class="cli-comment">! Create a Read-Write string (NMS can view and alter data, e.g., Hostname)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> snmp-server community cisco2 rw<br><br>
+
+                    <span class="cli-comment">! (After using the MIB Browser to SET the hostname)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> exit<br>
+                    <span class="cli-prompt">R11#</span> <span class="cli-comment">! Notice the prompt changed automatically because the NMS modified sysName</span>
+                </div>
+            </div>
+
+            <!-- CCNP Tab -->
+            <div id="config-ccnp" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Add administrative details (Contact, Location) to the MIB, and configure the router to send autonomous Traps to the NMS.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Administrative MIB objects (Useful for inventory management)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> snmp-server contact snmp@boson.com<br>
+                    <span class="cli-prompt">R1(config)#</span> snmp-server location R1_SNMP<br><br>
+
+                    <span class="cli-comment">! Tell the router where to send autonomous alerts (Traps)</span><br>
+                    <span class="cli-comment">! Syntax: snmp-server host [IP] version [ver] [community_string]</span><br>
+                    <span class="cli-prompt">R1(config)#</span> snmp-server host 10.10.0.2 version 2c snmp_logs<br><br>
+
+                    <span class="cli-comment">! Verification</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do show snmp<br>
+                    <span class="cli-prompt">R1(config)#</span> do show snmp host
+                </div>
+                <div class="bg-slate-50 border border-slate-200 p-3 mt-4 text-xs text-slate-700 rounded shadow-sm">
+                    <strong>Note:</strong> SNMP configuration is generally beyond the scope of the current CCNA 200-301 exam objectives, which is why Jeremy utilized a CCNP-level lab environment in the video to demonstrate these features.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-emerald-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-emerald-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('snmp_qa1', this)">
+                            <span class="pr-6">1. Configure Read-Only and Read-Write communities on R1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Enter global configuration mode to set the community strings. These act as plain-text passwords for SNMPv1/v2c.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R1(config)#</span> snmp-server community cisco1 ro<br>
+                                <span class="cli-prompt">R1(config)#</span> snmp-server community cisco2 rw
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-emerald-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('snmp_qa2', this)">
+                            <span>2. Use the MIB Browser on PC1 to read the system uptime and hostname of R1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>In Packet Tracer, open PC1's Desktop and launch the <strong>MIB Browser</strong>.</p>
+                            <ul class="list-disc pl-5 space-y-2">
+                                <li>Enter R1's IP (192.168.1.254).</li>
+                                <li>Click <strong>Advanced</strong> and set Read Community to <code>cisco1</code> and Write Community to <code>cisco2</code>.</li>
+                                <li>Navigate the tree to <code>.iso.org.dod.internet.mgmt.mib-2.system</code>.</li>
+                                <li>Select <strong>sysUpTime</strong> and click <strong>Go</strong> (Get operation). It will return a TimeTicks value representing how long R1 has been booted.</li>
+                                <li>Select <strong>sysName</strong> and click <strong>Go</strong>. It will return <code>R1</code>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-emerald-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('snmp_qa3', this)">
+                            <span>3. Use a SET message to remotely change the hostname of R1 to "R11".</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>In the MIB Browser:</p>
+                            <ul class="list-decimal pl-5 space-y-1">
+                                <li>Select <strong>sysName</strong> in the tree.</li>
+                                <li>Change the Operation dropdown from <code>Get</code> to <strong><code>Set</code></strong>.</li>
+                                <li>Ensure the Data Type is set to <strong>OctetString</strong>.</li>
+                                <li>Type <code>R11</code> in the Value field and click <strong>Go</strong>.</li>
+                            </ul>
+                            <p class="text-emerald-700 font-bold mt-3">Verification:</p>
+                            <p>If you switch back to R1's CLI and press enter, you will see the prompt has magically changed from <code>R1#</code> to <code>R11#</code>. The NMS successfully altered the router's configuration over the network.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-emerald-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onclick="event.stopPropagation(); saveProgress('snmp_qa4', this)">
+                            <span class="pr-6">4. (Boson Demo) Verify SNMP Contact, Location, and Trap Host parameters on R1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Use the specific show commands to verify the administrative variables you configured via <code>snmp-server contact</code> and <code>snmp-server location</code>.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> show snmp contact<br>
+                                <span class="cli-comment">snmp@boson.com</span><br><br>
+                                <span class="cli-prompt">R1#</span> show snmp location<br>
+                                <span class="cli-comment">R1_SNMP</span><br><br>
+                                <span class="cli-prompt">R1#</span> show snmp host<br>
+                                <span class="cli-comment">Notification host: 10.10.0.2   udp-port: 162   type: trap</span><br>
+                                <span class="cli-comment">user: snmp_logs  security model: v2c</span>
+                            </div>
+                            <p class="text-slate-500 text-xs mt-2 italic">Notice that Traps are sent via UDP port 162, while standard Polling (Get/Set) uses UDP port 161.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-emerald-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">snmp-server community [string] [ro|rw]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets up a plain-text password for an NMS to poll or modify the device (SNMP v1/v2c).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">snmp-server contact [text]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Defines the sysContact MIB variable (e.g., admin email).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">snmp-server location [text]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Defines the sysLocation MIB variable (e.g., Server Room Rack 2).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">snmp-server host [ip] version [ver] [string]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Tells the router where to proactively send autonomous SNMP Traps.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">show snmp</td>
+                            <td class="px-6 py-4"><span class="bg-emerald-50 text-emerald-800 text-xs px-2 py-1 rounded border border-emerald-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays general SNMP statistics, logging data, and chassis configuration info.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-emerald-700 whitespace-nowrap">show snmp host</td>
+                            <td class="px-6 py-4"><span class="bg-emerald-50 text-emerald-800 text-xs px-2 py-1 rounded border border-emerald-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Verifies which Network Management Station (NMS) IP addresses are configured to receive traps.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-emerald-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of SNMP architecture and MIB structures.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('snmpChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Clear Text Strings', 'Hashing (Auth)', 'Encryption (Priv)'],
+                datasets: [
+                    {
+                        label: 'SNMPv1 & v2c',
+                        data: [1, 0, 0],
+                        backgroundColor: '#94a3b8', // Slate 400
+                        borderWidth: 0,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'SNMPv3',
+                        data: [0, 1, 1],
+                        backgroundColor: '#10b981', // Emerald 500
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 1.2, 
+                        ticks: { stepSize: 1, callback: val => val === 1 ? 'Supported' : (val === 0 ? 'Not Supported' : '') },
+                        grid: { color: '#f1f5f9' },
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw === 1 ? ` ${context.dataset.label}: Supported` : ` ${context.dataset.label}: Not Supported`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-emerald-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-emerald-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-emerald-600', 'border-emerald-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-emerald-600', 'border-emerald-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- MIB Browser Simulator Logic ---
+    let currentOid = 'sysName';
+    let currentDataType = 'OctetString';
+    let mockData = {
+        sysName: 'R1',
+        sysUpTime: '14231 (00:15:32)',
+        ifNumber: '4'
+    };
+
+    function selectOid(oid, type) {
+        currentOid = oid;
+        currentDataType = type;
+        
+        // Update styling in tree
+        document.querySelectorAll('#tab-mib li').forEach(el => {
+            el.classList.remove('font-bold', 'bg-emerald-100');
+        });
+        
+        // Match the specific tree element (basic match for demo)
+        const allItems = document.querySelectorAll('#tab-mib li');
+        for(let item of allItems) {
+            if(item.textContent.includes('.' + oid)) {
+                item.classList.add('font-bold', 'bg-emerald-100');
+            }
+        }
+
+        // Update Input Field
+        let prefix = ".iso.org.dod.internet.mgmt.mib-2.";
+        if(oid === 'ifNumber') prefix += "interfaces.";
+        else prefix += "system.";
+        
+        document.getElementById('mib-oid').value = prefix + oid;
+        document.getElementById('mib-type').value = type;
+        
+        // Reset output
+        document.getElementById('mib-output').innerHTML = "<i>Ready. Click Go.</i>";
+    }
+
+    function toggleSetField() {
+        const op = document.getElementById('mib-op').value;
+        const panel = document.getElementById('set-panel');
+        if(op === 'set') {
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
+        }
+    }
+
+    function executeSnmp() {
+        const op = document.getElementById('mib-op').value;
+        const outputBox = document.getElementById('mib-output');
+        const valInput = document.getElementById('mib-val').value;
+
+        let timeStr = new Date().toLocaleTimeString();
+        let log = `<div class="mb-2"><span class="text-slate-500">[${timeStr}]</span> <span class="text-emerald-600 font-bold">${op.toUpperCase()}</span> ${currentOid}<br>`;
+
+        if (op === 'get') {
+            log += `<span class="text-slate-800 ml-4">Value: ${mockData[currentOid]} (${currentDataType})</span></div>`;
+        } else if (op === 'set') {
+            if (currentOid === 'sysName') {
+                if(valInput.trim() === '') {
+                    log += `<span class="text-red-500 ml-4">Error: Value cannot be empty.</span></div>`;
+                } else {
+                    mockData[currentOid] = valInput;
+                    log += `<span class="text-emerald-700 ml-4 font-bold">Success.</span> Value changed to: ${valInput}</div>`;
+                    document.getElementById('mib-val').value = '';
+                }
+            } else {
+                log += `<span class="text-red-500 ml-4">Error: This OID is Read-Only.</span></div>`;
+            }
+        }
+
+        outputBox.innerHTML = log + outputBox.innerHTML;
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('snmp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What is an SNMP NMS?", a: "A <strong>Network Management Station</strong>.<br><br>The central software or server that proactively polls SNMP Agents for data and receives autonomous Trap alerts." },
+            { q: "What is the difference between an SNMP Trap and a Poll?", a: "<strong>Polling (Get):</strong> The NMS asks the router for data.<br><br><strong>Trap:</strong> The router autonomously alerts the NMS that an event occurred (e.g., link down) without waiting to be asked." },
+            { q: "What UDP ports does SNMP use?", a: "<strong>UDP Port 161</strong> for Polling (Get/Set messages).<br><br><strong>UDP Port 162</strong> for Traps (autonomous alerts sent to the NMS)." },
+            { q: "What is an OID?", a: "An <strong>Object Identifier</strong>.<br><br>A hierarchical numeric string (like 1.3.6.1.2.1.1.5) that points to a specific variable within the MIB, such as the router's hostname." },
+            { q: "What is the key difference between SNMPv2c and SNMPv3?", a: "<strong>Security.</strong><br><br>SNMPv2c uses plain-text community strings (passwords). SNMPv3 supports message hashing (Authentication) and payload encryption (Privacy)." },
+            { q: "What command creates a read-only community string named 'public'?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>snmp-server community public ro</code>" }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-emerald-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-emerald-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-emerald-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('snmp_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: NTP Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #f0fdfa; color: #0d9488; border-left-color: #0d9488; font-weight: 600; } /* Teal Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #2dd4bf; font-weight: bold; } /* Teal 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #0d9488 !important; box-shadow: 0 0 15px rgba(13, 148, 136, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(13, 148, 136, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(13, 148, 136, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(13,148,136,1) 0%, rgba(204,251,241,1) 50%, rgba(13,148,136,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-teal-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-teal-500">⏱️</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-teal-400 font-semibold tracking-wide uppercase mt-1">Network Time Protocol</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-teal-600 text-white shadow-md">
+            <span class="text-xl">📊</span> NTP & Stratum Levels
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Sync Visualizer
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Network Time Protocol (NTP)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-teal-500 pl-4 bg-teal-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Accurate timekeeping is critical for logging, troubleshooting, and certificate validation. Learn how to synchronize network devices to a central time source using NTP (UDP Port 123), configure Stratum hierarchies, and secure time updates with MD5 authentication.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">🧠</span> Core NTP Mechanics
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">How NTP Operates</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-teal-700">The Stratum Hierarchy</strong>
+                                <span>NTP uses a tiered system called "Stratum" to indicate the distance from a reference clock. Stratum 0 represents highly precise atomic clocks or GPS clocks. Stratum 1 servers are directly connected to Stratum 0 devices. A router syncing to a Stratum 1 server becomes Stratum 2, and so on. <strong>Stratum 15 is the maximum valid level; 16 means unsynchronized.</strong></span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-teal-700">NTP Master vs. Client</strong>
+                                <span>A router configured as an <code>ntp server</code> syncs its clock to that specific IP. A router configured with <code>ntp master</code> acts as a fallback authoritative time source for the network, using its own internal hardware clock if external servers become unreachable.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-teal-700">NTP Authentication</strong>
+                                <span>Time manipulation is a serious security risk. Attackers could alter device times to invalidate security certificates or hide traces in log files. NTP authentication uses MD5 keys to verify that time updates are coming from trusted sources.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Stratum Level Hierarchy</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Visualizing the distance from the Reference Clock based on our lab.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="stratumChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-teal-50 p-3 rounded border border-teal-200 text-teal-900 shadow-sm">
+                        Because R1 syncs directly to the internet server (Stratum 1), R1 establishes itself as Stratum 2. R2 and R3 then sync to R1, becoming Stratum 3.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">🔍</span> NTP Synchronization Visualizer
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe how network time propagates downstream from a centralized, highly accurate source. Click through the steps to see the Stratum levels update.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playNtpStep(1)" id="btn-ntp-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Manual Clocks (Unsynced)</button>
+                <button onclick="playNtpStep(2)" id="btn-ntp-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. R1 Syncs to Server</button>
+                <button onclick="playNtpStep(3)" id="btn-ntp-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. R2 & R3 Sync to R1</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Topology -->
+                <div class="relative w-full max-w-lg h-72 mx-auto mt-4">
+                    
+                    <!-- Server 1 (Top) -->
+                    <div id="node-srv" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-16 rounded bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 transition-all shadow-lg">Server 1<span class="text-[9px] text-teal-300 font-mono font-normal">Stratum 1</span></div>
+                    
+                    <!-- R1 (Middle) -->
+                    <div id="node-r1" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 transition-all shadow-lg">R1<span id="st-r1" class="text-[9px] text-slate-400 font-mono font-normal">Stratum 16</span></div>
+                    
+                    <!-- R2 (Bottom Left) -->
+                    <div id="node-r2" class="absolute bottom-0 left-1/4 transform -translate-x-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 transition-all shadow-lg">R2<span id="st-r2" class="text-[9px] text-slate-400 font-mono font-normal">Stratum 16</span></div>
+                    
+                    <!-- R3 (Bottom Right) -->
+                    <div id="node-r3" class="absolute bottom-0 right-1/4 transform translate-x-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 transition-all shadow-lg">R3<span id="st-r3" class="text-[9px] text-slate-400 font-mono font-normal">Stratum 16</span></div>
+
+                    <!-- Links -->
+                    <!-- Server to R1 -->
+                    <div id="link-srv-r1" class="absolute top-16 left-1/2 w-1 h-[70px] bg-slate-600 transform -translate-x-1/2 transition-all z-0"></div>
+                    
+                    <!-- R1 to R2 -->
+                    <div id="link-r1-r2" class="absolute top-[65%] left-[38%] w-[100px] h-1 bg-slate-600 origin-top-right rotate-[55deg] transition-all z-0"></div>
+                    
+                    <!-- R1 to R3 -->
+                    <div id="link-r1-r3" class="absolute top-[65%] right-[38%] w-[100px] h-1 bg-slate-600 origin-top-left -rotate-[55deg] transition-all z-0"></div>
+
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="ntp-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl min-h-[60px]">
+                    Click step 1 to initialize the clocks.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-teal-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure manual clocks, NTP servers, and MD5 authentication.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600 transition-colors">Router 1 (NTP Master/Client)</button>
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Router 2/3 (NTP Clients)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Manually seed the clock, configure R1 to sync to the Internet Server (1.1.1.1), designate R1 as a fallback NTP Master, and set up the MD5 authentication key for downstream routers.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br><br>
+                    
+                    <span class="cli-comment">! Manually set the clock close to the real time (Speeds up NTP Sync)</span><br>
+                    <span class="cli-prompt">R1#</span> clock set 12:00:00 30 dec 2020<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br>
+                    <span class="cli-prompt">R1(config)#</span> clock timezone JST 9<br><br>
+
+                    <span class="cli-comment">! Sync to the Internet Server</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ntp server 1.1.1.1<br><br>
+
+                    <span class="cli-comment">! Act as a backup Master (Stratum 8 default) if Internet fails</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ntp master<br><br>
+
+                    <span class="cli-comment">! Setup NTP Authentication for downstream clients (R2, R3)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ntp authenticate<br>
+                    <span class="cli-prompt">R1(config)#</span> ntp authentication-key 1 md5 Jeremy'sITLab<br>
+                    <span class="cli-prompt">R1(config)#</span> ntp trusted-key 1<br><br>
+
+                    <span class="cli-comment">! Force the hardware calendar to update alongside the software clock</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ntp update-calendar
+                </div>
+            </div>
+
+            <!-- R2/R3 Tab -->
+            <div id="config-r2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure R2 and R3 to securely synchronize their time from R1 using the MD5 authentication key.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R2&gt;</span> enable<br>
+                    <span class="cli-prompt">R2#</span> clock set 12:00:00 30 dec 2020<br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br>
+                    <span class="cli-prompt">R2(config)#</span> clock timezone JST 9<br><br>
+
+                    <span class="cli-comment">! Setup the exact same Authentication key as R1</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ntp authenticate<br>
+                    <span class="cli-prompt">R2(config)#</span> ntp authentication-key 1 md5 Jeremy'sITLab<br>
+                    <span class="cli-prompt">R2(config)#</span> ntp trusted-key 1<br><br>
+
+                    <span class="cli-comment">! Sync to R1, and mandate the use of key 1</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ntp server 192.168.12.1 key 1<br><br>
+                    
+                    <span class="cli-comment">! (Configuration for R3 is identical, using R1's IP: ntp server 192.168.13.1 key 1)</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('ntp_qa1', this)">
+                            <span class="pr-6">1. Manually configure the clock and timezone on all routers.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Manual clock setting speeds up the initial NTP synchronization process.</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-comment">! Exec mode (Not config)</span><br>
+                                <span class="cli-prompt">R1#</span> clock set 12:00:00 30 dec 2020<br>
+                                <span class="cli-comment">! Global config</span><br>
+                                <span class="cli-prompt">R1#</span> configure terminal<br>
+                                <span class="cli-prompt">R1(config)#</span> clock timezone JST 9
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('ntp_qa2', this)">
+                            <span>2. Verify the NTP associations on R1. What indicates a successful sync?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> show ntp associations<br><br>
+                                <span class="cli-comment">  address         ref clock       st   when   poll reach  delay  offset   disp</span><br>
+                                <span class="cli-comment text-teal-400 font-bold">*~1.1.1.1         .LOCL.           1     21     64    17    2.0    15.5    3.4</span>
+                            </div>
+                            <p><strong>Answer:</strong> The asterisk (<strong><code>*</code></strong>) next to the IP address signifies that the router has successfully synchronized to this peer. (Note: In Packet Tracer, you may need to fast-forward time repeatedly for the asterisk to appear).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('ntp_qa3', this)">
+                            <span>3. What Stratum is R1 after syncing to 1.1.1.1?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> show ntp status<br>
+                                <span class="cli-comment text-teal-400 font-bold">Clock is synchronized, stratum 2, reference is 1.1.1.1</span><br>
+                                <span class="cli-comment">...</span>
+                            </div>
+                            <p><strong>Answer: Stratum 2.</strong> Because Server 1 is acting as a primary reference clock (Stratum 1), R1 adds 1 hop to the stratum distance when it syncs.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('ntp_qa4', this)">
+                            <span class="pr-6">4. Ensure R2 securely authenticates its NTP updates from R1.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>After configuring the authentication keys on both routers, you must append the <code>key</code> parameter to the server command.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R2(config)#</span> ntp authenticate<br>
+                                <span class="cli-prompt">R2(config)#</span> ntp authentication-key 1 md5 Jeremy'sITLab<br>
+                                <span class="cli-prompt">R2(config)#</span> ntp trusted-key 1<br>
+                                <span class="cli-prompt">R2(config)#</span> ntp server 192.168.12.1 <span class="text-teal-400 font-bold">key 1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">clock set [hh:mm:ss] [date]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Manually sets the software clock. Often used to speed up initial NTP synchronization.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">clock timezone [name] [offset]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures the router's local time zone offset from UTC.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">ntp server [ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures the router to act as an NTP client and sync its time to the specified server IP.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">ntp master [stratum]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures the router to act as an authoritative time source using its internal clock. Default stratum is 8.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">show ntp status</td>
+                            <td class="px-6 py-4"><span class="bg-teal-50 text-teal-800 text-xs px-2 py-1 rounded border border-teal-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the current Stratum level and whether the clock is synchronized.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">show ntp associations</td>
+                            <td class="px-6 py-4"><span class="bg-teal-50 text-teal-800 text-xs px-2 py-1 rounded border border-teal-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Lists known NTP peers. An asterisk (*) indicates an active, successful synchronization.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">show clock detail</td>
+                            <td class="px-6 py-4"><span class="bg-teal-50 text-teal-800 text-xs px-2 py-1 rounded border border-teal-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the current time and confirms the 'Time source' (e.g., NTP or user configuration).</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-teal-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of Stratum levels and NTP authentication.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('stratumChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Server 1', 'Router 1', 'Router 2', 'Router 3'],
+                datasets: [
+                    {
+                        label: 'Stratum Level',
+                        data: [1, 2, 3, 3], 
+                        backgroundColor: ['#0d9488', '#14b8a6', '#5eead4', '#5eead4'], // Teal tones
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 5, 
+                        ticks: { stepSize: 1 },
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'Stratum (Lower is Better)', font: {weight: 'bold', color: '#64748b'} }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` Stratum ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-teal-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-teal-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playNtpStep(1); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-teal-600', 'border-teal-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-teal-600', 'border-teal-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- NTP Tracker Logic ---
+    function playNtpStep(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=3; i++) {
+            const btn = document.getElementById('btn-ntp-'+i);
+            if(btn) {
+                btn.classList.remove('bg-teal-600', 'text-white', 'border-teal-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-ntp-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-teal-600', 'text-white', 'border-teal-600');
+        }
+
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        const r3 = document.getElementById('node-r3');
+        const srv = document.getElementById('node-srv');
+        
+        const l_s_r1 = document.getElementById('link-srv-r1');
+        const l_r1_r2 = document.getElementById('link-r1-r2');
+        const l_r1_r3 = document.getElementById('link-r1-r3');
+
+        const st1 = document.getElementById('st-r1');
+        const st2 = document.getElementById('st-r2');
+        const st3 = document.getElementById('st-r3');
+        
+        const desc = document.getElementById('ntp-desc');
+
+        // Reset visual classes
+        [r1, r2, r3, srv].forEach(n => n.classList.remove('node-highlight', 'node-dim'));
+        [l_s_r1, l_r1_r2, l_r1_r3].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|bg-slate-600/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+        });
+
+        if (stepIndex === 1) {
+            [r1, r2, r3].forEach(n => n.classList.add('node-dim'));
+            st1.innerText = "Stratum 16"; st2.innerText = "Stratum 16"; st3.innerText = "Stratum 16";
+            
+            desc.innerHTML = "<span class='text-slate-400 font-bold'>Step 1 (Unsynchronized):</span> The routers have their clocks manually set using <code>clock set</code>, but they are not dynamically synchronizing to a verified time source. They remain at Stratum 16 (unsynchronized).";
+        } else if (stepIndex === 2) {
+            srv.classList.add('node-highlight');
+            r1.classList.add('node-highlight');
+            [r2, r3].forEach(n => n.classList.add('node-dim'));
+            
+            l_s_r1.classList.replace('bg-slate-600', 'traffic-flow');
+            l_s_r1.classList.add('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+            
+            st1.innerText = "Stratum 2"; st2.innerText = "Stratum 16"; st3.innerText = "Stratum 16";
+            st1.classList.replace('text-slate-400', 'text-teal-300');
+
+            desc.innerHTML = "<span class='text-teal-400 font-bold'>Step 2 (R1 Sync):</span> <code>ntp server 1.1.1.1</code> is configured. R1 queries Server 1. After validation, an asterisk (*) appears in <code>show ntp associations</code>. R1 is now synced and becomes Stratum 2.";
+        } else if (stepIndex === 3) {
+            [srv, r1, r2, r3].forEach(n => n.classList.add('node-highlight'));
+            
+            [l_s_r1, l_r1_r2, l_r1_r3].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(13,148,136,0.5)]');
+            });
+            
+            st1.innerText = "Stratum 2"; st2.innerText = "Stratum 3"; st3.innerText = "Stratum 3";
+            [st1, st2, st3].forEach(st => st.classList.replace('text-slate-400', 'text-teal-300'));
+
+            desc.innerHTML = "<span class='text-teal-400 font-bold'>Step 3 (Client Sync & Auth):</span> R2 and R3 are configured to sync to R1 using <code>key 1</code>. They authenticate R1's responses using MD5 hashes. Since they are 1 hop away from R1, they establish themselves as Stratum 3.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ntp_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What UDP port does NTP use?", a: "<strong>UDP Port 123</strong>" },
+            { q: "What is the maximum valid Stratum level?", a: "<strong>Stratum 15.</strong><br><br>Stratum 16 indicates that a device is unsynchronized." },
+            { q: "What does the asterisk (*) mean in `show ntp associations`?", a: "It indicates that the router is <strong>currently synchronized</strong> to that specific peer/server." },
+            { q: "Why configure NTP Authentication?", a: "To prevent rogue NTP servers from poisoning the network time, which could invalidate security certificates or manipulate forensic logs." },
+            { q: "What is the difference between `ntp server` and `ntp master`?", a: "<code>ntp server</code> tells the router to sync its clock TO an external IP. <br><code>ntp master</code> tells the router to act as a fallback time source for OTHER devices using its own internal hardware clock." },
+            { q: "What does the `ntp update-calendar` command do?", a: "It forces the router's physical hardware calendar (which persists across reboots) to periodically synchronize with the software clock updated by NTP." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-teal-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-teal-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-teal-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ntp_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playNtpStep(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

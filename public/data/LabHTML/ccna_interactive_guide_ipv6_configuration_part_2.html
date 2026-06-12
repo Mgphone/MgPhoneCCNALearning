@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: IPv6 Configuration (Part 2)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #ecfeff; color: #0891b2; border-left-color: #0891b2; font-weight: 600; } /* Cyan Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #22d3ee; font-weight: bold; } /* Cyan 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #0891b2 !important; box-shadow: 0 0 15px rgba(8, 145, 178, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+        .node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(8, 145, 178, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(8, 145, 178, 0.8); }
+        }
+
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(8,145,178,1) 0%, rgba(207,250,254,1) 50%, rgba(8,145,178,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-cyan-200">
+
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-cyan-500">✨</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-cyan-400 font-semibold tracking-wide uppercase mt-1">IPv6 Config (2)</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-cyan-600 text-white shadow-md">
+            <span class="text-xl">📊</span> EUI-64 & Link-Local
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> IPv6 Route Tracker
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Advanced IPv6: EUI-64 & Static Routing</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-cyan-500 pl-4 bg-cyan-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Learn the inner mechanics of IPv6 Interface IDs. In this lab, you will configure addresses dynamically using the EUI-64 MAC conversion method, utilize Link-Local addresses via <code>ipv6 enable</code>, and master the specific syntax required for IPv6 static routing over link-local networks.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🧠</span> EUI-64 & Link-Local Mechanics
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">The EUI-64 Conversion Process</h4>
+                        <p class="text-sm text-slate-700 mb-4">EUI-64 automatically generates a 64-bit IPv6 Interface ID using the device's 48-bit MAC address. Here is how the router calculates it:</p>
+                        <ol class="space-y-3 text-sm text-slate-700 list-decimal pl-5">
+                            <li><strong>Split the MAC:</strong> Take the 48-bit MAC (e.g., <code>0000.1111.2222</code>) and split it in half.</li>
+                            <li><strong>Insert FFFE:</strong> Inject <code>FFFE</code> into the exact middle &rarr; <code>0000.11FF.FE11.2222</code>.</li>
+                            <li><strong>Invert the 7th Bit:</strong> Flip the 7th binary bit of the first byte. (e.g., <code>00</code> becomes <code>02</code>).</li>
+                            <li class="mt-2 text-cyan-700 font-mono font-bold bg-cyan-50 p-2 rounded inline-block border border-cyan-200">Result: 0200:11FF:FE11:2222</li>
+                        </ol>
+                    </div>
+
+                    <div class="bg-cyan-50 p-5 rounded-xl border border-cyan-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-cyan-900 mb-2">The Static Route "Gotcha"</h4>
+                        <p class="text-sm text-cyan-800 mb-3">When creating an IPv4 static route, providing the Next-Hop IP is usually enough. But in IPv6, if you use a <strong>Link-Local address (FE80::)</strong> as the Next-Hop, the router's routing table throws an error: <code class="bg-white px-1 border border-cyan-300 rounded font-mono text-red-500">% Interface has to be specified</code>.</p>
+                        <p class="text-sm text-cyan-800 font-bold">Why? Because Link-Local addresses are unique ONLY to a specific physical link. The router literally doesn't know which port to send the packet out of unless you explicitly tell it the exit interface.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Structure of a /64 Global Unicast Address</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Visualizing how the 128 bits are allocated when using EUI-64.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="ipv6StructureChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        The Global Routing Prefix and Subnet ID are provided by the administrator (or ISP). The final 64 bits are automatically filled by the EUI-64 MAC conversion logic.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: TOPOLOGY TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🔍</span> IPv6 Route Configuration Tracker
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe the steps required to establish end-to-end communication between two PCs using EUI-64 addressing and Link-Local static routing.</p>
+
+            <!-- Tracker Controls -->
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playIpv6Step(1)" id="btn-ipv6-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. EUI-64 Interfaces</button>
+                <button onclick="playIpv6Step(2)" id="btn-ipv6-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Transit Link (IPv6 Enable)</button>
+                <button onclick="playIpv6Step(3)" id="btn-ipv6-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Static Routing</button>
+                <button onclick="playIpv6Step(4)" id="btn-ipv6-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Ping Verification</button>
+            </div>
+
+            <!-- Visualization -->
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
+                
+                <!-- Topology -->
+                <div class="relative w-full max-w-lg h-64 mx-auto mt-4">
+                    
+                    <!-- R1 & R2 -->
+                    <div id="node-r1" class="absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 transition-all shadow-lg">R1<span id="ll-r1" class="hidden absolute -bottom-6 text-[10px] font-mono bg-slate-800 px-1 rounded text-cyan-400 border border-slate-600 whitespace-nowrap">FE80::...1111</span></div>
+                    
+                    <div id="node-r2" class="absolute top-1/2 right-1/3 transform translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-slate-500 z-10 transition-all shadow-lg">R2<span id="ll-r2" class="hidden absolute -bottom-6 text-[10px] font-mono bg-slate-800 px-1 rounded text-cyan-400 border border-slate-600 whitespace-nowrap">FE80::...2222</span></div>
+                    
+                    <!-- PCs -->
+                    <div id="node-pc1" class="absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-md transition-all">PC1</div>
+                    <div id="node-pc2" class="absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-md transition-all">PC2</div>
+
+                    <!-- Links -->
+                    <div id="link-pc1-r1" class="absolute top-1/2 left-16 w-[80px] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+                    <div id="link-r1-r2" class="absolute top-1/2 left-[40%] w-[100px] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex items-center justify-center"><span id="lbl-transit" class="hidden bg-slate-800 text-cyan-300 font-mono text-[9px] px-1 rounded -translate-y-3 border border-slate-600">Transit Link</span></div>
+                    <div id="link-r2-pc2" class="absolute top-1/2 right-16 w-[80px] h-1 bg-slate-600 transform -translate-y-1/2 transition-all z-0"></div>
+
+                    <!-- Pkt -->
+                    <div id="pkt" class="absolute top-1/2 left-16 transform -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-cyan-500 z-20 hidden"></div>
+                </div>
+
+                <!-- Dynamic Overlay -->
+                <div id="ipv6-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate IPv6 configuration logic.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-cyan-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to configure EUI-64 addresses, Link-Local routing, and specific static routes.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('r1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-cyan-600 border-b-2 border-cyan-600 transition-colors">Router 1 (R1)</button>
+                <button onclick="switchDeviceTab('r2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">Router 2 (R2)</button>
+            </div>
+
+            <!-- R1 Tab -->
+            <div id="config-r1" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Enable global routing, configure the edge port using EUI-64, enable the transit port without a global address, and construct the static route.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Crucial: Enable global IPv6 packet forwarding</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ipv6 unicast-routing<br><br>
+
+                    <span class="cli-comment">! Edge Port: Configure Network Prefix and instruct router to generate the Interface ID from its MAC</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ipv6 address 2001:db8::/64 eui-64<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Transit Port: We don't want to waste a Global IP here. Just enable IPv6 to auto-generate the Link-Local.</span><br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R1(config-if)#</span> ipv6 enable<br>
+                    <span class="cli-prompt">R1(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Static Route to R2's Subnet. </span><br>
+                    <span class="cli-comment">! MUST specify the exit interface (g0/0) before the Link-Local Next-Hop IP!</span><br>
+                    <span class="cli-prompt">R1(config)#</span> ipv6 route 2001:db8:0:1::/64 g0/0 fe80::202:16ff:fe17:1645
+                </div>
+            </div>
+
+            <!-- R2 Tab -->
+            <div id="config-r2" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Enable global routing, configure the edge port using EUI-64, enable the transit port, and configure the return static route.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R2&gt;</span> enable<br>
+                    <span class="cli-prompt">R2#</span> configure terminal<br><br>
+                    
+                    <span class="cli-prompt">R2(config)#</span> ipv6 unicast-routing<br><br>
+
+                    <span class="cli-comment">! Edge Port</span><br>
+                    <span class="cli-prompt">R2(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R2(config-if)#</span> ipv6 address 2001:db8:0:1::/64 eui-64<br>
+                    <span class="cli-prompt">R2(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Transit Port: Enable Link-Local only</span><br>
+                    <span class="cli-prompt">R2(config)#</span> interface g0/0<br>
+                    <span class="cli-prompt">R2(config-if)#</span> ipv6 enable<br>
+                    <span class="cli-prompt">R2(config-if)#</span> exit<br><br>
+
+                    <span class="cli-comment">! Static Route back to R1's Subnet</span><br>
+                    <span class="cli-prompt">R2(config)#</span> ipv6 route 2001:db8::/64 g0/0 fe80::201:97ff:fe7d:6601
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('ipv6_p2_qa1', this)">
+                            <span class="pr-6">1. Use EUI-64 to configure the appropriate IPv6 address on G0/1 of R1 and R2.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>We use the <code>eui-64</code> keyword at the end of the address assignment. Remember to enable <code>ipv6 unicast-routing</code> first!</p>
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">R1(config)#</span> ipv6 unicast-routing<br>
+                                <span class="cli-prompt">R1(config)#</span> interface g0/1<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ipv6 address 2001:db8::/64 eui-64
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('ipv6_p2_qa2', this)">
+                            <span>2. Configure the IPv6 address and default gateway on PC1 and PC2.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>You must first check the dynamically generated EUI-64 address on the routers using <code>show ipv6 interface brief</code>, copy it, and paste it into the Gateway field of the PCs in the Packet Tracer GUI.</p>
+                            <ul class="list-disc pl-5 space-y-1 font-mono text-xs">
+                                <li><strong>PC1 IP:</strong> 2001:db8::2 /64</li>
+                                <li><strong>PC1 Gateway:</strong> (Paste R1's dynamic G0/1 address here)</li>
+                                <li><strong>PC2 IP:</strong> 2001:db8:0:1::2 /64</li>
+                                <li><strong>PC2 Gateway:</strong> (Paste R2's dynamic G0/1 address here)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('ipv6_p2_qa3', this)">
+                            <span>3. Enable IPv6 on G0/0 of R1 and R2 without configuring a global unicast address.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Use the <code>ipv6 enable</code> command. This automatically generates a Link-Local address using the FE80::/10 prefix and the EUI-64 conversion of the MAC address, keeping the interface completely hidden from the global internet.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> interface g0/0<br>
+                                <span class="cli-prompt">R1(config-if)#</span> ipv6 enable
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-cyan-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" onclick="event.stopPropagation(); saveProgress('ipv6_p2_qa4', this)">
+                            <span class="pr-6">4. Configure static routes using the Link-Local Next-Hop to enable PC1 to ping PC2.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Find the generated link-local addresses using <code>show ipv6 interface brief</code> on both routers. Then configure the routes. <strong>Crucially: You must specify the exit interface before the link-local IP.</strong></p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> ipv6 route 2001:db8:0:1::/64 g0/0 fe80::202:16ff:fe17:1645
+                            </div>
+                            <p class="text-emerald-600 font-bold mt-2">After configuring this on both routers, the ping from PC1 to PC2 will succeed!</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">ipv6 address [addr]/[prefix] eui-64</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Assigns the Global Routing Prefix and instructs the router to auto-fill the Interface ID using the MAC address.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">ipv6 enable</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Automatically creates an FE80:: Link-Local address on the interface without assigning a Global Unicast Address.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">ipv6 route [net]/[prefix] [int] [LL-IP]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Creates a static route using a Link-Local Next-Hop. The exit interface MUST be specified before the IP.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-cyan-700 whitespace-nowrap">show interfaces [id]</td>
+                            <td class="px-6 py-4"><span class="bg-cyan-50 text-cyan-800 text-xs px-2 py-1 rounded border border-cyan-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays hardware details. Look at the top of the output to find the interface's built-in MAC address.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-cyan-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of EUI-64 logic and IPv6 Routing gotchas.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('ipv6StructureChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Global Routing Prefix (48 Bits)', 'Subnet ID (16 Bits)', 'Interface ID / EUI-64 (64 Bits)'],
+                datasets: [
+                    {
+                        label: 'IPv6 Address Distribution',
+                        data: [48, 16, 64],
+                        backgroundColor: ['#0284c7', '#0ea5e9', '#cbd5e1'], // Cyan/Sky tones
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: {family: "'Inter', sans-serif"} } },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-cyan-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-cyan-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-cyan-600', 'border-cyan-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-cyan-600', 'border-cyan-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- IPv6 Simulator Logic ---
+    function playIpv6Step(stepIndex) {
+        // Reset buttons
+        for(let i=1; i<=4; i++) {
+            const btn = document.getElementById('btn-ipv6-'+i);
+            if(btn) {
+                btn.classList.remove('bg-cyan-600', 'text-white', 'border-cyan-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
+
+        const activeBtn = document.getElementById('btn-ipv6-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-cyan-600', 'text-white', 'border-cyan-600');
+        }
+
+        const r1 = document.getElementById('node-r1');
+        const r2 = document.getElementById('node-r2');
+        const p1 = document.getElementById('node-pc1');
+        const p2 = document.getElementById('node-pc2');
+        
+        const l1 = document.getElementById('link-pc1-r1');
+        const transit = document.getElementById('link-r1-r2');
+        const l2 = document.getElementById('link-r2-pc2');
+        
+        const pkt = document.getElementById('pkt');
+        const desc = document.getElementById('ipv6-desc');
+        
+        const ll1 = document.getElementById('ll-r1');
+        const ll2 = document.getElementById('ll-r2');
+        const lblTransit = document.getElementById('lbl-transit');
+
+        // Reset
+        [r1, r2, p1, p2].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'node-error'));
+        [l1, transit, l2].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|bg-slate-600|bg-red-500|bg-cyan-500/g, '').trim() + " bg-slate-600";
+            l.classList.remove('shadow-[0_0_10px_rgba(239,68,68,0.5)]', 'shadow-[0_0_10px_rgba(8,145,178,0.5)]');
+        });
+        pkt.classList.add('hidden');
+        ll1.classList.add('hidden');
+        ll2.classList.add('hidden');
+        lblTransit.classList.add('hidden');
+
+        if (stepIndex === 1) {
+            [r1, p1, r2, p2].forEach(n => n.classList.add('node-highlight'));
+            
+            desc.innerHTML = "<span class='text-cyan-400 font-bold'>Step 1 (EUI-64 Interfaces):</span> <code>ipv6 address ... eui-64</code> is issued on the edge ports of R1 and R2. The routers calculate the Interface ID based on their physical MAC addresses. PC1 and PC2 are configured with static IPs pointing to these newly calculated gateways.";
+        } else if (stepIndex === 2) {
+            [r1, r2].forEach(n => n.classList.add('node-highlight'));
+            transit.classList.replace('bg-slate-600', 'bg-cyan-500');
+            transit.classList.add('shadow-[0_0_10px_rgba(8,145,178,0.5)]');
+            ll1.classList.remove('hidden');
+            ll2.classList.remove('hidden');
+            lblTransit.classList.remove('hidden');
+
+            desc.innerHTML = "<span class='text-cyan-400 font-bold'>Step 2 (IPv6 Enable):</span> We don't want to waste Global Unicast addresses on the transit link between R1 and R2. <code>ipv6 enable</code> generates a Link-Local (FE80::) address on both sides, allowing basic protocol communication without exposing the link to the internet.";
+        } else if (stepIndex === 3) {
+            r1.classList.add('node-error'); r2.classList.add('node-error');
+            transit.classList.replace('bg-slate-600', 'bg-red-500');
+            transit.classList.add('shadow-[0_0_10px_rgba(239,68,68,0.5)]');
+            
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 3 (Static Route Gotcha):</span> To route traffic, we attempt to configure a static route using the neighbor's FE80 address as the Next-Hop. The router <strong>throws an error</strong>! Link-Local addresses are unique only to a specific link, so the router doesn't know which physical port to use.";
+        } else if (stepIndex === 4) {
+            [p1, r1, r2, p2].forEach(n => n.classList.add('node-highlight'));
+            
+            [l1, transit, l2].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.add('shadow-[0_0_10px_rgba(8,145,178,0.5)]');
+            });
+
+            // Animate Packet
+            pkt.classList.remove('hidden');
+            pkt.style.animation = "slideFlow 2s linear infinite";
+
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Step 4 (Ping Success):</span> We fix the static route by explicitly stating the exit interface BEFORE the Next-Hop IP (e.g., <code>ipv6 route 2001:db8:0:1::/64 g0/0 fe80::...</code>). The routing tables update, and PC1 successfully pings PC2.";
+        }
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('ipv6_p2_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What does the `ipv6 enable` command do?", a: "It automatically generates and assigns an <strong>IPv6 Link-Local address (FE80::/10)</strong> to the interface using EUI-64, without assigning a Global Unicast address." },
+            { q: "What are the three steps to calculate an EUI-64 Interface ID from a MAC address?", a: "1. Split the MAC in half.<br>2. Insert <strong>FFFE</strong> in the middle.<br>3. <strong>Invert the 7th binary bit</strong> of the first byte." },
+            { q: "Why must you specify the exit interface when using a Link-Local address as a static route next-hop?", a: "Because Link-Local addresses (FE80::) are unique <strong>only to a specific link</strong>. The router's routing table cannot resolve which physical interface to push the packet out of using just the IP." },
+            { q: "What is the command to create an IPv6 static route using a link-local next-hop?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>ipv6 route [network]/[prefix] [exit-interface] [link-local-next-hop]</code>" },
+            { q: "What does the `eui-64` keyword do when configuring an IPv6 address?", a: "It tells the router to automatically derive the lower 64 bits (the Interface ID) of the Global Unicast address from the interface's MAC address." },
+            { q: "What command verifies the generated EUI-64 addresses?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>show ipv6 interface brief</code>" }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-cyan-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-cyan-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-cyan-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('ipv6_p2_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+        playIpv6Step(1); // Load tracker state
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: Syslog Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #fffbeb; color: #d97706; border-left-color: #d97706; font-weight: 600; } /* Amber Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #fbbf24; font-weight: bold; } /* Amber 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
+
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-amber-200">
+
+<!-- Sidebar Navigation -->
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-amber-500">📜</span>
+        <div>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-amber-400 font-semibold tracking-wide uppercase mt-1">Syslog Operations</p>
+        </div>
+    </div>
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-amber-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Syslog & Severities
+        </button>
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎛️</span> Trap Filter Simulator
+        </button>
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
+        </button>
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        </button>
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
+        </button>
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
+        </button>
+    </div>
+</nav>
+
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">System Message Logging (Syslog)</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-amber-500 pl-4 bg-amber-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            Learn how Cisco routers generate, format, and store system event logs. We will explore the 8 severity levels, how to route logs to different destinations (Console, VTY, Buffer, External Servers), and how to apply filters using the <code>logging trap</code> command.
+        </p>
+    </header>
+
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">🧠</span> Core Syslog Mechanics
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="space-y-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">Logging Destinations</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-amber-700">Console Line (Default)</strong>
+                                <span>Logs are automatically printed directly to the console port. If you are physically connected via console, you will see events in real-time.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-amber-700">VTY Lines (Telnet/SSH)</strong>
+                                <span>Logs are <strong>NOT</strong> displayed by default when connected remotely. You must issue the <code>terminal monitor</code> command to view real-time logs in your session.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-amber-700">Internal Buffer</strong>
+                                <span>Logs can be saved to the router's RAM (Buffer). You can view them anytime using the <code>show logging</code> command. The buffer clears if the router reboots.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-amber-700">External Syslog Server</strong>
+                                <span>A dedicated external server (NMS) that receives and stores logs centrally. This is crucial for long-term historical analysis and persistent storage.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-amber-900 mb-2">The "Trap" Filtering Rule</h4>
+                        <p class="text-sm text-amber-800">
+                            When you set a logging level (e.g., <code>logging trap warnings</code>), it operates as a ceiling. The router will send logs matching that exact level, <strong>AND</strong> all levels with a <em>lower</em> severity number (higher urgency). 
+                        </p>
+                        <p class="text-xs text-amber-700 mt-2 font-mono">Example: Level 4 (Warnings) includes Levels 0, 1, 2, 3, and 4. It drops Levels 5, 6, and 7.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Syslog Severity Levels (0-7)</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Lower numbers indicate higher urgency.</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="syslogChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        <strong>Mnemonic:</strong> Every Action Critical, Every Warning Noticeable, Information Detailed.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: INTERACTIVE LOG TRACKER -->
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">🎛️</span> Trap Level Filter Simulator
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">
+                Change the configured <code>logging trap</code> level on the router. Then, generate various network events to see which logs are forwarded to the Syslog Server and which are dropped by the filter.
+            </p>
+
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Controls -->
+                <div class="w-full md:w-1/3 space-y-6">
+                    <div class="bg-slate-100 p-4 rounded-lg border border-slate-300">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Set Router Trap Level</label>
+                        <select id="trap-selector" onchange="updateTrapLevel()" class="w-full border border-slate-300 rounded p-2 text-sm font-semibold bg-white cursor-pointer outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="7">7 - Debugging (Default/All)</option>
+                            <option value="6">6 - Informational</option>
+                            <option value="5">5 - Notifications</option>
+                            <option value="4" selected>4 - Warnings</option>
+                            <option value="3">3 - Errors</option>
+                            <option value="2">2 - Critical</option>
+                        </select>
+                        <p class="text-[10px] text-slate-500 mt-2 italic">Levels &le; Selected will be transmitted.</p>
+                    </div>
+
+                    <div class="bg-slate-100 p-4 rounded-lg border border-slate-300 flex flex-col gap-2">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Generate Network Events</label>
+                        <button onclick="triggerLog(5, 'Interface GigabitEthernet0/0 changed state to administratively down', 'LINK-5-CHANGED')" class="w-full text-left px-3 py-2 bg-white hover:bg-slate-200 border border-slate-300 rounded shadow-sm text-sm transition-colors flex justify-between">
+                            <span>Admin Shutdown Port</span> <span class="font-mono text-xs text-slate-400">Lvl 5</span>
+                        </button>
+                        <button onclick="triggerLog(4, 'Configuration changed by console', 'SYS-4-CONFIG_RESOLVE_FAILURE')" class="w-full text-left px-3 py-2 bg-white hover:bg-slate-200 border border-slate-300 rounded shadow-sm text-sm transition-colors flex justify-between">
+                            <span>Config Change Warning</span> <span class="font-mono text-xs text-slate-400">Lvl 4</span>
+                        </button>
+                        <button onclick="triggerLog(3, 'Line protocol on Interface G0/0 changed state to down', 'LINEPROTO-3-UPDOWN')" class="w-full text-left px-3 py-2 bg-white hover:bg-slate-200 border border-slate-300 rounded shadow-sm text-sm transition-colors flex justify-between">
+                            <span>Cable Unplugged</span> <span class="font-mono text-xs text-slate-400">Lvl 3</span>
+                        </button>
+                        <button onclick="triggerLog(7, 'OSPF: Build router LSA for area 0', 'OSPF-7-DEBUG')" class="w-full text-left px-3 py-2 bg-white hover:bg-slate-200 border border-slate-300 rounded shadow-sm text-sm transition-colors flex justify-between">
+                            <span>OSPF Debug Event</span> <span class="font-mono text-xs text-slate-400">Lvl 7</span>
+                        </button>
+                    </div>
+                    <button onclick="document.getElementById('syslog-output').innerHTML=''" class="w-full text-center px-3 py-2 bg-slate-300 hover:bg-slate-400 border border-slate-400 text-slate-700 font-bold rounded shadow-sm text-sm transition-colors">
+                        Clear Logs
+                    </button>
+                </div>
+
+                <!-- Simulated Syslog Server Output -->
+                <div class="w-full md:w-2/3 bg-slate-900 rounded-xl border border-slate-800 shadow-inner flex flex-col h-[400px]">
+                    <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 flex justify-between items-center rounded-t-xl">
+                        <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">External Syslog Server Data</span>
+                        <span class="text-xs font-mono bg-slate-700 text-amber-400 px-2 py-1 rounded border border-slate-600" id="current-level-display">Accepting: Lvl 0 - 4</span>
+                    </div>
+                    <div id="syslog-output" class="p-4 flex-grow overflow-y-auto font-mono text-xs space-y-2">
+                        <!-- Logs appended here -->
+                        <div class="text-slate-500 italic">Server running. Listening on UDP Port 514...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-amber-500">💻</span> Device Configuration Lab
+                </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to enable timestamps, log to the internal buffer, monitor VTY sessions, and route logs to external servers.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('basic', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-amber-600 border-b-2 border-amber-600 transition-colors">R1 (Basic & Buffer)</button>
+                <button onclick="switchDeviceTab('external', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">R1 (External Syslog)</button>
+                <button onclick="switchDeviceTab('vty', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">PC1 (VTY Monitor)</button>
+            </div>
+
+            <!-- Basic Tab -->
+            <div id="config-basic" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Add accurate timestamps to log messages and enable saving logs to the router's internal RAM buffer.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! Add timestamps (with milliseconds) to all syslog messages</span><br>
+                    <span class="cli-prompt">R1(config)#</span> service timestamps log datetime msec<br><br>
+
+                    <span class="cli-comment">! Enable logging to the internal RAM buffer</span><br>
+                    <span class="cli-prompt">R1(config)#</span> logging buffered<br><br>
+                    
+                    <span class="cli-comment">! (Optional) Set the specific size of the buffer in bytes</span><br>
+                    <span class="cli-prompt">R1(config)#</span> logging buffered 8192<br><br>
+
+                    <span class="cli-comment">! Verify the buffer status and view stored logs</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do show logging<br>
+                    <span class="cli-comment">Syslog logging: enabled</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;Console logging: level debugging, 18 messages logged</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;Buffer logging:  level debugging, 18 messages logged</span><br>
+                    <span class="cli-comment">...</span>
+                </div>
+            </div>
+
+            <!-- External Tab -->
+            <div id="config-external" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Point the router to an external Syslog Server and restrict the volume of messages sent using a trap filter.</p>
+                <div class="cli-window">
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br><br>
+
+                    <span class="cli-comment">! Specify the IP address of the external Syslog Server</span><br>
+                    <span class="cli-comment">! ('logging' and 'logging host' perform the exact same function)</span><br>
+                    <span class="cli-prompt">R1(config)#</span> logging host 192.168.1.100<br><br>
+
+                    <span class="cli-comment">! Filter out "chatter" by only sending events that are Warnings (Level 4) or more severe</span><br>
+                    <span class="cli-prompt">R1(config)#</span> logging trap warnings<br><br>
+
+                    <span class="cli-comment">! Verify external logging setup</span><br>
+                    <span class="cli-prompt">R1(config)#</span> do show logging<br>
+                    <span class="cli-comment">...</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;Trap logging: level warnings, 15 message lines logged</span><br>
+                    <span class="cli-comment">&nbsp;&nbsp;&nbsp;&nbsp;Logging to 192.168.1.100  (udp port 514)</span>
+                </div>
+            </div>
+
+            <!-- VTY Tab -->
+            <div id="config-vty" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Connect to the router remotely via Telnet/SSH and enable real-time logs to display on the remote terminal screen.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! From PC1's Command Prompt</span><br>
+                    <span class="cli-prompt">C:\&gt;</span> telnet 192.168.1.1<br>
+                    <span class="cli-comment">User Access Verification</span><br>
+                    <span class="cli-comment">Password: </span><br>
+                    <span class="cli-prompt">R1&gt;</span> enable<br>
+                    <span class="cli-comment">Password: </span><br><br>
+
+                    <span class="cli-comment">! By default, if an interface goes down right now, we won't see the alert!</span><br>
+                    <span class="cli-comment">! We MUST enable terminal monitoring for this specific session.</span><br>
+                    <span class="cli-prompt">R1#</span> terminal monitor<br><br>
+
+                    <span class="cli-comment">! Now, events will print directly to our remote screen in real-time.</span><br>
+                    <span class="cli-prompt">R1#</span> configure terminal<br>
+                    <span class="cli-prompt">R1(config)#</span> interface g0/1<br>
+                    <span class="cli-prompt">R1(config-if)#</span> shutdown<br>
+                    <span class="cli-comment">*Mar  1 01:12:44.205: %LINK-5-CHANGED: Interface GigabitEthernet0/1, changed state to administratively down</span>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 p-3 mt-4 text-xs text-amber-800 rounded shadow-sm">
+                    <strong>Note:</strong> The <code>terminal monitor</code> command only applies to the <em>current</em> remote session. If you close Telnet/SSH and reconnect, you must type the command again.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SECTION 4: LAB Q&A -->
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">📝</span> Lab Tasks & Solutions
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('syslog_qa1', this)">
+                            <span class="pr-6">1. Why do two log messages appear when an interface is shut down?</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>When you type <code>shutdown</code>, you see messages for both <code>%LINK-5-CHANGED</code> and <code>%LINEPROTO-5-UPDOWN</code>.</p>
+                            <p><strong>Answer:</strong> The first message corresponds to the Layer 1 physical status (Status column in <code>show ip int brief</code>). The second message corresponds to the Layer 2 data link protocol status (Protocol column). Since L2 relies on L1, bringing down the interface triggers an alert for both layers simultaneously.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('syslog_qa2', this)">
+                            <span>2. Enable timestamps on console log messages.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>By default, logs just show the message. Adding timestamps is critical for correlating events during troubleshooting.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1(config)#</span> service timestamps log datetime msec
+                            </div>
+                            <p class="text-xs italic text-slate-500 mt-2">*In Packet Tracer, the <code>msec</code> (milliseconds) keyword is mandatory for the command to be accepted, though it is optional in real IOS.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('syslog_qa3', this)">
+                            <span>3. Connect to R1 via Telnet. Enable logs to display in the session.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Log into R1 from PC1. Once inside Privileged EXEC mode, issue the monitor command.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">R1#</span> terminal monitor
+                            </div>
+                            <p>If you don't run this, your remote terminal screen will be completely silent regarding real-time network events.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-amber-50 flex justify-between items-center focus:outline-none transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500" onclick="event.stopPropagation(); saveProgress('syslog_qa4', this)">
+                            <span class="pr-6">4. Enable logging to the internal buffer and to an external Syslog Server.</span>
+                        </div>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-comment">! Enable Buffer Logging (default size is usually fine, or specify bytes)</span><br>
+                                <span class="cli-prompt">R1(config)#</span> logging buffered 8192<br><br>
+                                <span class="cli-comment">! Point to the External Syslog Server</span><br>
+                                <span class="cli-prompt">R1(config)#</span> logging host 192.168.1.100<br><br>
+                                <span class="cli-comment">! Optional: Set trap severity (PT only supports 'debugging')</span><br>
+                                <span class="cli-prompt">R1(config)#</span> logging trap debugging
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: COMMAND REFERENCE -->
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">📋</span> Command Reference
+            </h3>
+            
+            <div class="mb-6 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow">
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">service timestamps log datetime msec</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Appends accurate timestamps (down to the millisecond) to every generated log message.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">terminal monitor</td>
+                            <td class="px-6 py-4"><span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded border border-amber-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Enables real-time console log readouts over a remote VTY session (Telnet/SSH).</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">logging buffered [bytes]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Saves log messages into the router's internal RAM so they can be viewed later.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">logging [host|ip]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Configures the router to send logs to an external centralized Syslog Server.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">logging trap [level]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Filters logs sent to the external server, ensuring only messages of that severity or higher are sent.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 font-mono text-amber-700 whitespace-nowrap">show logging</td>
+                            <td class="px-6 py-4"><span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded border border-amber-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Displays the current logging configuration status and prints out the contents of the local buffer.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">No matching commands found.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: FLASHCARDS -->
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-amber-500">🎴</span> Active Recall Flashcards
+            </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of Syslog severities and commands.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // --- Chart.js Logic ---
+    let chartRendered = false;
+    function initChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById('syslogChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['0-Emerg', '1-Alert', '2-Crit', '3-Err', '4-Warn', '5-Notif', '6-Info', '7-Debug'],
+                datasets: [
+                    {
+                        label: 'Severity Urgency',
+                        data: [8, 7, 6, 5, 4, 3, 2, 1], // Inverting for visual weight (0 is highest urgency)
+                        backgroundColor: [
+                            '#dc2626', '#ef4444', '#f87171', '#fca5a5', // Reds (High Severity)
+                            '#f59e0b', '#fbbf24', // Ambers (Warnings/Notices)
+                            '#3b82f6', '#94a3b8' // Blue/Slate (Info/Debug)
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        display: false, // Hide arbitrary y-axis values since we just want visual hierarchy
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12, cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                // Map back to actual level number
+                                const actualLevel = 7 - context.dataIndex;
+                                return ` Level ${actualLevel} Severity`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        chartRendered = true;
+    }
+
+    // --- Navigation Logic ---
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
+            view.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('nav-active', 'bg-amber-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        });
+        
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-amber-600', 'text-white', 'shadow-md');
+
+        if(viewId === 'tab-concepts') { initChart(); }
+    }
+
+    // --- Config Tab Logic ---
+    function switchDeviceTab(deviceId, btnElement) {
+        document.querySelectorAll('.device-tab-content').forEach(content => {
+            content.classList.remove('block');
+            content.classList.add('hidden');
+        });
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.classList.remove('text-amber-600', 'border-amber-600', 'font-bold');
+            btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('config-' + deviceId).classList.remove('hidden');
+        document.getElementById('config-' + deviceId).classList.add('block');
+        
+        btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
+        btnElement.classList.add('text-amber-600', 'border-amber-600', 'font-bold');
+    }
+
+    // --- Accordion Logic ---
+    function toggleAccordion(id, btnElement) {
+        const content = document.getElementById(id);
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.textContent = '+';
+            icon.style.transform = 'none';
+        } else {
+            content.classList.add('expanded');
+            icon.textContent = '−';
+            icon.style.transform = 'none';
+        }
+    }
+
+    // --- Filter Logic ---
+    function filterCommands() {
+        const input = document.getElementById("cmdSearch");
+        const filter = input.value.toUpperCase();
+        const tbody = document.querySelector("#cmdTable tbody");
+        const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        for (let i = 0; i < tr.length; i++) {
+            let txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                visibleCount++;
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
+    }
+
+    // --- Trap Simulator Logic ---
+    let currentTrapLevel = 4; // default Warnings
+
+    function updateTrapLevel() {
+        const selector = document.getElementById('trap-selector');
+        currentTrapLevel = parseInt(selector.value);
+        document.getElementById('current-level-display').innerText = `Accepting: Lvl 0 - ${currentTrapLevel}`;
+    }
+
+    function triggerLog(level, msg, code) {
+        const logBox = document.getElementById('syslog-output');
+        let timeStr = new Date().toLocaleTimeString('en-US', {hour12:false}) + "." + Math.floor(Math.random() * 999).toString().padStart(3, '0');
+        
+        let logEntry = document.createElement('div');
+        
+        if (level <= currentTrapLevel) {
+            logEntry.className = "text-emerald-400";
+            logEntry.innerHTML = `*Mar 1 ${timeStr}: %${code}: ${msg} <span class="text-slate-500 float-right">[FWD to Server]</span>`;
+        } else {
+            logEntry.className = "text-slate-500 line-through opacity-75";
+            logEntry.innerHTML = `*Mar 1 ${timeStr}: %${code}: ${msg} <span class="text-red-400 float-right no-underline">[DROPPED - Lvl ${level} > ${currentTrapLevel}]</span>`;
+        }
+        
+        logBox.appendChild(logEntry);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // --- Features (Copy, Progress, Flashcards) ---
+    function initFeatures() {
+        // 1. Copy Buttons
+        document.querySelectorAll('.cli-window').forEach(block => {
+            if(block.parentElement.classList.contains('group')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group mt-2 mb-4';
+            block.parentNode.insertBefore(wrapper, block);
+            wrapper.appendChild(block);
+            
+            const btn = document.createElement('button');
+            btn.className = 'absolute top-2 right-2 bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const textArea = document.createElement("textarea");
+                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
+                document.body.removeChild(textArea);
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            };
+            wrapper.appendChild(btn);
+        });
+
+        // 2. Load Progress
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('syslog_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
+            }
+        });
+
+        // 3. Flashcards
+        const flashcards = [
+            { q: "What command displays the logs currently stored in the router's RAM?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>show logging</code>" },
+            { q: "What command enables real-time log messages to display during a Telnet/SSH session?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>terminal monitor</code><br><br>Required because VTY lines do not show logs by default." },
+            { q: "If `logging trap 4` is configured, which severity levels are sent to the syslog server?", a: "<strong>Levels 0, 1, 2, 3, and 4.</strong><br><br>The filter acts as a ceiling. It allows that level and all levels with a lower number (higher severity)." },
+            { q: "What is the severity level of 'Debugging'?", a: "<strong>Level 7.</strong><br><br>It is the lowest urgency level, producing the highest volume of detailed output." },
+            { q: "What command adds milliseconds to the timestamps of log messages?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>service timestamps log datetime msec</code>" },
+            { q: "What is the default destination for syslog messages on a Cisco router?", a: "The <strong>Console Line</strong>.<br><br>If you are physically connected via console cable, logs print directly to your screen by default." }
+        ];
+
+        const grid = document.getElementById('flashcard-grid');
+        if (grid) {
+            flashcards.forEach((item, index) => {
+                const cardHTML = `
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                        <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
+                            <!-- Front -->
+                            <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-amber-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="absolute w-full h-full bg-amber-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-amber-700">Answer</span>
+                                <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+    }
+
+    function saveProgress(id, cb) {
+        localStorage.setItem('syslog_progress_' + id, cb.checked);
+    }
+
+    // Initialize defaults on load
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        initFeatures();
+    });
+</script>
+</body>
+</html>
