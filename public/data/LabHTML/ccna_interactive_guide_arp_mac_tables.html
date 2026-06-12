@@ -1,485 +1,1035 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CCNA Interactive Guide: ARP & MAC Address Tables</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Base Typography and Backgrounds */
-        body { 
-            background-color: #f8fafc; /* Slate 50 */
-            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-            color: #1e293b; /* Slate 800 */
+      /* Base Typography and Backgrounds */
+      body {
+        background-color: #f8fafc; /* Slate 50 */
+        font-family:
+          "Inter",
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        color: #1e293b; /* Slate 800 */
+      }
+
+      /* Mandatory Chart Container Styling */
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 35vh;
+        min-height: 250px;
+        max-height: 350px;
+      }
+      @media (min-width: 768px) {
+        .chart-container {
+          height: 320px;
         }
-        
-        /* Mandatory Chart Container Styling */
-        .chart-container { 
-            position: relative; 
-            width: 100%; 
-            max-width: 500px; 
-            margin-left: auto; 
-            margin-right: auto; 
-            height: 35vh; 
-            min-height: 250px;
-            max-height: 350px; 
-        }
-        @media (min-width: 768px) { .chart-container { height: 320px; } }
+      }
 
-        /* View Management */
-        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
-        .tab-content.active { display: block; opacity: 1; }
+      /* View Management */
+      .tab-content {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.4s ease-in-out;
+      }
+      .tab-content.active {
+        display: block;
+        opacity: 1;
+      }
 
-        /* Navigation Buttons */
-        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
-        .nav-active { background-color: #f5f3ff; color: #7c3aed; border-left-color: #7c3aed; font-weight: 600; } /* Violet theme */
-        .nav-inactive { color: #64748b; }
-        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+      /* Navigation Buttons */
+      .nav-btn {
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+      }
+      .nav-active {
+        background-color: #f5f3ff;
+        color: #7c3aed;
+        border-left-color: #7c3aed;
+        font-weight: 600;
+      } /* Violet theme */
+      .nav-inactive {
+        color: #64748b;
+      }
+      .nav-inactive:hover {
+        background-color: #f1f5f9;
+        color: #334155;
+      }
 
-        /* Accordion Animations */
-        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .accordion-content.open { max-height: 1200px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+      /* Accordion Animations */
+      .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .accordion-content.expanded {
+        max-height: 1200px;
+        transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-        /* Code Block Styling */
-        .cli-block {
-            background-color: #0f172a; 
-            color: #e2e8f0; 
-            font-family: 'Courier New', Courier, monospace;
-            padding: 1.25rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            font-size: 0.875rem;
-            border: 1px solid #1e293b;
-            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2);
-            line-height: 1.5;
-        }
-        .cli-prompt { color: #a78bfa; font-weight: bold; } /* Violet 400 */
-        .cli-comment { color: #64748b; font-style: italic; }
+      /* Code Block Styling */
+      .cli-block {
+        background-color: #0f172a;
+        color: #e2e8f0;
+        font-family: "Courier New", Courier, monospace;
+        padding: 1.25rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        font-size: 0.875rem;
+        border: 1px solid #1e293b;
+        box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2);
+        line-height: 1.5;
+      }
+      .cli-prompt {
+        color: #a78bfa;
+        font-weight: bold;
+      } /* Violet 400 */
+      .cli-comment {
+        color: #64748b;
+        font-style: italic;
+      }
 
-        /* 3D Flip Utilities for Flashcards */
-        .perspective { perspective: 1000px; }
-        .transform-style-3d { transform-style: preserve-3d; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-        .backface-hidden { backface-visibility: hidden; }
+      /* 3D Flip Utilities for Flashcards */
+      .perspective {
+        perspective: 1000px;
+      }
+      .transform-style-3d {
+        transform-style: preserve-3d;
+      }
+      .rotate-y-180 {
+        transform: rotateY(180deg);
+      }
+      .backface-hidden {
+        backface-visibility: hidden;
+      }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
     </style>
-</head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-violet-200">
-
-<!-- Sidebar Navigation -->
-<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col z-20 shadow-sm transition-all">
-    <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+  </head>
+  <body
+    class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-violet-200"
+  >
+    <!-- Sidebar Navigation -->
+    <nav
+      class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col z-20 shadow-sm transition-all"
+    >
+      <div class="p-6 border-b border-slate-100 flex items-center gap-3">
         <span class="text-3xl text-violet-600">🌐</span>
         <div>
-            <h1 class="text-lg font-bold leading-tight text-slate-800">CCNA Mastery</h1>
-            <p class="text-xs text-violet-600 font-semibold uppercase tracking-wider mt-1">ARP & MAC Tables</p>
+          <h1 class="text-lg font-bold leading-tight text-slate-800">
+            CCNA Mastery
+          </h1>
+          <p
+            class="text-xs text-violet-600 font-semibold uppercase tracking-wider mt-1"
+          >
+            ARP & MAC Tables
+          </p>
         </div>
-    </div>
-    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
-        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
-            <span class="text-xl">📖</span> Core Concepts
+      </div>
+      <div
+        class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1"
+      >
+        <button
+          onclick="switchTab('tab-concepts', this)"
+          class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"
+        >
+          <span class="text-xl">📖</span> Core Concepts
         </button>
-        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
-            <span class="text-xl">🔍</span> Traffic Tracker
+        <button
+          onclick="switchTab('tab-tracker', this)"
+          class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"
+        >
+          <span class="text-xl">🔍</span> Traffic Tracker
         </button>
-        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
-            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        <button
+          onclick="switchTab('tab-qa', this)"
+          class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"
+        >
+          <span class="text-xl">📝</span> Lab Tasks & Q&A
         </button>
-        <button onclick="switchTab('tab-commands', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
-            <span class="text-xl">⌨️</span> Command Matrix
+        <button
+          onclick="switchTab('tab-commands', this)"
+          class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"
+        >
+          <span class="text-xl">⌨️</span> Command Matrix
         </button>
-        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3">
-            <span class="text-xl">🎴</span> Flashcards
+        <button
+          onclick="switchTab('tab-flashcards', this)"
+          class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"
+        >
+          <span class="text-xl">🎴</span> Flashcards
         </button>
-    </div>
-</nav>
+      </div>
+    </nav>
 
-<!-- Main Content Area -->
-<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
-    
-    <header class="mb-8 max-w-5xl mx-auto">
-        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Analyzing Ethernet Switching</h2>
-        <div class="border-l-4 border-violet-500 pl-4 bg-white p-4 rounded-r-xl shadow-sm border border-slate-100">
-            <p class="text-lg text-slate-600 leading-relaxed">
-                This module covers how switches populate their MAC address tables dynamically and how end devices (PCs) use the Address Resolution Protocol (ARP) to map IP addresses to MAC addresses on a local network.
-            </p>
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+      <header class="mb-8 max-w-5xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">
+          Analyzing Ethernet Switching
+        </h2>
+        <div
+          class="border-l-4 border-violet-500 pl-4 bg-white p-4 rounded-r-xl shadow-sm border border-slate-100"
+        >
+          <p class="text-lg text-slate-600 leading-relaxed">
+            This module covers how switches populate their MAC address tables
+            dynamically and how end devices (PCs) use the Address Resolution
+            Protocol (ARP) to map IP addresses to MAC addresses on a local
+            network.
+          </p>
         </div>
-    </header>
+      </header>
 
-    <!-- TAB 1: Core Concepts -->
-    <div id="tab-concepts" class="tab-content active max-w-5xl mx-auto space-y-8">
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">The Bridging Gap</h3>
-            <p class="text-slate-600 mb-8 leading-relaxed">
-                Devices use IP addresses (Layer 3) to identify who they want to talk to, but they <strong>must</strong> use MAC addresses (Layer 2) to build the Ethernet frame and deliver the data on the local segment.
-            </p>
+      <!-- TAB 1: Core Concepts -->
+      <div
+        id="tab-concepts"
+        class="tab-content active max-w-5xl mx-auto space-y-8"
+      >
+        <div
+          class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+        >
+          <h3
+            class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2"
+          >
+            The Bridging Gap
+          </h3>
+          <p class="text-slate-600 mb-8 leading-relaxed">
+            Devices use IP addresses (Layer 3) to identify who they want to talk
+            to, but they <strong>must</strong> use MAC addresses (Layer 2) to
+            build the Ethernet frame and deliver the data on the local segment.
+          </p>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-4">
-                <div class="space-y-4">
-                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex items-start gap-4">
-                        <div class="bg-white p-2 border border-slate-300 rounded text-violet-700 font-bold text-xl w-12 text-center shadow-sm">🔍</div>
-                        <div>
-                            <h4 class="font-bold text-slate-800">The ARP Solution</h4>
-                            <p class="text-sm text-slate-600 mt-1">When a PC knows a destination IP but not the MAC address, it broadcasts an <strong>ARP Request</strong> (<code>FFFF.FFFF.FFFF</code>) asking, "Who has this IP?". The owner of that IP responds with a unicast <strong>ARP Reply</strong>.</p>
-                        </div>
-                    </div>
-                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex items-start gap-4">
-                        <div class="bg-white p-2 border border-slate-300 rounded text-violet-700 font-bold text-xl w-12 text-center shadow-sm">📥</div>
-                        <div>
-                            <h4 class="font-bold text-slate-800">Switch Learning (Source MAC)</h4>
-                            <p class="text-sm text-slate-600 mt-1">Switches start with empty tables. Every time a frame enters a port, the switch records the <strong>Source MAC Address</strong> against that incoming port.</p>
-                        </div>
-                    </div>
-                    <div class="bg-violet-50 p-5 rounded-xl border border-violet-200 flex items-start gap-4">
-                        <div class="bg-white p-2 border border-violet-300 rounded text-violet-700 font-bold text-xl w-12 text-center shadow-sm">📤</div>
-                        <div>
-                            <h4 class="font-bold text-violet-900">Switch Forwarding (Dest MAC)</h4>
-                            <p class="text-sm text-violet-800 mt-1">The switch checks the <strong>Destination MAC Address</strong>. If known, it forwards out the specific port. If unknown (or broadcast), it <strong>floods</strong> the frame out all other ports.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col">
-                    <h4 class="text-center font-bold text-slate-800 mb-2">Frame Types in Initial Connection</h4>
-                    <p class="text-xs text-center text-slate-500 mb-4">A single ping to an unknown destination actually generates <strong>four</strong> distinct frames initially.</p>
-                    
-                    <div class="chart-container flex-grow flex items-center justify-center">
-                        <canvas id="packetChart"></canvas>
-                    </div>
-                    
-                    <p class="text-xs text-center text-slate-500 mt-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        The first frame is always a broadcast (ARP Req), impacting all local network bandwidth, while subsequent frames are unicast.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 2: Traffic Tracker -->
-    <div id="tab-tracker" class="tab-content max-w-5xl mx-auto space-y-8">
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-             <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Traffic Flow Interactive Analysis</h3>
-            <p class="text-slate-600 mb-6 leading-relaxed">
-                When switches and PCs are first booted, their MAC and ARP tables are empty. If PC1 tries to ping PC3, it knows PC3's IP address, but lacks its MAC address. Click through the steps below to see how the network resolves this.
-            </p>
-
-            <div class="bg-slate-900 rounded-2xl p-6 md:p-8 border border-slate-800 shadow-inner flex flex-col">
-                <!-- Device Diagram -->
-                <div class="flex items-center justify-between mb-8 font-mono text-sm md:text-base text-white">
-                    <div class="p-3 md:p-5 border-2 border-slate-600 bg-slate-800 rounded-lg shadow-lg text-center w-16 md:w-24 font-bold">PC1</div>
-                    <div id="path-1" class="flex-1 text-center font-bold text-slate-500 overflow-hidden text-xs md:text-sm">---------</div>
-                    <div class="p-3 md:p-5 border-2 border-slate-600 bg-slate-800 rounded-lg shadow-lg text-center w-16 md:w-24 font-bold">SW1</div>
-                    <div id="path-2" class="flex-1 text-center font-bold text-slate-500 overflow-hidden text-xs md:text-sm">---------</div>
-                    <div class="p-3 md:p-5 border-2 border-slate-600 bg-slate-800 rounded-lg shadow-lg text-center w-16 md:w-24 font-bold">SW2</div>
-                    <div id="path-3" class="flex-1 text-center font-bold text-slate-500 overflow-hidden text-xs md:text-sm">---------</div>
-                    <div class="p-3 md:p-5 border-2 border-slate-600 bg-slate-800 rounded-lg shadow-lg text-center w-16 md:w-24 font-bold">PC3</div>
-                </div>
-                
-                <!-- Controls -->
-                <div class="flex flex-wrap justify-center gap-3 mb-6 bg-slate-800 p-2 rounded-xl">
-                    <button onclick="playStep(1)" id="btn-step-1" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-bold transition-all shadow-md">1. ARP Request</button>
-                    <button onclick="playStep(2)" id="btn-step-2" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold transition-all shadow-md">2. ARP Reply</button>
-                    <button onclick="playStep(3)" id="btn-step-3" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-bold transition-all shadow-md">3. ICMP Echo Req</button>
-                    <button onclick="playStep(4)" id="btn-step-4" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm font-bold transition-all shadow-md">4. ICMP Echo Rep</button>
-                </div>
-
-                <!-- Analysis Description -->
-                <div id="step-description" class="p-4 bg-slate-800 border-l-4 border-slate-500 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 leading-relaxed shadow-inner">
-                    Click a step above to analyze the frame flow across the empty network.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 3: Lab Tasks & Q&A -->
-    <div id="tab-qa" class="tab-content max-w-5xl mx-auto space-y-8">
-         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Lab Task Breakdown</h3>
-            <p class="text-slate-600 mb-6 leading-relaxed">
-                Below are the expert solutions to the lab tasks. Check off the steps as you complete them to save your progress! Click on a question to expand its step-by-step answer and configuration.
-            </p>
-
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-4">
             <div class="space-y-4">
-                <!-- Q1 -->
-                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                    <button onclick="toggleAccordion('acc-1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('qa1', this)">
-                            <span class="pr-6">1. If PC1 pings to PC3, what messages will be sent, and who receives them?</span>
-                        </div>
-                        <span class="text-2xl text-violet-600 transition-transform duration-300 transform">+</span>
-                    </button>
-                    <div id="acc-1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
-                        <div class="py-5 text-slate-700 text-sm space-y-4">
-                            <p>Because tables are empty, PC1 cannot immediately build an Ethernet frame. The following sequence occurs:</p>
-                            <ol class="list-decimal ml-5 space-y-3">
-                                <li><strong>ARP Request (Broadcast):</strong> PC1 sends an ARP request asking "Who has PC3's IP?". The destination MAC is <code class="bg-white px-1 border rounded text-xs font-mono">FFFF.FFFF.FFFF</code>. 
-                                    <br><span class="text-violet-700 font-semibold">Receivers:</span> Both switches receive and flood this frame out all active ports. PC2, PC3, and PC4 receive it. PC2 and PC4 drop it; PC3 processes it.</li>
-                                <li><strong>ARP Reply (Unicast):</strong> PC3 replies directly to PC1 with its MAC address. 
-                                    <br><span class="text-violet-700 font-semibold">Receivers:</span> SW2 receives it, learns PC3's MAC, and forwards to SW1. SW1 receives it, learns PC3's MAC, and forwards directly to PC1.</li>
-                                <li><strong>ICMP Echo Request (Unicast):</strong> Now possessing the MAC, PC1 sends the actual Ping packet.
-                                    <br><span class="text-violet-700 font-semibold">Receivers:</span> SW1 forwards to SW2, SW2 forwards to PC3.</li>
-                                <li><strong>ICMP Echo Reply (Unicast):</strong> PC3 replies to the ping.
-                                    <br><span class="text-violet-700 font-semibold">Receivers:</span> SW2 forwards to SW1, SW1 forwards to PC1.</li>
-                            </ol>
-                        </div>
-                    </div>
+              <div
+                class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex items-start gap-4"
+              >
+                <div
+                  class="bg-white p-2 border border-slate-300 rounded text-violet-700 font-bold text-xl w-12 text-center shadow-sm"
+                >
+                  🔍
                 </div>
-
-                <!-- Q2 -->
-                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                    <button onclick="toggleAccordion('acc-2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('qa2', this)">
-                            <span>2. Send the ping and use Packet Tracer 'simulation mode' to verify.</span>
-                        </div>
-                        <span class="text-2xl text-violet-600 transition-transform duration-300 transform">+</span>
-                    </button>
-                    <div id="acc-2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
-                        <div class="py-5 text-slate-700 text-sm space-y-3">
-                            <p>To execute this in Packet Tracer:</p>
-                            <ul class="list-disc ml-5 space-y-2">
-                                <li>Click the <strong>Simulation</strong> tab (bottom right corner).</li>
-                                <li>Open PC1's Desktop, then open the Command Prompt.</li>
-                                <li>Run the command: <code class="bg-slate-800 text-emerald-400 px-2 py-1 rounded font-mono text-xs">ping 192.168.1.3</code></li>
-                                <li>Click the <strong>Play / Capture Forward</strong> button in the Simulation Panel to advance the animation frame by frame.</li>
-                                <li>You will visually see the ARP broadcast hit all devices, followed by the unicast paths of the ARP reply and ICMP packets.</li>
-                            </ul>
-                        </div>
-                    </div>
+                <div>
+                  <h4 class="font-bold text-slate-800">The ARP Solution</h4>
+                  <p class="text-sm text-slate-600 mt-1">
+                    When a PC knows a destination IP but not the MAC address, it
+                    broadcasts an
+                    <strong>ARP Request</strong> (<code>FFFF.FFFF.FFFF</code>)
+                    asking, "Who has this IP?". The owner of that IP responds
+                    with a unicast <strong>ARP Reply</strong>.
+                  </p>
                 </div>
-
-                <!-- Q3 -->
-                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                    <button onclick="toggleAccordion('acc-3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('qa3', this)">
-                            <span>3. Generate network traffic to allow switches to learn all MAC addresses.</span>
-                        </div>
-                        <span class="text-2xl text-violet-600 transition-transform duration-300 transform">+</span>
-                    </button>
-                    <div id="acc-3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
-                        <div class="py-5 text-slate-700 text-sm space-y-3">
-                            <p>Switches learn Source MAC addresses dynamically when a device sends a frame. To populate the tables completely, every PC must send traffic across the network.</p>
-                            <div class="cli-block">
-                                <span class="cli-comment">! From PC1's Command Prompt:</span><br>
-                                <span class="cli-prompt">PC1&gt;</span> ping 192.168.1.2  <span class="cli-comment"># Populates PC1 & PC2</span><br>
-                                <span class="cli-prompt">PC1&gt;</span> ping 192.168.1.3  <span class="cli-comment"># Populates PC3</span><br><br>
-                                <span class="cli-comment">! From PC2's Command Prompt:</span><br>
-                                <span class="cli-prompt">PC2&gt;</span> ping 192.168.1.4  <span class="cli-comment"># Populates PC4</span>
-                            </div>
-                            <p class="text-xs text-slate-500 italic mt-2">*Once traffic traverses all switch ports across both switches, their MAC tables are fully populated with all PC addresses.</p>
-                        </div>
-                    </div>
+              </div>
+              <div
+                class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex items-start gap-4"
+              >
+                <div
+                  class="bg-white p-2 border border-slate-300 rounded text-violet-700 font-bold text-xl w-12 text-center shadow-sm"
+                >
+                  📥
                 </div>
-
-                <!-- Q4 -->
-                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                    <button onclick="toggleAccordion('acc-4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('qa4', this)">
-                            <span>4. Use 'show' commands to identify the MAC address of each PC.</span>
-                        </div>
-                        <span class="text-2xl text-violet-600 transition-transform duration-300 transform">+</span>
-                    </button>
-                    <div id="acc-4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
-                        <div class="py-5 text-slate-700 text-sm space-y-4">
-                            <p>Go to the CLI of each switch and enter Privileged EXEC mode.</p>
-                            <div class="cli-block">
-                                <span class="cli-prompt">SW1&gt;</span> enable<br>
-                                <span class="cli-prompt">SW1#</span> show mac address-table
-                            </div>
-                            <div class="bg-violet-50 border-l-4 border-violet-500 p-3 text-violet-900 rounded text-xs leading-relaxed mt-3">
-                                <strong>Topology Note:</strong> On SW1, you will clearly see PC1 on <code class="font-mono bg-white px-1 border rounded">Fa0/1</code> and PC2 on <code class="font-mono bg-white px-1 border rounded">Fa0/2</code>. However, PC3 and PC4 will both appear on the uplink port (<code class="font-mono bg-white px-1 border rounded">Gig0/1</code>). To find their specific edge ports, you must run the same command on <strong>SW2</strong>.
-                            </div>
-                        </div>
-                    </div>
+                <div>
+                  <h4 class="font-bold text-slate-800">
+                    Switch Learning (Source MAC)
+                  </h4>
+                  <p class="text-sm text-slate-600 mt-1">
+                    Switches start with empty tables. Every time a frame enters
+                    a port, the switch records the
+                    <strong>Source MAC Address</strong> against that incoming
+                    port.
+                  </p>
                 </div>
-
-                <!-- Q5 -->
-                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                    <button onclick="toggleAccordion('acc-5', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors">
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('qa5', this)">
-                            <span>5. Clear the dynamic MAC addresses from each switch.</span>
-                        </div>
-                        <span class="text-2xl text-violet-600 transition-transform duration-300 transform">+</span>
-                    </button>
-                    <div id="acc-5" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
-                        <div class="py-5 text-slate-700 text-sm space-y-3">
-                            <p>To reset the lab state and clear the switch's learned MAC addresses, execute the following command in Privileged EXEC mode on both SW1 and SW2:</p>
-                            <div class="cli-block">
-                                <span class="cli-prompt">SW1#</span> clear mac address-table dynamic<br>
-                                <span class="cli-prompt">SW2#</span> clear mac address-table dynamic
-                            </div>
-                            <p class="text-xs text-slate-500 italic mt-2">*Note: Packet Tracer does not support clearing specific interfaces (e.g., <code>clear mac address-table dynamic interface Fa0/1</code>). You must clear the entire dynamic table.</p>
-                        </div>
-                    </div>
+              </div>
+              <div
+                class="bg-violet-50 p-5 rounded-xl border border-violet-200 flex items-start gap-4"
+              >
+                <div
+                  class="bg-white p-2 border border-violet-300 rounded text-violet-700 font-bold text-xl w-12 text-center shadow-sm"
+                >
+                  📤
                 </div>
-
+                <div>
+                  <h4 class="font-bold text-violet-900">
+                    Switch Forwarding (Dest MAC)
+                  </h4>
+                  <p class="text-sm text-violet-800 mt-1">
+                    The switch checks the
+                    <strong>Destination MAC Address</strong>. If known, it
+                    forwards out the specific port. If unknown (or broadcast),
+                    it <strong>floods</strong> the frame out all other ports.
+                  </p>
+                </div>
+              </div>
             </div>
+
+            <div
+              class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col"
+            >
+              <h4 class="text-center font-bold text-slate-800 mb-2">
+                Frame Types in Initial Connection
+              </h4>
+              <p class="text-xs text-center text-slate-500 mb-4">
+                A single ping to an unknown destination actually generates
+                <strong>four</strong> distinct frames initially.
+              </p>
+
+              <div
+                class="chart-container flex-grow flex items-center justify-center"
+              >
+                <canvas id="packetChart"></canvas>
+              </div>
+
+              <p
+                class="text-xs text-center text-slate-500 mt-4 bg-slate-50 p-3 rounded-lg border border-slate-100"
+              >
+                The first frame is always a broadcast (ARP Req), impacting all
+                local network bandwidth, while subsequent frames are unicast.
+              </p>
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- TAB 4: Command Matrix -->
-    <div id="tab-commands" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Command Reference Index</h3>
-            <p class="text-slate-600 mb-6 leading-relaxed">
-                Quick lookup for Cisco IOS commands related to MAC tables and ARP functionality. Use the input box to filter.
-            </p>
+      <!-- TAB 2: Traffic Tracker -->
+      <div id="tab-tracker" class="tab-content max-w-5xl mx-auto space-y-8">
+        <div
+          class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+        >
+          <h3
+            class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2"
+          >
+            Traffic Flow Interactive Analysis
+          </h3>
+          <p class="text-slate-600 mb-6 leading-relaxed">
+            When switches and PCs are first booted, their MAC and ARP tables are
+            empty. If PC1 tries to ping PC3, it knows PC3's IP address, but
+            lacks its MAC address. Click through the steps below to see how the
+            network resolves this.
+          </p>
 
-            <div class="mb-6 relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
-                <input type="text" id="cmdSearch" onkeyup="filterTable()" placeholder="Search commands, modes, or descriptions..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-shadow text-sm">
+          <div
+            class="bg-slate-900 rounded-2xl p-6 md:p-8 border border-slate-800 shadow-inner flex flex-col"
+          >
+            <!-- Device Diagram -->
+            <div
+              class="flex items-center justify-between mb-8 font-mono text-sm md:text-base text-white"
+            >
+              <div
+                class="p-3 md:p-5 border-2 border-slate-600 bg-slate-800 rounded-lg shadow-lg text-center w-16 md:w-24 font-bold"
+              >
+                PC1
+              </div>
+              <div
+                id="path-1"
+                class="flex-1 text-center font-bold text-slate-500 overflow-hidden text-xs md:text-sm"
+              >
+                ---------
+              </div>
+              <div
+                class="p-3 md:p-5 border-2 border-slate-600 bg-slate-800 rounded-lg shadow-lg text-center w-16 md:w-24 font-bold"
+              >
+                SW1
+              </div>
+              <div
+                id="path-2"
+                class="flex-1 text-center font-bold text-slate-500 overflow-hidden text-xs md:text-sm"
+              >
+                ---------
+              </div>
+              <div
+                class="p-3 md:p-5 border-2 border-slate-600 bg-slate-800 rounded-lg shadow-lg text-center w-16 md:w-24 font-bold"
+              >
+                SW2
+              </div>
+              <div
+                id="path-3"
+                class="flex-1 text-center font-bold text-slate-500 overflow-hidden text-xs md:text-sm"
+              >
+                ---------
+              </div>
+              <div
+                class="p-3 md:p-5 border-2 border-slate-600 bg-slate-800 rounded-lg shadow-lg text-center w-16 md:w-24 font-bold"
+              >
+                PC3
+              </div>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
-                <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
-                    <thead class="bg-slate-50 text-slate-700 font-semibold">
-                        <tr>
-                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Command</th>
-                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Mode</th>
-                            <th class="px-6 py-4 uppercase tracking-wider text-xs">Purpose</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-slate-100">
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">show mac address-table</td>
-                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600">Privileged EXEC</span></td>
-                            <td class="px-6 py-4 text-slate-600">Displays the MAC address table, including dynamic/static entries, and their associated interfaces.</td>
-                        </tr>
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">clear mac address-table dynamic</td>
-                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600">Privileged EXEC</span></td>
-                            <td class="px-6 py-4 text-slate-600">Flushes all dynamically learned MAC addresses from the switch's memory.</td>
-                        </tr>
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">arp -a</td>
-                            <td class="px-6 py-4"><span class="bg-emerald-50 px-2 py-1 rounded text-xs border border-emerald-200 text-emerald-800">Windows CMD</span></td>
-                            <td class="px-6 py-4 text-slate-600">Displays the current ARP cache (IP to MAC mapping) on an end-host machine.</td>
-                        </tr>
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">arp -d</td>
-                            <td class="px-6 py-4"><span class="bg-emerald-50 px-2 py-1 rounded text-xs border border-emerald-200 text-emerald-800">Windows CMD</span></td>
-                            <td class="px-6 py-4 text-slate-600">Deletes/clears the ARP cache on a Windows machine. Useful for resetting labs.</td>
-                        </tr>
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">ping [ip-address]</td>
-                            <td class="px-6 py-4"><span class="bg-stone-100 px-2 py-1 rounded text-xs border border-stone-200 text-stone-600">Any Exec Mode</span></td>
-                            <td class="px-6 py-4 text-slate-600">Sends ICMP Echo Requests to verify Layer 3 connectivity and generate network traffic.</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div id="noResults" class="hidden p-8 text-center text-slate-500 bg-white">No matching commands found in the index.</div>
+            <!-- Controls -->
+            <div
+              class="flex flex-wrap justify-center gap-3 mb-6 bg-slate-800 p-2 rounded-xl"
+            >
+              <button
+                onclick="playStep(1)"
+                id="btn-step-1"
+                class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-bold transition-all shadow-md"
+              >
+                1. ARP Request
+              </button>
+              <button
+                onclick="playStep(2)"
+                id="btn-step-2"
+                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold transition-all shadow-md"
+              >
+                2. ARP Reply
+              </button>
+              <button
+                onclick="playStep(3)"
+                id="btn-step-3"
+                class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-bold transition-all shadow-md"
+              >
+                3. ICMP Echo Req
+              </button>
+              <button
+                onclick="playStep(4)"
+                id="btn-step-4"
+                class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm font-bold transition-all shadow-md"
+              >
+                4. ICMP Echo Rep
+              </button>
             </div>
+
+            <!-- Analysis Description -->
+            <div
+              id="step-description"
+              class="p-4 bg-slate-800 border-l-4 border-slate-500 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 leading-relaxed shadow-inner"
+            >
+              Click a step above to analyze the frame flow across the empty
+              network.
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- TAB 5: Flashcards -->
-    <div id="tab-flashcards" class="tab-content max-w-5xl mx-auto space-y-8 pb-12">
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2">Active Recall Flashcards</h3>
-            <p class="text-slate-600 mb-6 leading-relaxed">
-                Click a card to flip and verify your understanding of Ethernet switching and ARP mechanics.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
-                <!-- Injected via JS -->
+      <!-- TAB 3: Lab Tasks & Q&A -->
+      <div id="tab-qa" class="tab-content max-w-5xl mx-auto space-y-8">
+        <div
+          class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+        >
+          <h3
+            class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2"
+          >
+            Lab Task Breakdown
+          </h3>
+          <p class="text-slate-600 mb-6 leading-relaxed">
+            Below are the expert solutions to the lab tasks. Check off the steps
+            as you complete them to save your progress! Click on a question to
+            expand its step-by-step answer and configuration.
+          </p>
+
+          <div class="space-y-4">
+            <!-- Q1 -->
+            <div
+              class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden"
+            >
+              <button
+                onclick="toggleAccordion('acc-1', this)"
+                class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500"
+                    onclick="
+                      event.stopPropagation();
+                      saveProgress('qa1', this);
+                    "
+                  />
+                  <span class="pr-6"
+                    >1. If PC1 pings to PC3, what messages will be sent, and who
+                    receives them?</span
+                  >
+                </div>
+                <span
+                  class="text-2xl text-violet-600 transition-transform duration-300 transform"
+                  >+</span
+                >
+              </button>
+              <div
+                id="acc-1"
+                class="accordion-content bg-slate-50 px-6 border-t border-slate-100"
+              >
+                <div class="py-5 text-slate-700 text-sm space-y-4">
+                  <p>
+                    Because tables are empty, PC1 cannot immediately build an
+                    Ethernet frame. The following sequence occurs:
+                  </p>
+                  <ol class="list-decimal ml-5 space-y-3">
+                    <li>
+                      <strong>ARP Request (Broadcast):</strong> PC1 sends an ARP
+                      request asking "Who has PC3's IP?". The destination MAC is
+                      <code
+                        class="bg-white px-1 border rounded text-xs font-mono"
+                        >FFFF.FFFF.FFFF</code
+                      >. <br /><span class="text-violet-700 font-semibold"
+                        >Receivers:</span
+                      >
+                      Both switches receive and flood this frame out all active
+                      ports. PC2, PC3, and PC4 receive it. PC2 and PC4 drop it;
+                      PC3 processes it.
+                    </li>
+                    <li>
+                      <strong>ARP Reply (Unicast):</strong> PC3 replies directly
+                      to PC1 with its MAC address. <br /><span
+                        class="text-violet-700 font-semibold"
+                        >Receivers:</span
+                      >
+                      SW2 receives it, learns PC3's MAC, and forwards to SW1.
+                      SW1 receives it, learns PC3's MAC, and forwards directly
+                      to PC1.
+                    </li>
+                    <li>
+                      <strong>ICMP Echo Request (Unicast):</strong> Now
+                      possessing the MAC, PC1 sends the actual Ping packet.
+                      <br /><span class="text-violet-700 font-semibold"
+                        >Receivers:</span
+                      >
+                      SW1 forwards to SW2, SW2 forwards to PC3.
+                    </li>
+                    <li>
+                      <strong>ICMP Echo Reply (Unicast):</strong> PC3 replies to
+                      the ping. <br /><span
+                        class="text-violet-700 font-semibold"
+                        >Receivers:</span
+                      >
+                      SW2 forwards to SW1, SW1 forwards to PC1.
+                    </li>
+                  </ol>
+                </div>
+              </div>
             </div>
+
+            <!-- Q2 -->
+            <div
+              class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden"
+            >
+              <button
+                onclick="toggleAccordion('acc-2', this)"
+                class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500"
+                    onclick="
+                      event.stopPropagation();
+                      saveProgress('qa2', this);
+                    "
+                  />
+                  <span
+                    >2. Send the ping and use Packet Tracer 'simulation mode' to
+                    verify.</span
+                  >
+                </div>
+                <span
+                  class="text-2xl text-violet-600 transition-transform duration-300 transform"
+                  >+</span
+                >
+              </button>
+              <div
+                id="acc-2"
+                class="accordion-content bg-slate-50 px-6 border-t border-slate-100"
+              >
+                <div class="py-5 text-slate-700 text-sm space-y-3">
+                  <p>To execute this in Packet Tracer:</p>
+                  <ul class="list-disc ml-5 space-y-2">
+                    <li>
+                      Click the <strong>Simulation</strong> tab (bottom right
+                      corner).
+                    </li>
+                    <li>Open PC1's Desktop, then open the Command Prompt.</li>
+                    <li>
+                      Run the command:
+                      <code
+                        class="bg-slate-800 text-emerald-400 px-2 py-1 rounded font-mono text-xs"
+                        >ping 192.168.1.3</code
+                      >
+                    </li>
+                    <li>
+                      Click the <strong>Play / Capture Forward</strong> button
+                      in the Simulation Panel to advance the animation frame by
+                      frame.
+                    </li>
+                    <li>
+                      You will visually see the ARP broadcast hit all devices,
+                      followed by the unicast paths of the ARP reply and ICMP
+                      packets.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Q3 -->
+            <div
+              class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden"
+            >
+              <button
+                onclick="toggleAccordion('acc-3', this)"
+                class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500"
+                    onclick="
+                      event.stopPropagation();
+                      saveProgress('qa3', this);
+                    "
+                  />
+                  <span
+                    >3. Generate network traffic to allow switches to learn all
+                    MAC addresses.</span
+                  >
+                </div>
+                <span
+                  class="text-2xl text-violet-600 transition-transform duration-300 transform"
+                  >+</span
+                >
+              </button>
+              <div
+                id="acc-3"
+                class="accordion-content bg-slate-50 px-6 border-t border-slate-100"
+              >
+                <div class="py-5 text-slate-700 text-sm space-y-3">
+                  <p>
+                    Switches learn Source MAC addresses dynamically when a
+                    device sends a frame. To populate the tables completely,
+                    every PC must send traffic across the network.
+                  </p>
+                  <div class="cli-block">
+                    <span class="cli-comment">! From PC1's Command Prompt:</span
+                    ><br />
+                    <span class="cli-prompt">PC1&gt;</span> ping 192.168.1.2
+                    <span class="cli-comment"># Populates PC1 & PC2</span><br />
+                    <span class="cli-prompt">PC1&gt;</span> ping 192.168.1.3
+                    <span class="cli-comment"># Populates PC3</span><br /><br />
+                    <span class="cli-comment">! From PC2's Command Prompt:</span
+                    ><br />
+                    <span class="cli-prompt">PC2&gt;</span> ping 192.168.1.4
+                    <span class="cli-comment"># Populates PC4</span>
+                  </div>
+                  <p class="text-xs text-slate-500 italic mt-2">
+                    *Once traffic traverses all switch ports across both
+                    switches, their MAC tables are fully populated with all PC
+                    addresses.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Q4 -->
+            <div
+              class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden"
+            >
+              <button
+                onclick="toggleAccordion('acc-4', this)"
+                class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500"
+                    onclick="
+                      event.stopPropagation();
+                      saveProgress('qa4', this);
+                    "
+                  />
+                  <span
+                    >4. Use 'show' commands to identify the MAC address of each
+                    PC.</span
+                  >
+                </div>
+                <span
+                  class="text-2xl text-violet-600 transition-transform duration-300 transform"
+                  >+</span
+                >
+              </button>
+              <div
+                id="acc-4"
+                class="accordion-content bg-slate-50 px-6 border-t border-slate-100"
+              >
+                <div class="py-5 text-slate-700 text-sm space-y-4">
+                  <p>
+                    Go to the CLI of each switch and enter Privileged EXEC mode.
+                  </p>
+                  <div class="cli-block">
+                    <span class="cli-prompt">SW1&gt;</span> enable<br />
+                    <span class="cli-prompt">SW1#</span> show mac address-table
+                  </div>
+                  <div
+                    class="bg-violet-50 border-l-4 border-violet-500 p-3 text-violet-900 rounded text-xs leading-relaxed mt-3"
+                  >
+                    <strong>Topology Note:</strong> On SW1, you will clearly see
+                    PC1 on
+                    <code class="font-mono bg-white px-1 border rounded"
+                      >Fa0/1</code
+                    >
+                    and PC2 on
+                    <code class="font-mono bg-white px-1 border rounded"
+                      >Fa0/2</code
+                    >. However, PC3 and PC4 will both appear on the uplink port
+                    (<code class="font-mono bg-white px-1 border rounded"
+                      >Gig0/1</code
+                    >). To find their specific edge ports, you must run the same
+                    command on <strong>SW2</strong>.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Q5 -->
+            <div
+              class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden"
+            >
+              <button
+                onclick="toggleAccordion('acc-5', this)"
+                class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500"
+                    onclick="
+                      event.stopPropagation();
+                      saveProgress('qa5', this);
+                    "
+                  />
+                  <span
+                    >5. Clear the dynamic MAC addresses from each switch.</span
+                  >
+                </div>
+                <span
+                  class="text-2xl text-violet-600 transition-transform duration-300 transform"
+                  >+</span
+                >
+              </button>
+              <div
+                id="acc-5"
+                class="accordion-content bg-slate-50 px-6 border-t border-slate-100"
+              >
+                <div class="py-5 text-slate-700 text-sm space-y-3">
+                  <p>
+                    To reset the lab state and clear the switch's learned MAC
+                    addresses, execute the following command in Privileged EXEC
+                    mode on both SW1 and SW2:
+                  </p>
+                  <div class="cli-block">
+                    <span class="cli-prompt">SW1#</span> clear mac address-table
+                    dynamic<br />
+                    <span class="cli-prompt">SW2#</span> clear mac address-table
+                    dynamic
+                  </div>
+                  <p class="text-xs text-slate-500 italic mt-2">
+                    *Note: Packet Tracer does not support clearing specific
+                    interfaces (e.g.,
+                    <code>clear mac address-table dynamic interface Fa0/1</code
+                    >). You must clear the entire dynamic table.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-</main>
+      <!-- TAB 4: Command Matrix -->
+      <div
+        id="tab-commands"
+        class="tab-content max-w-5xl mx-auto space-y-8 pb-12"
+      >
+        <div
+          class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+        >
+          <h3
+            class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2"
+          >
+            Command Reference Index
+          </h3>
+          <p class="text-slate-600 mb-6 leading-relaxed">
+            Quick lookup for Cisco IOS commands related to MAC tables and ARP
+            functionality. Use the input box to filter.
+          </p>
 
-<script>
-    // --- Chart.js Logic ---
-    let chartRendered = false;
-    function renderChart() {
-        if(chartRendered) return;
-        const ctx = document.getElementById('packetChart').getContext('2d');
+          <div class="mb-6 relative">
+            <span
+              class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg"
+              >🔍</span
+            >
+            <input
+              type="text"
+              id="cmdSearch"
+              onkeyup="filterTable()"
+              placeholder="Search commands, modes, or descriptions..."
+              class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-shadow text-sm"
+            />
+          </div>
+
+          <div
+            class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm"
+          >
+            <table
+              class="min-w-full divide-y divide-slate-200 text-left text-sm"
+              id="cmdTable"
+            >
+              <thead class="bg-slate-50 text-slate-700 font-semibold">
+                <tr>
+                  <th class="px-6 py-4 uppercase tracking-wider text-xs">
+                    Command
+                  </th>
+                  <th class="px-6 py-4 uppercase tracking-wider text-xs">
+                    Mode
+                  </th>
+                  <th class="px-6 py-4 uppercase tracking-wider text-xs">
+                    Purpose
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-slate-100">
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td
+                    class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap"
+                  >
+                    show mac address-table
+                  </td>
+                  <td class="px-6 py-4">
+                    <span
+                      class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600"
+                      >Privileged EXEC</span
+                    >
+                  </td>
+                  <td class="px-6 py-4 text-slate-600">
+                    Displays the MAC address table, including dynamic/static
+                    entries, and their associated interfaces.
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td
+                    class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap"
+                  >
+                    clear mac address-table dynamic
+                  </td>
+                  <td class="px-6 py-4">
+                    <span
+                      class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200 text-slate-600"
+                      >Privileged EXEC</span
+                    >
+                  </td>
+                  <td class="px-6 py-4 text-slate-600">
+                    Flushes all dynamically learned MAC addresses from the
+                    switch's memory.
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td
+                    class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap"
+                  >
+                    arp -a
+                  </td>
+                  <td class="px-6 py-4">
+                    <span
+                      class="bg-emerald-50 px-2 py-1 rounded text-xs border border-emerald-200 text-emerald-800"
+                      >Windows CMD</span
+                    >
+                  </td>
+                  <td class="px-6 py-4 text-slate-600">
+                    Displays the current ARP cache (IP to MAC mapping) on an
+                    end-host machine.
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td
+                    class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap"
+                  >
+                    arp -d
+                  </td>
+                  <td class="px-6 py-4">
+                    <span
+                      class="bg-emerald-50 px-2 py-1 rounded text-xs border border-emerald-200 text-emerald-800"
+                      >Windows CMD</span
+                    >
+                  </td>
+                  <td class="px-6 py-4 text-slate-600">
+                    Deletes/clears the ARP cache on a Windows machine. Useful
+                    for resetting labs.
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td
+                    class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap"
+                  >
+                    ping [ip-address]
+                  </td>
+                  <td class="px-6 py-4">
+                    <span
+                      class="bg-stone-100 px-2 py-1 rounded text-xs border border-stone-200 text-stone-600"
+                      >Any Exec Mode</span
+                    >
+                  </td>
+                  <td class="px-6 py-4 text-slate-600">
+                    Sends ICMP Echo Requests to verify Layer 3 connectivity and
+                    generate network traffic.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div
+              id="noResults"
+              class="hidden p-8 text-center text-slate-500 bg-white"
+            >
+              No matching commands found in the index.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: Flashcards -->
+      <div
+        id="tab-flashcards"
+        class="tab-content max-w-5xl mx-auto space-y-8 pb-12"
+      >
+        <div
+          class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+        >
+          <h3
+            class="text-2xl font-bold text-slate-800 mb-2 border-b border-slate-100 pb-2"
+          >
+            Active Recall Flashcards
+          </h3>
+          <p class="text-slate-600 mb-6 leading-relaxed">
+            Click a card to flip and verify your understanding of Ethernet
+            switching and ARP mechanics.
+          </p>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            id="flashcard-grid"
+          >
+            <!-- Injected via JS -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // --- Chart.js Logic ---
+      let chartRendered = false;
+      function renderChart() {
+        if (chartRendered) return;
+        const ctx = document.getElementById("packetChart").getContext("2d");
         new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Broadcast (ARP Request)', 'Unicast (ARP Reply, ICMP)'],
-                datasets: [{
-                    data: [1, 3], // 1 ARP Request, 1 ARP Reply, 1 ICMP Req, 1 ICMP Rep
-                    backgroundColor: ['#f59e0b', '#7c3aed'], // Amber 500, Violet 600
-                    borderWidth: 0,
-                    hoverOffset: 6
-                }]
+          type: "doughnut",
+          data: {
+            labels: ["Broadcast (ARP Request)", "Unicast (ARP Reply, ICMP)"],
+            datasets: [
+              {
+                data: [1, 3], // 1 ARP Request, 1 ARP Reply, 1 ICMP Req, 1 ICMP Rep
+                backgroundColor: ["#f59e0b", "#7c3aed"], // Amber 500, Violet 600
+                borderWidth: 0,
+                hoverOffset: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "65%",
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  boxWidth: 12,
+                  padding: 20,
+                  font: { family: "'Inter', sans-serif" },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    return ` ${context.label}: ${context.raw} Frame(s)`;
+                  },
+                },
+                padding: 12,
+                cornerRadius: 8,
+              },
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '65%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { family: "'Inter', sans-serif" } } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return ` ${context.label}: ${context.raw} Frame(s)`;
-                            }
-                        },
-                        padding: 12,
-                        cornerRadius: 8
-                    }
-                }
-            }
+          },
         });
         chartRendered = true;
-    }
+      }
 
-    // --- Navigation Logic ---
-    function switchTab(tabId, btnElement) {
+      // --- Navigation Logic ---
+      function switchTab(tabId, btnElement) {
         // Hide all views
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.remove('active');
+        document.querySelectorAll(".tab-content").forEach((tab) => {
+          tab.classList.remove("active");
         });
-        
+
         // Remove active state from all buttons
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('nav-active');
-            btn.classList.add('nav-inactive');
+        document.querySelectorAll(".nav-btn").forEach((btn) => {
+          btn.classList.remove("nav-active");
+          btn.classList.add("nav-inactive");
         });
 
         // Show target view & set button active
-        document.getElementById(tabId).classList.add('active');
-        btnElement.classList.remove('nav-inactive');
-        btnElement.classList.add('nav-active');
+        document.getElementById(tabId).classList.add("active");
+        btnElement.classList.remove("nav-inactive");
+        btnElement.classList.add("nav-active");
 
         // Render chart if Concepts tab is opened
-        if(tabId === 'tab-concepts') {
-            renderChart();
+        if (tabId === "tab-concepts") {
+          renderChart();
         }
-        
+
         // Render Tracker if opened
-        if(tabId === 'tab-tracker') {
-            playStep(1);
+        if (tabId === "tab-tracker") {
+          playStep(1);
         }
-    }
+      }
 
-    // --- Accordion Logic ---
-    function toggleAccordion(id, btnElement) {
+      // --- Accordion Logic ---
+      function toggleAccordion(id, btnElement) {
         const content = document.getElementById(id);
-        const icon = btnElement.querySelector('span:last-child');
-        
-        if (content.classList.contains('open')) {
-            content.classList.remove('open');
-            icon.style.transform = 'rotate(0deg)';
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains("expanded")) {
+          content.classList.remove("expanded");
+          icon.textContent = "+";
         } else {
-            content.classList.add('open');
-            icon.style.transform = 'rotate(45deg)';
+          content.classList.add("expanded");
+          icon.textContent = "−";
         }
-    }
+      }
 
-    // --- Command Filter Logic ---
-    function filterTable() {
+      // --- Command Filter Logic ---
+      function filterTable() {
         const input = document.getElementById("cmdSearch");
         const filter = input.value.toUpperCase();
         const tbody = document.querySelector("#cmdTable tbody");
@@ -487,139 +1037,194 @@
         let visibleCount = 0;
 
         for (let i = 0; i < tr.length; i++) {
-            let txtValue = tr[i].textContent || tr[i].innerText;
-            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                tr[i].style.display = "";
-                visibleCount++;
-            } else {
-                tr[i].style.display = "none";
-            }
+          let txtValue = tr[i].textContent || tr[i].innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+            visibleCount++;
+          } else {
+            tr[i].style.display = "none";
+          }
         }
-        
-        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
-        document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
-    }
 
-    // --- Interactive Packet Flow Logic ---
-    function playStep(stepIndex) {
+        document.getElementById("noResults").style.display =
+          visibleCount === 0 ? "block" : "none";
+        document.getElementById("cmdTable").style.display =
+          visibleCount === 0 ? "none" : "table";
+      }
+
+      // --- Interactive Packet Flow Logic ---
+      function playStep(stepIndex) {
         // Reset path styles
-        ['path-1', 'path-2', 'path-3'].forEach(id => {
-            const el = document.getElementById(id);
-            el.className = "flex-1 text-center font-bold overflow-hidden text-xs md:text-sm text-slate-500 transition-colors";
-            el.innerHTML = "---------";
+        ["path-1", "path-2", "path-3"].forEach((id) => {
+          const el = document.getElementById(id);
+          el.className =
+            "flex-1 text-center font-bold overflow-hidden text-xs md:text-sm text-slate-500 transition-colors";
+          el.innerHTML = "---------";
         });
-        
+
         // Reset button styles
-        for(let i=1; i<=4; i++) {
-            document.getElementById('btn-step-'+i).classList.remove('ring-4', 'ring-offset-2', 'ring-slate-900');
+        for (let i = 1; i <= 4; i++) {
+          document
+            .getElementById("btn-step-" + i)
+            .classList.remove("ring-4", "ring-offset-2", "ring-slate-900");
         }
-        document.getElementById('btn-step-'+stepIndex).classList.add('ring-4', 'ring-offset-2', 'ring-slate-900');
+        document
+          .getElementById("btn-step-" + stepIndex)
+          .classList.add("ring-4", "ring-offset-2", "ring-slate-900");
 
-        const desc = document.getElementById('step-description');
+        const desc = document.getElementById("step-description");
 
-        if(stepIndex === 1) {
-            document.getElementById('path-1').innerHTML = "======&gt;";
-            document.getElementById('path-1').classList.replace('text-slate-500', 'text-amber-500');
-            document.getElementById('path-2').innerHTML = "======&gt;";
-            document.getElementById('path-2').classList.replace('text-slate-500', 'text-amber-500');
-            document.getElementById('path-3').innerHTML = "======&gt;";
-            document.getElementById('path-3').classList.replace('text-slate-500', 'text-amber-500');
-            
-            desc.innerHTML = "<span class='text-amber-500 font-bold'>ARP Request (Broadcast):</span> PC1 sends a broadcast frame (FFFF.FFFF.FFFF). SW1 learns PC1's MAC on its incoming port. SW1 floods it to SW2. SW2 learns PC1's MAC and floods it to PC3 and PC4. PC4 drops it; PC3 processes it.";
-            desc.className = "p-4 bg-slate-800 border-l-4 border-amber-500 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 shadow-inner";
-        } 
-        else if(stepIndex === 2) {
-            document.getElementById('path-3').innerHTML = "&lt;======";
-            document.getElementById('path-3').classList.replace('text-slate-500', 'text-emerald-500');
-            document.getElementById('path-2').innerHTML = "&lt;======";
-            document.getElementById('path-2').classList.replace('text-slate-500', 'text-emerald-500');
-            document.getElementById('path-1').innerHTML = "&lt;======";
-            document.getElementById('path-1').classList.replace('text-slate-500', 'text-emerald-500');
+        if (stepIndex === 1) {
+          document.getElementById("path-1").innerHTML = "======&gt;";
+          document
+            .getElementById("path-1")
+            .classList.replace("text-slate-500", "text-amber-500");
+          document.getElementById("path-2").innerHTML = "======&gt;";
+          document
+            .getElementById("path-2")
+            .classList.replace("text-slate-500", "text-amber-500");
+          document.getElementById("path-3").innerHTML = "======&gt;";
+          document
+            .getElementById("path-3")
+            .classList.replace("text-slate-500", "text-amber-500");
 
-            desc.innerHTML = "<span class='text-emerald-500 font-bold'>ARP Reply (Unicast):</span> PC3 replies directly to PC1's MAC. SW2 receives it, learns PC3's MAC, and forwards out the known uplink port to SW1. SW1 learns PC3's MAC and forwards to PC1.";
-            desc.className = "p-4 bg-slate-800 border-l-4 border-emerald-500 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 shadow-inner";
+          desc.innerHTML =
+            "<span class='text-amber-500 font-bold'>ARP Request (Broadcast):</span> PC1 sends a broadcast frame (FFFF.FFFF.FFFF). SW1 learns PC1's MAC on its incoming port. SW1 floods it to SW2. SW2 learns PC1's MAC and floods it to PC3 and PC4. PC4 drops it; PC3 processes it.";
+          desc.className =
+            "p-4 bg-slate-800 border-l-4 border-amber-500 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 shadow-inner";
+        } else if (stepIndex === 2) {
+          document.getElementById("path-3").innerHTML = "&lt;======";
+          document
+            .getElementById("path-3")
+            .classList.replace("text-slate-500", "text-emerald-500");
+          document.getElementById("path-2").innerHTML = "&lt;======";
+          document
+            .getElementById("path-2")
+            .classList.replace("text-slate-500", "text-emerald-500");
+          document.getElementById("path-1").innerHTML = "&lt;======";
+          document
+            .getElementById("path-1")
+            .classList.replace("text-slate-500", "text-emerald-500");
+
+          desc.innerHTML =
+            "<span class='text-emerald-500 font-bold'>ARP Reply (Unicast):</span> PC3 replies directly to PC1's MAC. SW2 receives it, learns PC3's MAC, and forwards out the known uplink port to SW1. SW1 learns PC3's MAC and forwards to PC1.";
+          desc.className =
+            "p-4 bg-slate-800 border-l-4 border-emerald-500 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 shadow-inner";
+        } else if (stepIndex === 3) {
+          document.getElementById("path-1").innerHTML = "------&gt;";
+          document
+            .getElementById("path-1")
+            .classList.replace("text-slate-500", "text-sky-400");
+          document.getElementById("path-2").innerHTML = "------&gt;";
+          document
+            .getElementById("path-2")
+            .classList.replace("text-slate-500", "text-sky-400");
+          document.getElementById("path-3").innerHTML = "------&gt;";
+          document
+            .getElementById("path-3")
+            .classList.replace("text-slate-500", "text-sky-400");
+
+          desc.innerHTML =
+            "<span class='text-sky-400 font-bold'>ICMP Echo Request (Unicast):</span> PC1 now has the MAC address. It constructs the actual Ping packet and sends it. Switches forward the frame directly using their now-populated MAC tables.";
+          desc.className =
+            "p-4 bg-slate-800 border-l-4 border-sky-400 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 shadow-inner";
+        } else if (stepIndex === 4) {
+          document.getElementById("path-3").innerHTML = "&lt;------";
+          document
+            .getElementById("path-3")
+            .classList.replace("text-slate-500", "text-violet-400");
+          document.getElementById("path-2").innerHTML = "&lt;------";
+          document
+            .getElementById("path-2")
+            .classList.replace("text-slate-500", "text-violet-400");
+          document.getElementById("path-1").innerHTML = "&lt;------";
+          document
+            .getElementById("path-1")
+            .classList.replace("text-slate-500", "text-violet-400");
+
+          desc.innerHTML =
+            "<span class='text-violet-400 font-bold'>ICMP Echo Reply (Unicast):</span> PC3 replies to the Ping. Again, switches use known MAC table entries to forward the frame directly to PC1 without flooding.";
+          desc.className =
+            "p-4 bg-slate-800 border-l-4 border-violet-400 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 shadow-inner";
         }
-        else if(stepIndex === 3) {
-            document.getElementById('path-1').innerHTML = "------&gt;";
-            document.getElementById('path-1').classList.replace('text-slate-500', 'text-sky-400');
-            document.getElementById('path-2').innerHTML = "------&gt;";
-            document.getElementById('path-2').classList.replace('text-slate-500', 'text-sky-400');
-            document.getElementById('path-3').innerHTML = "------&gt;";
-            document.getElementById('path-3').classList.replace('text-slate-500', 'text-sky-400');
+      }
 
-            desc.innerHTML = "<span class='text-sky-400 font-bold'>ICMP Echo Request (Unicast):</span> PC1 now has the MAC address. It constructs the actual Ping packet and sends it. Switches forward the frame directly using their now-populated MAC tables.";
-            desc.className = "p-4 bg-slate-800 border-l-4 border-sky-400 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 shadow-inner";
-        }
-        else if(stepIndex === 4) {
-            document.getElementById('path-3').innerHTML = "&lt;------";
-            document.getElementById('path-3').classList.replace('text-slate-500', 'text-violet-400');
-            document.getElementById('path-2').innerHTML = "&lt;------";
-            document.getElementById('path-2').classList.replace('text-slate-500', 'text-violet-400');
-            document.getElementById('path-1').innerHTML = "&lt;------";
-            document.getElementById('path-1').classList.replace('text-slate-500', 'text-violet-400');
-
-            desc.innerHTML = "<span class='text-violet-400 font-bold'>ICMP Echo Reply (Unicast):</span> PC3 replies to the Ping. Again, switches use known MAC table entries to forward the frame directly to PC1 without flooding.";
-            desc.className = "p-4 bg-slate-800 border-l-4 border-violet-400 text-sm h-32 overflow-y-auto rounded-r-lg text-slate-300 shadow-inner";
-        }
-    }
-
-    // --- Features (Copy, Progress, Flashcards) ---
-    function initFeatures() {
+      // --- Features (Copy, Progress, Flashcards) ---
+      function initFeatures() {
         // 1. Copy Buttons for CLI blocks
-        document.querySelectorAll('.cli-block').forEach(block => {
-            if(block.parentElement.classList.contains('group')) return;
+        document.querySelectorAll(".cli-block").forEach((block) => {
+          if (block.parentElement.classList.contains("group")) return;
 
-            const wrapper = document.createElement('div');
-            wrapper.className = 'relative group mt-2 mb-4';
-            block.parentNode.insertBefore(wrapper, block);
-            wrapper.appendChild(block);
-            
-            const btn = document.createElement('button');
-            btn.className = 'absolute top-2 right-2 bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
-            btn.innerText = 'Copy';
-            btn.onclick = (e) => {
-                e.stopPropagation();
-                const textArea = document.createElement("textarea");
-                textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    btn.innerText = 'Copied!';
-                } catch (err) {
-                    btn.innerText = 'Failed';
-                }
-                document.body.removeChild(textArea);
-                setTimeout(() => btn.innerText = 'Copy', 2000);
-            };
-            wrapper.appendChild(btn);
+          const wrapper = document.createElement("div");
+          wrapper.className = "relative group mt-2 mb-4";
+          block.parentNode.insertBefore(wrapper, block);
+          wrapper.appendChild(block);
+
+          const btn = document.createElement("button");
+          btn.className =
+            "absolute top-2 right-2 bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10";
+          btn.innerText = "Copy";
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const textArea = document.createElement("textarea");
+            textArea.value = block.innerText.replace(/Copy$/, "").trim();
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+              document.execCommand("copy");
+              btn.innerText = "Copied!";
+            } catch (err) {
+              btn.innerText = "Failed";
+            }
+            document.body.removeChild(textArea);
+            setTimeout(() => (btn.innerText = "Copy"), 2000);
+          };
+          wrapper.appendChild(btn);
         });
 
         // 2. Load Progress
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
-            if(match && match[1]) {
-                const id = match[1];
-                if(localStorage.getItem('arp_mac_progress_' + id) === 'true') {
-                    cb.checked = true;
-                }
+        document.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+          const match = cb.getAttribute("onclick")?.match(/'([^']+)'/);
+          if (match && match[1]) {
+            const id = match[1];
+            if (localStorage.getItem("arp_mac_progress_" + id) === "true") {
+              cb.checked = true;
             }
+          }
         });
 
         // 3. Render Flashcards
         const flashcards = [
-            { q: "What is the broadcast MAC Address used in an ARP Request?", a: "<strong>FFFF.FFFF.FFFF</strong><br><br>This ensures all devices on the local segment receive and process the frame up to Layer 3." },
-            { q: "How does a switch learn a MAC address?", a: "By inspecting the <strong>Source MAC Address</strong> of incoming frames on its ports." },
-            { q: "What happens if a switch receives a frame destined for an unknown MAC?", a: "It floods the frame out of <strong>all ports</strong> (except the port it was received on). This is known as Unknown Unicast Flooding." },
-            { q: "What command views the MAC Address Table?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>show mac address-table</code><br><br>Executed in Privileged EXEC mode." },
-            { q: "What command deletes dynamically learned MAC addresses?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>clear mac address-table dynamic</code>" },
-            { q: "How do you view a PC's ARP table in Windows Command Prompt?", a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>arp -a</code><br><br>Shows the current mappings of IP addresses to MAC addresses on the host." }
+          {
+            q: "What is the broadcast MAC Address used in an ARP Request?",
+            a: "<strong>FFFF.FFFF.FFFF</strong><br><br>This ensures all devices on the local segment receive and process the frame up to Layer 3.",
+          },
+          {
+            q: "How does a switch learn a MAC address?",
+            a: "By inspecting the <strong>Source MAC Address</strong> of incoming frames on its ports.",
+          },
+          {
+            q: "What happens if a switch receives a frame destined for an unknown MAC?",
+            a: "It floods the frame out of <strong>all ports</strong> (except the port it was received on). This is known as Unknown Unicast Flooding.",
+          },
+          {
+            q: "What command views the MAC Address Table?",
+            a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>show mac address-table</code><br><br>Executed in Privileged EXEC mode.",
+          },
+          {
+            q: "What command deletes dynamically learned MAC addresses?",
+            a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>clear mac address-table dynamic</code>",
+          },
+          {
+            q: "How do you view a PC's ARP table in Windows Command Prompt?",
+            a: "<code class='bg-white border px-1 rounded text-slate-800 font-mono'>arp -a</code><br><br>Shows the current mappings of IP addresses to MAC addresses on the host.",
+          },
         ];
 
-        const grid = document.getElementById('flashcard-grid');
+        const grid = document.getElementById("flashcard-grid");
         if (grid) {
-            flashcards.forEach((item, index) => {
-                const cardHTML = `
+          flashcards.forEach((item, index) => {
+            const cardHTML = `
                     <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
                         <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
                             <!-- Front -->
@@ -636,21 +1241,21 @@
                         </div>
                     </div>
                 `;
-                grid.insertAdjacentHTML('beforeend', cardHTML);
-            });
+            grid.insertAdjacentHTML("beforeend", cardHTML);
+          });
         }
-    }
+      }
 
-    function saveProgress(id, cb) {
-        localStorage.setItem('arp_mac_progress_' + id, cb.checked);
-    }
+      function saveProgress(id, cb) {
+        localStorage.setItem("arp_mac_progress_" + id, cb.checked);
+      }
 
-    // Initialize on load
-    document.addEventListener("DOMContentLoaded", () => {
+      // Initialize on load
+      document.addEventListener("DOMContentLoaded", () => {
         renderChart();
         initFeatures();
         playStep(1); // init tracker view
-    });
-</script>
-</body>
+      });
+    </script>
+  </body>
 </html>

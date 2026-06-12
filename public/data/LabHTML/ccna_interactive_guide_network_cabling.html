@@ -39,7 +39,7 @@
 
         /* Accordion Animations */
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .accordion-content.open { max-height: 1200px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1200px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
         /* Code Block Styling */
         .cli-block {
@@ -488,18 +488,17 @@
     }
 
     // --- Accordion Logic ---
-    function toggleAccordion(id, btnElement) {
+   function toggleAccordion(id, btnElement) {
         const content = document.getElementById(id);
-        const icon = btnElement.querySelector('span:last-child');
-        
-        if (content.classList.contains('open')) {
-            content.classList.remove('open');
-            icon.style.transform = 'rotate(0deg)';
+        const icon = btnElement.lastElementChild;
+        if (content.classList.contains("expanded")) {
+          content.classList.remove("expanded");
+          icon.textContent = "+";
         } else {
-            content.classList.add('open');
-            icon.style.transform = 'rotate(45deg)';
+          content.classList.add("expanded");
+          icon.textContent = "−";
         }
-    }
+      }
 
     // --- Filter Logic ---
     function filterTable() {
