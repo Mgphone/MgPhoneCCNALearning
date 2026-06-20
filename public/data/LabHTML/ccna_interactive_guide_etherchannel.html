@@ -3,18 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CCNA Interactive Guide: EtherChannel (LACP & PAgP)</title>
+<title>CCNA Mastery: Configuring EtherChannel</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 /* Base Typography and Backgrounds */
 body { 
-    background-color: #f8fafc; 
+    background-color: #fafafc; 
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
     color: #1e293b;
 }
 
-/* Mandatory Chart Container Styling */
+/* Sidebar Custom Styling */
+.sidebar-nav { background-color: #0f111a; }
+.brand-header { background-color: #151824; }
+
+/* Chart Container */
 .chart-container { 
     position: relative; 
     width: 100%; 
@@ -23,426 +27,494 @@ body {
     margin-right: auto; 
     height: 35vh; 
     min-height: 250px;
-    max-height: 350px; 
+    max-height: 320px; 
 }
-@media (min-width: 768px) { .chart-container { height: 320px; } }
 
 /* View Management */
 .view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
 .view-section.active { display: block; opacity: 1; }
 
 /* Navigation Buttons */
-.nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
-.nav-active { background-color: #f0fdfa; color: #0d9488; border-left-color: #0d9488; font-weight: 600; } /* Teal Theme */
-.nav-inactive { color: #64748b; }
-.nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
+.nav-btn { transition: all 0.2s ease; border-radius: 0.375rem; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;}
+.nav-active { background-color: #4f46e5; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); } 
+.nav-inactive { color: #94a3b8; }
+.nav-inactive:hover { background-color: rgba(255,255,255,0.05); color: #e2e8f0; }
+.nav-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* Accordion Animations */
+/* Accordions */
 .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px solid #f1f5f9; }
 
-/* Code Block Styling */
+/* Code Blocks */
 .cli-window { 
-    background-color: #0f172a; 
+    background-color: #1e1e1e; 
     color: #e2e8f0; 
     font-family: 'Courier New', Courier, monospace; 
     padding: 1.25rem; 
     border-radius: 0.5rem; 
     overflow-x: auto; 
     font-size: 0.875rem; 
-    border: 1px solid #1e293b; 
+    border: 1px solid #334155; 
     box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
-    line-height: 1.5;
+    line-height: 1.6;
 }
-.cli-prompt { color: #2dd4bf; font-weight: bold; } /* Teal 400 */
-.cli-comment { color: #64748b; font-style: italic; }
+.cli-prompt { color: #4ade80; font-weight: bold; } 
+.cli-comment { color: #94a3b8; font-style: italic; }
 
-/* Interactive Tracker Node Effects */
-.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #0d9488 !important; box-shadow: 0 0 15px rgba(13, 148, 136, 0.5); }
-.node-dim { opacity: 0.4; transition: all 0.3s; }
-.link-active { background-color: #10b981; } /* Emerald */
-.link-blocked { background-color: #ef4444; } /* Red */
-.link-bundled { background-color: #0d9488; height: 16px !important; border-radius: 8px; } /* Thick Teal Bundle */
+/* Tracker Effects */
+.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #4f46e5 !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+.node-error { animation: pulseRed 1s infinite alternate; border-color: #ef4444 !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
 
-@keyframes pulseGlow {
-    0% { box-shadow: 0 0 5px rgba(13, 148, 136, 0.2); }
-    100% { box-shadow: 0 0 20px rgba(13, 148, 136, 0.8); }
+@keyframes pulseGlow { 0% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); } 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.8); } }
+@keyframes pulseRed { 0% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); } 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); } }
+
+@keyframes flowTraffic { 0% { background-position: 0% 0%; } 100% { background-position: 100% 0%; } }
+.traffic-flow-indigo {
+    background: linear-gradient(90deg, #4f46e5 0%, #c7d2fe 50%, #4f46e5 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1s linear infinite;
+}
+.traffic-flow-red {
+    background: linear-gradient(90deg, #ef4444 0%, #fecaca 50%, #ef4444 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1s linear infinite;
+}
+.traffic-flow-amber {
+    background: linear-gradient(90deg, #f59e0b 0%, #fde68a 50%, #f59e0b 100%);
+    background-size: 200% 100%;
+    animation: flowTraffic 1.5s linear infinite;
 }
 
-/* 3D Flip Utilities for Flashcards */
+/* 3D Flip Utilities */
 .perspective { perspective: 1000px; }
 .transform-style-3d { transform-style: preserve-3d; }
 .rotate-y-180 { transform: rotateY(180deg); }
 .backface-hidden { backface-visibility: hidden; }
 
-/* Custom Scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-teal-200">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-indigo-200">
 
-<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
-    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
-        <span class="text-3xl text-teal-500">🔗</span>
+<nav class="sidebar-nav border-r border-slate-800 w-full md:w-64 flex-shrink-0 md:h-full flex flex-col shadow-2xl z-20 transition-all">
+    <div class="brand-header p-6 border-b border-slate-800 flex items-center gap-3">
+        <svg class="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>
         <div>
-            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
-            <p class="text-xs text-teal-400 font-semibold tracking-wide uppercase mt-1">EtherChannel (LAG)</p>
+            <h1 class="text-sm font-bold text-white tracking-wide">CCNA Mastery</h1>
+            <p class="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mt-0.5">Day 23 Lab</p>
         </div>
     </div>
-    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
-        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-teal-600 text-white shadow-md">
-            <span class="text-xl">📊</span> Protocols & Concepts
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-6 px-4 flex flex-row md:flex-col gap-1">
+        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            EtherChannel Theory
         </button>
-        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
-            <span class="text-xl">🔍</span> Bundle Tracker
+        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            Protocol Visualizer
         </button>
-        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
-            <span class="text-xl">💻</span> Device Configs
+        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Device Configs
         </button>
-        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
-            <span class="text-xl">📝</span> Lab Tasks & Q&A
+        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            Lab Walkthrough
         </button>
-        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
-            <span class="text-xl">📋</span> Command Matrix
+        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            Command Matrix
         </button>
-        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
-            <span class="text-xl">🎴</span> Flashcards
+        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
+            <svg class="nav-icon"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            Flashcards
         </button>
     </div>
 </nav>
 
-<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
-    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
-        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">EtherChannel (Link Aggregation)</h2>
-        <p class="text-lg text-slate-600 border-l-4 border-teal-500 pl-4 bg-teal-50 py-3 pr-3 rounded-r-lg shadow-sm">
-            Combine multiple physical links into a single logical interface. Increase bandwidth and provide redundancy without Spanning Tree Protocol (STP) blocking your redundant links. Learn LACP, PAgP, and Layer 3 EtherChannels.
-        </p>
+<main class="flex-1 overflow-y-auto p-6 md:p-10 relative scroll-smooth bg-white">
+    <header class="mb-10 max-w-5xl mx-auto">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Layer 2 & Layer 3 Resilience</span>
+            <span class="text-slate-400 text-sm">Jeremy's IT Lab Day 23</span>
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">Configuring EtherChannel</h2>
+        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded-r-lg">
+            <p class="text-indigo-900 text-sm md:text-base leading-relaxed">
+                Combine multiple physical links into one logical connection! In this comprehensive lab, we will configure Layer 2 EtherChannels using LACP and PAgP, transition to Layer 3 EtherChannels for routed links, and manipulate the load-balancing hashing algorithm.
+            </p>
+        </div>
     </header>
 
-    <!-- SECTION 1: THEORY -->
-    <div id="view-theory" class="view-section active max-w-6xl mx-auto space-y-8">
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <span class="text-teal-500">🧠</span> Core Concepts: LACP & PAgP
+    <div id="view-theory" class="view-section active max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                EtherChannel Protocols & Modes
             </h3>
             
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
                 <div class="space-y-6">
-                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <h4 class="font-bold text-lg text-slate-800 mb-4">Negotiation Protocols</h4>
-                        <ul class="space-y-4 text-sm text-slate-700">
-                            <li class="flex items-start">
-                                <span class="bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-16 text-center">LACP</span>
-                                <div><strong>IEEE 802.3ad (Open Standard):</strong> Uses modes <code>active</code> (initiates) and <code>passive</code> (waits). Supported by almost all vendors.</div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-16 text-center">PAgP</span>
-                                <div><strong>Cisco Proprietary:</strong> Uses modes <code>desirable</code> (initiates) and <code>auto</code> (waits). Only supported on Cisco hardware.</div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded text-xs mt-0.5 mr-3 w-16 text-center">Static</span>
-                                <div><strong>Unconditional (On):</strong> Uses mode <code>on</code>. No negotiation packets are sent. Risky if the other side is misconfigured.</div>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="bg-teal-50 p-5 rounded-xl border border-teal-200 shadow-sm">
-                        <h4 class="font-bold text-lg text-teal-900 mb-2">The EtherChannel Rule</h4>
-                        <p class="text-sm text-teal-800 mb-3">All physical ports bundled in an EtherChannel <strong>must have identical configurations</strong>. This includes Speed, Duplex, Native VLAN, Allowed VLANs, and Switchport Mode.</p>
-                        <p class="text-sm text-teal-800">Once the port-channel is created, always apply configuration changes to the logical <code>interface port-channel [number]</code>, not the physical interfaces.</p>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
-                    <h4 class="text-center font-bold text-slate-800 mb-2">STP vs. EtherChannel (4x 1Gbps Links)</h4>
-                    <p class="text-xs text-center text-slate-500 mb-4">How STP treats redundant links vs. how EtherChannel treats them.</p>
-                    <div class="chart-container w-full flex-grow flex items-center justify-center">
-                        <canvas id="stpChart"></canvas>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100">
-                        Without EtherChannel, STP blocks 3 out of 4 links to prevent loops, yielding only 1 Gbps. EtherChannel bundles them logically so STP sees one 4 Gbps link.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECTION 2: TOPOLOGY TRACKER -->
-    <div id="view-tracker" class="view-section max-w-6xl mx-auto space-y-8">
-        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <span class="text-teal-500">🔍</span> EtherChannel Negotiation Tracker
-            </h3>
-            <p class="text-sm text-slate-600 mb-6">Watch how 4 physical cables transition from being STP-blocked redundant links into a high-bandwidth logical Port-Channel bundle.</p>
-
-            <!-- Tracker Controls -->
-            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
-                <button onclick="playTrackerStep(1)" id="btn-track-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Physical Links (STP)</button>
-                <button onclick="playTrackerStep(2)" id="btn-track-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. LACP Active/Passive</button>
-                <button onclick="playTrackerStep(3)" id="btn-track-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Logical Bundle (Po1)</button>
-                <button onclick="playTrackerStep(4)" id="btn-track-4" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">4. Load Balancing</button>
-            </div>
-
-            <!-- Visualization -->
-            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
-                
-                <div class="flex w-full justify-around items-center relative h-48">
-                    <div id="node-sw1" class="w-32 h-24 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-slate-500 z-10 shadow-lg transition-colors">
-                        SW1
-                        <span class="text-[10px] font-mono mt-1 font-normal bg-slate-800 px-2 py-0.5 rounded border border-slate-600" id="mode-sw1">Unconfigured</span>
-                    </div>
+                    <p class="text-sm text-slate-600">You can manually force interfaces to bundle together (Static), or you can use a negotiation protocol to establish the bundle dynamically.</p>
                     
-                    <!-- Dynamic Links -->
-                    <div class="absolute left-1/2 transform -translate-x-1/2 w-48 h-full flex flex-col justify-center gap-3 z-0" id="link-container">
-                        <div class="h-1 w-full link-active transition-all" id="link-1"></div>
-                        <div class="h-1 w-full link-blocked transition-all relative flex items-center justify-center" id="link-2"><span class="text-[8px] bg-red-600 text-white px-1 rounded absolute block-label">BLK</span></div>
-                        <div class="h-1 w-full link-blocked transition-all relative flex items-center justify-center" id="link-3"><span class="text-[8px] bg-red-600 text-white px-1 rounded absolute block-label">BLK</span></div>
-                        <div class="h-1 w-full link-blocked transition-all relative flex items-center justify-center" id="link-4"><span class="text-[8px] bg-red-600 text-white px-1 rounded absolute block-label">BLK</span></div>
-                    </div>
-
-                    <div id="node-sw2" class="w-32 h-24 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-lg border-2 border-slate-500 z-10 shadow-lg transition-colors">
-                        SW2
-                        <span class="text-[10px] font-mono mt-1 font-normal bg-slate-800 px-2 py-0.5 rounded border border-slate-600" id="mode-sw2">Unconfigured</span>
-                    </div>
+                    <ul class="space-y-4 text-sm text-slate-700">
+                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
+                            <strong class="text-indigo-700 mb-1">LACP (IEEE 802.3ad)</strong>
+                            <span>The open standard protocol. Uses modes: <strong>Active</strong> (actively asks to form a channel) and <strong>Passive</strong> (waits to be asked).</span>
+                        </li>
+                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
+                            <strong class="text-indigo-700 mb-1">PAgP (Cisco Proprietary)</strong>
+                            <span>Cisco's proprietary protocol. Uses modes: <strong>Desirable</strong> (actively asks) and <strong>Auto</strong> (waits to be asked).</span>
+                        </li>
+                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
+                            <strong class="text-indigo-700 mb-1">Static / Layer 3</strong>
+                            <span>Forces the interface into an EtherChannel without negotiation (Mode: <strong>On</strong>). For a Layer 3 channel, you must use <code>no switchport</code> on the physical interfaces before bundling them.</span>
+                        </li>
+                    </ul>
                 </div>
-                
-                <!-- Dynamic Overlay -->
-                <div id="tracker-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
-                    Click step 1 to begin the simulation.
+
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-700 mb-2 text-sm">Load-Balancing Hashing</h4>
+                    <p class="text-xs text-slate-500 mb-4">Traffic isn't round-robin. It's pinned to a specific link based on a math hash (e.g., src-dst-ip).</p>
+                    <div class="chart-container w-full flex-grow flex items-center justify-center">
+                        <canvas id="bwChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SECTION 3: DEVICE CONFIGURATIONS -->
-    <div id="view-config" class="view-section max-w-6xl mx-auto space-y-8">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                    <span class="text-teal-500">💻</span> Device Configuration Lab
+    <div id="view-tracker" class="view-section max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Protocol Visualizer
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Observe the different EtherChannel types applied across the 4-switch topology.</p>
+
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-50 p-2 rounded-lg border border-slate-200 justify-center">
+                <button onclick="playEcStep(1)" id="btn-sec-1" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-indigo-600 transition">1. LACP (L2)</button>
+                <button onclick="playEcStep(2)" id="btn-sec-2" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-indigo-600 transition">2. PAgP (L2)</button>
+                <button onclick="playEcStep(3)" id="btn-sec-3" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-amber-600 transition">3. Static (L3)</button>
+                <button onclick="playEcStep(4)" id="btn-sec-4" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-green-600 transition">4. Routed Traffic Flow</button>
+            </div>
+
+            <div class="bg-slate-900 rounded-xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[480px] relative overflow-hidden">
+                
+                <div class="relative w-full max-w-2xl h-80 mx-auto mt-4 flex items-center justify-between">
+                    
+                    <!-- SRV1 (Top Center) -->
+                    <div id="node-srv1" class="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 h-12 rounded bg-slate-700 text-slate-300 font-bold flex flex-col items-center justify-center text-xs border border-slate-500 z-10 transition-all">
+                        SRV1
+                    </div>
+
+                    <!-- DSW1 (Top Left) -->
+                    <div id="node-dsw1" class="absolute top-20 left-16 w-24 h-16 rounded bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        DSW1
+                    </div>
+
+                    <!-- DSW2 (Top Right) -->
+                    <div id="node-dsw2" class="absolute top-20 right-16 w-24 h-16 rounded bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        DSW2
+                    </div>
+
+                    <!-- ASW1 (Bottom Left) -->
+                    <div id="node-asw1" class="absolute bottom-16 left-16 w-24 h-16 rounded bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        ASW1
+                    </div>
+
+                    <!-- ASW2 (Bottom Right) -->
+                    <div id="node-asw2" class="absolute bottom-16 right-16 w-24 h-16 rounded bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                        ASW2
+                    </div>
+
+                    <!-- PCs (Bottom) -->
+                    <div id="node-pc1" class="absolute bottom-0 left-20 w-16 h-8 rounded bg-slate-700 text-slate-300 font-bold flex items-center justify-center text-[10px] border border-slate-500 z-10">PC1</div>
+                    <div id="node-pc2" class="absolute bottom-0 right-20 w-16 h-8 rounded bg-slate-700 text-slate-300 font-bold flex items-center justify-center text-[10px] border border-slate-500 z-10">PC2</div>
+
+                    <!-- Links (Representing Channels) -->
+                    <div id="link-dsw1-srv1" class="absolute top-12 left-[10rem] w-[5rem] h-1 bg-slate-600 origin-bottom-left transform -rotate-[35deg] transition-all z-0"></div>
+                    
+                    <div id="link-dsw1-dsw2" class="absolute top-[6.5rem] left-[8rem] right-[8rem] h-2 bg-slate-600 transition-all z-0 border-y border-slate-800"></div>
+                    <div id="label-l3" class="absolute top-[5rem] left-1/2 transform -translate-x-1/2 text-[10px] text-amber-400 font-mono opacity-0 transition-opacity">L3 Static (Po3)</div>
+
+                    <div id="link-asw1-dsw1" class="absolute top-[8rem] left-[5.5rem] w-3 h-[7rem] bg-slate-600 transition-all z-0 border-x border-slate-800"></div>
+                    <div id="label-lacp" class="absolute top-[11rem] left-[1rem] text-[10px] text-indigo-400 font-mono opacity-0 transition-opacity">L2 LACP (Po1)</div>
+
+                    <div id="link-asw2-dsw2" class="absolute top-[8rem] right-[5.5rem] w-3 h-[7rem] bg-slate-600 transition-all z-0 border-x border-slate-800"></div>
+                    <div id="label-pagp" class="absolute top-[11rem] right-[1rem] text-[10px] text-indigo-400 font-mono opacity-0 transition-opacity">L2 PAgP (Po2)</div>
+
+                    <!-- PC Links -->
+                    <div id="link-pc1-asw1" class="absolute bottom-8 left-[6.5rem] w-1 h-8 bg-slate-600 transition-all z-0"></div>
+                    <div id="link-pc2-asw2" class="absolute bottom-8 right-[6.5rem] w-1 h-8 bg-slate-600 transition-all z-0"></div>
+
+                </div>
+
+                <div id="sec-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800 border border-slate-600 p-4 rounded shadow-xl">
+                    Click step 1 to configure the LACP channel.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-config" class="view-section max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-5 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Device Configurations
                 </h3>
-                <p class="text-sm text-slate-500 mt-1">Review the commands to configure LACP, PAgP, Static, and Layer 3 EtherChannels.</p>
             </div>
             
-            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
-                <button onclick="switchDeviceTab('sw1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600 transition-colors">SW1 (LACP Active)</button>
-                <button onclick="switchDeviceTab('sw2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">SW2 (LACP & PAgP)</button>
-                <button onclick="switchDeviceTab('sw3', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">MLS1 (Layer 3 Channel)</button>
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-1 overflow-x-auto">
+                <button onclick="switchDeviceTab('lacp', this)" class="device-tab-btn active px-5 py-2.5 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">1. LACP (ASW1 & DSW1)</button>
+                <button onclick="switchDeviceTab('pagp', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">2. PAgP (ASW2 & DSW2)</button>
+                <button onclick="switchDeviceTab('static', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">3. L3 Static (DSW1 & DSW2)</button>
+                <button onclick="switchDeviceTab('routing', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">4. Routes & Load Balancing</button>
             </div>
 
-            <!-- SW1 Tab -->
-            <div id="config-sw1" class="device-tab-content block p-6">
-                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure a Layer 2 LACP EtherChannel to SW2, initiating the negotiation (Active), and a Static EtherChannel to SW3.</p>
+            <div id="config-lacp" class="device-tab-content block p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Task 1:</strong> Configure Layer 2 EtherChannel between ASW1 and DSW1 using LACP, configured as a trunk.</p>
                 <div class="cli-window">
-                    <span class="cli-prompt">SW1&gt;</span> enable<br>
-                    <span class="cli-prompt">SW1#</span> configure terminal<br><br>
+                    <span class="cli-comment">! On ASW1 (Active)</span><br>
+                    <span class="cli-prompt">ASW1(config)#</span> interface range g0/1 - 2<br>
+                    <span class="cli-prompt">ASW1(config-if-range)#</span> channel-protocol lacp<br>
+                    <span class="cli-prompt">ASW1(config-if-range)#</span> channel-group 1 mode active<br><br>
+
+                    <span class="cli-comment">! On DSW1 (Active or Passive)</span><br>
+                    <span class="cli-prompt">DSW1(config)#</span> interface range g1/0/3 - 4<br>
+                    <span class="cli-prompt">DSW1(config-if-range)#</span> channel-protocol lacp<br>
+                    <span class="cli-prompt">DSW1(config-if-range)#</span> channel-group 1 mode active<br><br>
+
+                    <span class="cli-comment">! Configure the logical Port-Channel as a Trunk on both switches</span><br>
+                    <span class="cli-prompt">ASW1(config)#</span> interface port-channel 1<br>
+                    <span class="cli-prompt">ASW1(config-if)#</span> switchport trunk encapsulation dot1q<br>
+                    <span class="cli-prompt">ASW1(config-if)#</span> switchport mode trunk
+                </div>
+            </div>
+
+            <div id="config-pagp" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Task 2:</strong> Configure Layer 2 EtherChannel between ASW2 and DSW2 using PAgP, configured as a trunk.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! On ASW2 (Desirable)</span><br>
+                    <span class="cli-prompt">ASW2(config)#</span> interface range g0/1 - 2<br>
+                    <span class="cli-prompt">ASW2(config-if-range)#</span> channel-protocol pagp<br>
+                    <span class="cli-prompt">ASW2(config-if-range)#</span> channel-group 2 mode desirable<br><br>
+
+                    <span class="cli-comment">! On DSW2 (Desirable or Auto)</span><br>
+                    <span class="cli-prompt">DSW2(config)#</span> interface range g1/0/3 - 4<br>
+                    <span class="cli-prompt">DSW2(config-if-range)#</span> channel-protocol pagp<br>
+                    <span class="cli-prompt">DSW2(config-if-range)#</span> channel-group 2 mode desirable<br><br>
+
+                    <span class="cli-comment">! Configure the logical Port-Channel as a Trunk on both switches</span><br>
+                    <span class="cli-prompt">ASW2(config)#</span> interface port-channel 2<br>
+                    <span class="cli-prompt">ASW2(config-if)#</span> switchport trunk encapsulation dot1q<br>
+                    <span class="cli-prompt">ASW2(config-if)#</span> switchport mode trunk
+                </div>
+            </div>
+
+            <div id="config-static" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Task 3:</strong> Configure Layer 3 EtherChannel between DSW1 and DSW2 using static EtherChannel.</p>
+                <div class="cli-window">
+                    <span class="cli-comment">! On DSW1 (Convert physical ports to Layer 3 BEFORE bundling)</span><br>
+                    <span class="cli-prompt">DSW1(config)#</span> interface range g1/0/1 - 2<br>
+                    <span class="cli-prompt">DSW1(config-if-range)#</span> no switchport<br>
+                    <span class="cli-prompt">DSW1(config-if-range)#</span> channel-group 3 mode on<br><br>
                     
-                    <span class="cli-comment">! Group 1: LACP Active (To SW2)</span><br>
-                    <span class="cli-prompt">SW1(config)#</span> interface range f0/1 - 2<br>
-                    <span class="cli-prompt">SW1(config-if-range)#</span> channel-group 1 mode active<br>
-                    <span class="cli-comment">Creating a port-channel interface Port-channel 1</span><br>
-                    <span class="cli-prompt">SW1(config-if-range)#</span> exit<br><br>
+                    <span class="cli-comment">! Assign an IP address directly to the logical port-channel</span><br>
+                    <span class="cli-prompt">DSW1(config)#</span> interface port-channel 3<br>
+                    <span class="cli-prompt">DSW1(config-if)#</span> ip address 10.0.0.1 255.255.255.252<br><br>
 
-                    <span class="cli-comment">! Configure the logical Port-Channel as a Trunk</span><br>
-                    <span class="cli-prompt">SW1(config)#</span> interface port-channel 1<br>
-                    <span class="cli-prompt">SW1(config-if)#</span> switchport mode trunk<br>
-                    <span class="cli-prompt">SW1(config-if)#</span> exit<br><br>
-
-                    <span class="cli-comment">! Group 2: Static / On (To SW3)</span><br>
-                    <span class="cli-prompt">SW1(config)#</span> interface range f0/3 - 4<br>
-                    <span class="cli-prompt">SW1(config-if-range)#</span> channel-group 2 mode on<br>
-                    <span class="cli-prompt">SW1(config-if-range)#</span> exit<br>
-                    <span class="cli-prompt">SW1(config)#</span> interface port-channel 2<br>
-                    <span class="cli-prompt">SW1(config-if)#</span> switchport mode trunk<br>
+                    <span class="cli-comment">! Repeat on DSW2</span><br>
+                    <span class="cli-prompt">DSW2(config)#</span> interface range g1/0/1 - 2<br>
+                    <span class="cli-prompt">DSW2(config-if-range)#</span> no switchport<br>
+                    <span class="cli-prompt">DSW2(config-if-range)#</span> channel-group 3 mode on<br>
+                    <span class="cli-prompt">DSW2(config)#</span> interface port-channel 3<br>
+                    <span class="cli-prompt">DSW2(config-if)#</span> ip address 10.0.0.2 255.255.255.252
                 </div>
             </div>
 
-            <!-- SW2 Tab -->
-            <div id="config-sw2" class="device-tab-content hidden p-6">
-                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure an LACP EtherChannel (Passive) to SW1, and a PAgP EtherChannel (Desirable) to SW3.</p>
+            <div id="config-routing" class="device-tab-content hidden p-6">
+                <p class="text-sm text-slate-600 mb-3"><strong>Tasks 4, 5, 6:</strong> Enable IP Routing, add static routes, and modify EtherChannel Load-Balancing.</p>
                 <div class="cli-window">
-                    <span class="cli-prompt">SW2&gt;</span> enable<br>
-                    <span class="cli-prompt">SW2#</span> configure terminal<br><br>
+                    <span class="cli-comment">! Task 4: Enable routing and configure static routes to reach remote LANs</span><br>
+                    <span class="cli-prompt">DSW1(config)#</span> ip routing<br>
+                    <span class="cli-prompt">DSW1(config)#</span> ip route 172.16.2.0 255.255.255.0 10.0.0.2<br><br>
+                    <span class="cli-prompt">DSW2(config)#</span> ip routing<br>
+                    <span class="cli-prompt">DSW2(config)#</span> ip route 172.16.1.0 255.255.255.0 10.0.0.1<br><br>
 
-                    <span class="cli-comment">! Group 1: LACP Passive (Responding to SW1)</span><br>
-                    <span class="cli-prompt">SW2(config)#</span> interface range f0/1 - 2<br>
-                    <span class="cli-prompt">SW2(config-if-range)#</span> channel-group 1 mode passive<br>
-                    <span class="cli-prompt">SW2(config-if-range)#</span> exit<br>
-                    <span class="cli-prompt">SW2(config)#</span> interface port-channel 1<br>
-                    <span class="cli-prompt">SW2(config-if)#</span> switchport mode trunk<br>
-                    <span class="cli-prompt">SW2(config-if)#</span> exit<br><br>
+                    <span class="cli-comment">! Task 5: Check default load-balancing method</span><br>
+                    <span class="cli-prompt">DSW1#</span> show etherchannel load-balance<br>
+                    <span class="text-slate-400">EtherChannel Load-Balancing Configuration:</span><br>
+                    <span class="text-slate-400">        src-mac</span><br><br>
 
-                    <span class="cli-comment">! Group 3: PAgP Desirable (Initiating to SW3)</span><br>
-                    <span class="cli-prompt">SW2(config)#</span> interface range g0/1 - 2<br>
-                    <span class="cli-prompt">SW2(config-if-range)#</span> channel-group 3 mode desirable<br>
-                    <span class="cli-prompt">SW2(config-if-range)#</span> exit<br>
-                    <span class="cli-prompt">SW2(config)#</span> interface port-channel 3<br>
-                    <span class="cli-prompt">SW2(config-if)#</span> switchport mode trunk<br>
+                    <span class="cli-comment">! Task 6: Configure load-balancing based on source and destination IPs on ALL switches</span><br>
+                    <span class="cli-prompt">ASW1(config)#</span> port-channel load-balance src-dst-ip<br>
+                    <span class="cli-prompt">ASW2(config)#</span> port-channel load-balance src-dst-ip<br>
+                    <span class="cli-prompt">DSW1(config)#</span> port-channel load-balance src-dst-ip<br>
+                    <span class="cli-prompt">DSW2(config)#</span> port-channel load-balance src-dst-ip
                 </div>
             </div>
-
-            <!-- SW3 Tab -->
-            <div id="config-sw3" class="device-tab-content hidden p-6">
-                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Configure a Layer 3 EtherChannel using a Multilayer Switch. IPs are assigned directly to the logical port-channel.</p>
-                <div class="cli-window">
-                    <span class="cli-prompt">MLS1&gt;</span> enable<br>
-                    <span class="cli-prompt">MLS1#</span> configure terminal<br><br>
-
-                    <span class="cli-comment">! 1. Convert physical ports to Layer 3 before bundling</span><br>
-                    <span class="cli-prompt">MLS1(config)#</span> interface range g1/0/1 - 2<br>
-                    <span class="cli-prompt">MLS1(config-if-range)#</span> no switchport<br>
-                    <span class="cli-prompt">MLS1(config-if-range)#</span> channel-group 5 mode active<br>
-                    <span class="cli-prompt">MLS1(config-if-range)#</span> exit<br><br>
-
-                    <span class="cli-comment">! 2. Assign IP address directly to the Port-Channel</span><br>
-                    <span class="cli-prompt">MLS1(config)#</span> interface port-channel 5<br>
-                    <span class="cli-prompt">MLS1(config-if)#</span> ip address 10.0.0.1 255.255.255.252<br>
-                    <span class="cli-prompt">MLS1(config-if)#</span> no shutdown<br>
-                </div>
-            </div>
-
         </div>
     </div>
 
-    <!-- SECTION 4: LAB Q&A -->
-    <div id="view-qa" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <span class="text-teal-500">📝</span> Lab Tasks & Solutions
+    <div id="view-qa" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+                📝 Lab Walkthrough Checklist
             </h3>
-            <p class="text-slate-600 mb-6 leading-relaxed">
-                Check off the steps as you complete them to save your progress. Click to expand the configuration answers.
-            </p>
+            <p class="text-slate-500 text-sm mb-6 border-b border-slate-100 pb-6">Complete these 6 specific lab tasks requested in the scenario.</p>
 
-            <div class="space-y-4">
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+            <div class="space-y-3">
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
                         <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('lag_qa1', this)">
-                            <span class="pr-6">1. Configure LACP EtherChannel between SW1 and SW2.</span>
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('ec_qa1', this)">
+                            <span class="text-sm">1. Configure Layer 2 EtherChannel between ASW1 and DSW1 using LACP.</span>
                         </div>
-                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
                     </button>
-                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
-                        <div class="py-5 text-sm text-slate-700 space-y-3">
-                            <p>One side must be <code>active</code>. The other can be <code>active</code> or <code>passive</code>. We will use Active/Passive.</p>
-                            <div class="cli-window text-xs mb-3">
-                                <span class="cli-comment">! On SW1:</span><br>
-                                <span class="cli-prompt">SW1(config)#</span> interface range f0/1 - 2<br>
-                                <span class="cli-prompt">SW1(config-if-range)#</span> channel-group 1 mode active<br><br>
-                                <span class="cli-comment">! On SW2:</span><br>
-                                <span class="cli-prompt">SW2(config)#</span> interface range f0/1 - 2<br>
-                                <span class="cli-prompt">SW2(config-if-range)#</span> channel-group 1 mode passive
-                            </div>
+                    <div id="qa1" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Enter the interface range connecting ASW1 to DSW1 (<code>g0/1 - 2</code> on ASW1, and <code>g1/0/3 - 4</code> on DSW1). Use <code>channel-group 1 mode active</code> to initiate LACP. Then, enter <code>interface port-channel 1</code> and configure it as a trunk.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
                         <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('lag_qa2', this)">
-                            <span>2. Configure PAgP EtherChannel between SW2 and SW3.</span>
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('ec_qa2', this)">
+                            <span class="text-sm">2. Configure Layer 2 EtherChannel between ASW2 and DSW2 using PAgP.</span>
                         </div>
-                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
                     </button>
-                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
-                        <div class="py-5 text-sm text-slate-700 space-y-4">
-                            <p>One side must be <code>desirable</code>. The other can be <code>desirable</code> or <code>auto</code>.</p>
-                            <div class="cli-window text-xs py-2 px-3">
-                                <span class="cli-comment">! On SW2:</span><br>
-                                <span class="cli-prompt">SW2(config)#</span> interface range g0/1 - 2<br>
-                                <span class="cli-prompt">SW2(config-if-range)#</span> channel-group 3 mode desirable<br><br>
-                                <span class="cli-comment">! On SW3:</span><br>
-                                <span class="cli-prompt">SW3(config)#</span> interface range g0/1 - 2<br>
-                                <span class="cli-prompt">SW3(config-if-range)#</span> channel-group 3 mode auto
-                            </div>
+                    <div id="qa2" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Enter the interface range connecting ASW2 to DSW2 (<code>g0/1 - 2</code> on ASW2, and <code>g1/0/3 - 4</code> on DSW2). Use <code>channel-group 2 mode desirable</code> to initiate PAgP. Enter <code>interface port-channel 2</code> and configure it as a trunk.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <button class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-teal-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
                         <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500" onclick="event.stopPropagation(); saveProgress('lag_qa3', this)">
-                            <span>3. Verify the EtherChannel status using <code>show</code> commands.</span>
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('ec_qa3', this)">
+                            <span class="text-sm">3. Configure Layer 3 EtherChannel between DSW1 and DSW2 (Static).</span>
                         </div>
-                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
                     </button>
-                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
-                        <div class="py-5 text-sm text-slate-700 space-y-3">
-                            <p>Use <code>show etherchannel summary</code> to ensure the bundle is formed correctly.</p>
-                            <div class="cli-window text-xs py-2 px-3">
-                                <span class="cli-prompt">SW1#</span> show etherchannel summary<br>
-                                <span class="cli-comment">Flags:  D - down        P - bundled in port-channel</span><br>
-                                <span class="cli-comment">        S - Layer2      U - in use</span><br>
-                                <span class="cli-comment">...</span><br>
-                                <span class="cli-comment">Group  Port-channel  Protocol    Ports</span><br>
-                                <span class="cli-comment">------+-------------+-----------+-----------------------</span><br>
-                                <span class="cli-comment text-emerald-400">1      Po1(SU)       LACP        Fa0/1(P) Fa0/2(P)</span>
-                            </div>
-                            <p class="text-xs text-slate-500 mt-2"><strong>Tip:</strong> Look for "SU". S = Switched (Layer 2), U = Up/In Use. Look for "P" next to ports, meaning bundled in Port-channel.</p>
+                    <div id="qa3" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>You MUST use <code>no switchport</code> on the physical interfaces first (<code>interface range g1/0/1 - 2</code>). Then use <code>channel-group 3 mode on</code>. Finally, assign an IP address directly to <code>interface port-channel 3</code>.</p>
                         </div>
                     </div>
                 </div>
+                
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('ec_qa4', this)">
+                            <span class="text-sm">4. Configure routes to allow the PCs to reach SRV1.</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa4" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Enable <code>ip routing</code> on both DSW1 and DSW2. Then, configure static routes so DSW1 routes to 172.16.2.0/24 via 10.0.0.2, and DSW2 routes to 172.16.1.0/24 via 10.0.0.1.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa5', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('ec_qa5', this)">
+                            <span class="text-sm">5. What is the default EtherChannel load-balancing method?</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa5" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>Use the command <code>show etherchannel load-balance</code>. On most Cisco switches, the default method is <strong>src-mac</strong> (Source MAC address).</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa6', this)">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('ec_qa6', this)">
+                            <span class="text-sm">6. Configure load-balance based on source and destination IPs.</span>
+                        </div>
+                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                    </button>
+                    <div id="qa6" class="accordion-content bg-white px-5">
+                        <div class="py-4 text-sm text-slate-600 space-y-3">
+                            <p>In global configuration mode on ALL switches (ASW1, ASW2, DSW1, and DSW2), enter <code>port-channel load-balance src-dst-ip</code> to apply this algorithm across all EtherChannels on the switches.</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- SECTION 5: COMMAND REFERENCE -->
-    <div id="view-reference" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <span class="text-teal-500">📋</span> Command Reference
+    <div id="view-reference" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                Command Matrix
             </h3>
             
             <div class="mb-6 relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
-                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-shadow">
+                <svg class="absolute inset-y-0 left-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search commands..." class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow">
             </div>
 
-            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+            <div class="overflow-x-auto rounded border border-slate-200 shadow-sm">
                 <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
                     <thead class="bg-slate-50 text-slate-700">
                         <tr>
-                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
-                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
-                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide w-1/3">Command</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide w-1/4">Mode</th>
+                            <th class="px-5 py-3 font-semibold tracking-wide">Purpose</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-slate-100">
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">channel-group [X] mode [active|passive]</td>
-                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
-                            <td class="px-6 py-4 text-slate-600">Assigns physical interfaces to an LACP EtherChannel group.</td>
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">channel-group [id] mode [mode]</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Interface Config</span></td>
+                            <td class="px-5 py-3 text-slate-600">Assigns physical interfaces to an EtherChannel bundle (active/passive for LACP, desirable/auto for PAgP, on for static).</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">channel-group [X] mode [desirable|auto]</td>
-                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
-                            <td class="px-6 py-4 text-slate-600">Assigns physical interfaces to a PAgP EtherChannel group.</td>
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">no switchport</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Interface Config</span></td>
+                            <td class="px-5 py-3 text-slate-600">Converts a Layer 2 switchport into a Layer 3 routed port. Mandatory before creating a L3 EtherChannel.</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">channel-group [X] mode on</td>
-                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Interface Config</span></td>
-                            <td class="px-6 py-4 text-slate-600">Assigns physical interfaces to a Static (un-negotiated) EtherChannel.</td>
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">interface port-channel [id]</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Global Config</span></td>
+                            <td class="px-5 py-3 text-slate-600">Enters the logical interface. IP addresses or trunking commands must be applied here.</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">interface port-channel [X]</td>
-                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
-                            <td class="px-6 py-4 text-slate-600">Enters the logical interface to apply global settings (like switchport mode trunk).</td>
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">port-channel load-balance src-dst-ip</td>
+                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Global Config</span></td>
+                            <td class="px-5 py-3 text-slate-600">Changes the mathematical hash used to distribute traffic across the physical links.</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">show etherchannel summary</td>
-                            <td class="px-6 py-4"><span class="bg-teal-50 text-teal-800 text-xs px-2 py-1 rounded border border-teal-200">Privileged EXEC</span></td>
-                            <td class="px-6 py-4 text-slate-600">Displays the status, protocol, and bundled ports for all EtherChannels.</td>
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">show etherchannel summary</td>
+                            <td class="px-5 py-3"><span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded">Priv EXEC</span></td>
+                            <td class="px-5 py-3 text-slate-600">Shows the state of the port-channels and the status of bundled physical links (e.g., 'SU' or 'RU').</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 font-mono text-teal-700 whitespace-nowrap">port-channel load-balance [method]</td>
-                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
-                            <td class="px-6 py-4 text-slate-600">Changes the hashing algorithm (e.g. src-mac, dst-ip) used to distribute traffic across links.</td>
+                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">show etherchannel load-balance</td>
+                            <td class="px-5 py-3"><span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded">Priv EXEC</span></td>
+                            <td class="px-5 py-3 text-slate-600">Displays the currently active load balancing hash algorithm.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -451,18 +523,14 @@ body {
         </div>
     </div>
 
-    <!-- SECTION 6: FLASHCARDS -->
-    <div id="view-flashcards" class="view-section max-w-6xl mx-auto space-y-8 pb-12">
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <span class="text-teal-500">🎴</span> Active Recall Flashcards
+    <div id="view-flashcards" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Flashcards
             </h3>
-            <p class="text-slate-600 mb-6 leading-relaxed">
-                Click a card to flip and verify your understanding of LACP, PAgP, and Layer 3 EtherChannels.
-            </p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
-                <!-- Injected via JS -->
-            </div>
+                </div>
         </div>
     </div>
 
@@ -471,41 +539,41 @@ body {
 <script>
     // --- Chart.js Logic ---
     let chartRendered = false;
+
     function initChart() {
         if (chartRendered) return;
-        const ctx = document.getElementById('stpChart').getContext('2d');
-        chartInstance = new Chart(ctx, {
+        const ctx = document.getElementById('bwChart').getContext('2d');
+        new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Standard STP', 'EtherChannel (LAG)'],
-                datasets: [{
-                    label: 'Available Bandwidth (Gbps)',
-                    data: [1, 4], // 1 link active vs all 4 bundled
-                    backgroundColor: ['#ef4444', '#0d9488'], // Red, Teal
-                    borderWidth: 0,
-                    borderRadius: 4
-                }]
+                labels: ['Spanning Tree (STP)', 'EtherChannel (LACP)'],
+                datasets: [
+                    {
+                        label: 'Usable Bandwidth (Mbps)',
+                        data: [100, 400],
+                        backgroundColor: ['#f59e0b', '#4f46e5'], 
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
                     y: { 
-                        beginAtZero: true, 
-                        max: 5, 
-                        ticks: { stepSize: 1, callback: val => val + ' Gbps' },
-                        grid: { color: '#f1f5f9' },
-                        title: { display: true, text: 'Active Forwarding Capacity', font: {weight: 'bold', color: '#64748b'} }
+                        beginAtZero: true,
+                        max: 500,
+                        title: { display: true, text: 'Throughput' }
                     },
                     x: { grid: { display: false } }
                 },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        padding: 12, cornerRadius: 8,
                         callbacks: {
-                            label: function(context) {
-                                return ` Capacity: ${context.raw} Gbps`;
+                            label: function(context) { 
+                                return ` Bandwidth: ${context.raw} Mbps`; 
                             }
                         }
                     }
@@ -523,14 +591,14 @@ body {
         document.getElementById(viewId).classList.add('active');
         
         document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('nav-active', 'bg-teal-600', 'text-white', 'shadow-md');
-            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+            btn.classList.remove('nav-active');
+            btn.classList.add('nav-inactive');
         });
         
-        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
-        btnElement.classList.add('nav-active', 'bg-teal-600', 'text-white', 'shadow-md');
+        btnElement.classList.remove('nav-inactive');
+        btnElement.classList.add('nav-active');
 
-        if(viewId === 'view-theory') { initChart(); }
+        if(viewId === 'view-theory') { initChart(); } 
     }
 
     // --- Config Tab Logic ---
@@ -540,14 +608,14 @@ body {
             content.classList.add('hidden');
         });
         document.querySelectorAll('.device-tab-btn').forEach(btn => {
-            btn.classList.remove('text-teal-600', 'border-teal-600', 'font-bold');
+            btn.classList.remove('text-indigo-600', 'border-indigo-600', 'font-bold');
             btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
         });
         document.getElementById('config-' + deviceId).classList.remove('hidden');
         document.getElementById('config-' + deviceId).classList.add('block');
         
         btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
-        btnElement.classList.add('text-teal-600', 'border-teal-600', 'font-bold');
+        btnElement.classList.add('text-indigo-600', 'border-indigo-600', 'font-bold');
     }
 
     // --- Accordion Logic ---
@@ -557,11 +625,9 @@ body {
         if (content.classList.contains('expanded')) {
             content.classList.remove('expanded');
             icon.textContent = '+';
-            icon.style.transform = 'none';
         } else {
             content.classList.add('expanded');
             icon.textContent = '−';
-            icon.style.transform = 'none';
         }
     }
 
@@ -587,145 +653,134 @@ body {
         document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
     }
 
-    // --- EtherChannel Simulator Logic ---
-    function playTrackerStep(stepIndex) {
-        // Reset buttons
+    // --- Tracker Logic ---
+    function playEcStep(stepIndex) {
+        // Button styling
         for(let i=1; i<=4; i++) {
-            const btn = document.getElementById('btn-track-'+i);
-            if(btn) {
-                btn.classList.remove('bg-teal-600', 'text-white', 'border-teal-600');
-                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
-            }
+            const btn = document.getElementById('btn-sec-'+i);
+            if(btn) btn.classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
         }
+        const activeBtn = document.getElementById('btn-sec-'+stepIndex);
+        if(activeBtn) activeBtn.classList.add('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        
+        const labelLACP = document.getElementById('label-lacp');
+        const labelPAgP = document.getElementById('label-pagp');
+        const labelL3 = document.getElementById('label-l3');
+        const desc = document.getElementById('sec-desc');
 
-        const activeBtn = document.getElementById('btn-track-'+stepIndex);
-        if(activeBtn) {
-            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
-            activeBtn.classList.add('bg-teal-600', 'text-white', 'border-teal-600');
-        }
+        const linkLACP = document.getElementById('link-asw1-dsw1');
+        const linkPAgP = document.getElementById('link-asw2-dsw2');
+        const linkL3 = document.getElementById('link-dsw1-dsw2');
+        
+        const linkPC1 = document.getElementById('link-pc1-asw1');
+        const linkSRV1 = document.getElementById('link-dsw1-srv1');
 
-        const l1 = document.getElementById('link-1');
-        const l2 = document.getElementById('link-2');
-        const l3 = document.getElementById('link-3');
-        const l4 = document.getElementById('link-4');
-        const m1 = document.getElementById('mode-sw1');
-        const m2 = document.getElementById('mode-sw2');
-        const desc = document.getElementById('tracker-desc');
-        const container = document.getElementById('link-container');
+        // Reset Styles
+        labelLACP.classList.remove('opacity-100');
+        labelPAgP.classList.remove('opacity-100');
+        labelL3.classList.remove('opacity-100');
+        labelLACP.classList.add('opacity-0');
+        labelPAgP.classList.add('opacity-0');
+        labelL3.classList.add('opacity-0');
 
-        // Reset visual classes
-        [l1, l2, l3, l4].forEach(l => {
-            l.className = "h-1 w-full transition-all duration-500 relative flex items-center justify-center";
-            l.innerHTML = ""; // Clear block labels
-        });
-        container.className = "absolute left-1/2 transform -translate-x-1/2 w-48 h-full flex flex-col justify-center gap-3 z-0";
+        linkLACP.className = "absolute top-[8rem] left-[5.5rem] w-3 h-[7rem] bg-slate-600 transition-all z-0 border-x border-slate-800";
+        linkPAgP.className = "absolute top-[8rem] right-[5.5rem] w-3 h-[7rem] bg-slate-600 transition-all z-0 border-x border-slate-800";
+        linkL3.className = "absolute top-[6.5rem] left-[8rem] right-[8rem] h-3 bg-slate-600 transition-all z-0 border-y border-slate-800";
+        
+        linkPC1.className = "absolute bottom-8 left-[6.5rem] w-1 h-8 bg-slate-600 transition-all z-0";
+        linkSRV1.className = "absolute top-12 left-[10rem] w-[5rem] h-1 bg-slate-600 origin-bottom-left transform -rotate-[35deg] transition-all z-0";
 
         if (stepIndex === 1) {
-            // STP
-            l1.classList.add('bg-emerald-500');
-            [l2, l3, l4].forEach(l => {
-                l.classList.add('bg-red-500');
-                l.innerHTML = '<span class="text-[8px] bg-red-600 text-white px-1 rounded absolute block-label">BLK</span>';
-            });
-            m1.innerText = "Unconfigured"; m2.innerText = "Unconfigured";
-            desc.innerHTML = "<span class='text-teal-400 font-bold'>Step 1 (Physical Links):</span> You connect 4 cables between the switches. Spanning Tree Protocol (STP) detects a loop and immediately places 3 of the 4 links into a Blocking state. Only 1 Gbps is active.";
+            labelLACP.classList.remove('opacity-0');
+            labelLACP.classList.add('opacity-100');
+            linkLACP.className = "absolute top-[8rem] left-[5.5rem] w-3 h-[7rem] traffic-flow-indigo transition-all z-0 border-x border-slate-800";
+            
+            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 1 (L2 LACP):</span> ASW1 and DSW1 bundle their links using LACP Active mode. The resulting logical interface operates as a Layer 2 trunk.";
         } else if (stepIndex === 2) {
-            // LACP
-            [l1, l2, l3, l4].forEach(l => l.classList.add('bg-amber-400', 'animate-pulse'));
-            m1.innerText = "LACP Active"; m2.innerText = "LACP Passive";
-            desc.innerHTML = "<span class='text-amber-400 font-bold'>Step 2 (LACP Negotiation):</span> You configure SW1 as <code>active</code> and SW2 as <code>passive</code>. SW1 begins sending LACP packets over all 4 links. SW2 receives them and agrees to form a channel.";
+            labelPAgP.classList.remove('opacity-0');
+            labelPAgP.classList.add('opacity-100');
+            linkPAgP.className = "absolute top-[8rem] right-[5.5rem] w-3 h-[7rem] traffic-flow-indigo transition-all z-0 border-x border-slate-800";
+            
+            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 2 (L2 PAgP):</span> ASW2 and DSW2 bundle their links using PAgP Desirable mode. This logical interface also operates as a Layer 2 trunk.";
         } else if (stepIndex === 3) {
-            // Bundled
-            container.className = "absolute left-1/2 transform -translate-x-1/2 w-48 h-full flex flex-col justify-center gap-0 z-0";
-            [l1, l2, l3, l4].forEach(l => l.classList.add('bg-teal-600', 'h-4')); // Make them thick to look like one block
-            l1.classList.add('rounded-t-lg');
-            l4.classList.add('rounded-b-lg');
-            m1.innerText = "Po1 (SU)"; m2.innerText = "Po1 (SU)";
-            desc.innerHTML = "<span class='text-teal-400 font-bold'>Step 3 (Logical Bundle):</span> The EtherChannel forms successfully! The interface is now <code>Port-channel 1</code>. STP sees this as a single logical link, so ALL 4 cables are now forwarding (4 Gbps total bandwidth).";
+            labelL3.classList.remove('opacity-0');
+            labelL3.classList.add('opacity-100');
+            linkL3.className = "absolute top-[6.5rem] left-[8rem] right-[8rem] h-3 traffic-flow-amber transition-all z-0 border-y border-slate-800"; 
+            
+            desc.innerHTML = "<span class='text-amber-500 font-bold'>Step 3 (L3 Static):</span> The physical ports between DSW1 and DSW2 are converted with <code>no switchport</code>. They are statically bundled (Mode: On) and assigned an IP address, becoming a Layer 3 routed link.";
         } else if (stepIndex === 4) {
-            // Load Balancing
-            container.className = "absolute left-1/2 transform -translate-x-1/2 w-48 h-full flex flex-col justify-center gap-3 z-0";
-            [l1, l2, l3, l4].forEach(l => l.classList.add('bg-teal-500'));
+            labelLACP.classList.remove('opacity-0');
+            labelLACP.classList.add('opacity-100');
+            labelL3.classList.remove('opacity-0');
+            labelL3.classList.add('opacity-100');
             
-            // Animate data chunks
-            l1.innerHTML = '<div class="h-2 w-4 bg-white rounded absolute left-0 animate-[slideFlow_1s_linear_infinite]"></div>';
-            l2.innerHTML = '<div class="h-2 w-4 bg-white rounded absolute left-0 animate-[slideFlow_1.5s_linear_infinite]"></div>';
-            l3.innerHTML = '<div class="h-2 w-4 bg-white rounded absolute left-0 animate-[slideFlow_1.2s_linear_infinite]"></div>';
-            l4.innerHTML = '<div class="h-2 w-4 bg-white rounded absolute left-0 animate-[slideFlow_1.8s_linear_infinite]"></div>';
+            linkPC1.className = "absolute bottom-8 left-[6.5rem] w-2 h-8 traffic-flow-green transition-all z-0";
+            linkLACP.className = "absolute top-[8rem] left-[5.5rem] w-3 h-[7rem] traffic-flow-green transition-all z-0 border-x border-slate-800";
+            linkL3.className = "absolute top-[6.5rem] left-[8rem] right-[8rem] h-3 traffic-flow-green transition-all z-0 border-y border-slate-800"; 
+            linkSRV1.className = "absolute top-12 left-[10rem] w-[5rem] h-2 traffic-flow-green origin-bottom-left transform -rotate-[35deg] transition-all z-0 flex flex-row-reverse"; // Visual flow tweak
             
-            m1.innerText = "Hash: src-mac"; m2.innerText = "Hash: src-mac";
-            desc.innerHTML = "<span class='text-teal-400 font-bold'>Step 4 (Load Balancing):</span> Traffic is not sent round-robin. The switch uses a hashing algorithm (e.g., Source MAC address) to assign specific traffic flows to specific physical links within the bundle.";
+            desc.innerHTML = "<span class='text-green-500 font-bold'>Step 4 (Routing Flow):</span> PC1 communicates with SRV1! Traffic travels up the L2 LACP trunk to DSW1, gets routed across the L3 Static Etherchannel to DSW2 (or directly if connected), and hits the server based on the static routes we configured.";
         }
     }
 
-    // --- Features (Copy, Progress, Flashcards) ---
+    // --- Features ---
     function initFeatures() {
-        // 1. Copy Buttons
+        // Copy buttons
         document.querySelectorAll('.cli-window').forEach(block => {
             if(block.parentElement.classList.contains('group')) return;
-
             const wrapper = document.createElement('div');
             wrapper.className = 'relative group mt-2 mb-4';
             block.parentNode.insertBefore(wrapper, block);
             wrapper.appendChild(block);
             
             const btn = document.createElement('button');
-            btn.className = 'absolute top-2 right-2 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
-            btn.innerText = 'Copy';
+            btn.className = 'absolute top-2 right-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow z-10';
+            btn.innerText = 'Copy'; 
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const textArea = document.createElement("textarea");
                 textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
                 document.body.appendChild(textArea);
                 textArea.select();
-                try {
-                    document.execCommand('copy');
-                    btn.innerText = 'Copied!';
-                } catch (err) {
-                    btn.innerText = 'Failed';
-                }
+                document.execCommand('copy');
                 document.body.removeChild(textArea);
+                btn.innerText = 'Copied!'; 
                 setTimeout(() => btn.innerText = 'Copy', 2000);
             };
             wrapper.appendChild(btn);
         });
 
-        // 2. Load Progress
+        // Load checkboxes
         document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
-            if(match && match[1]) {
-                const id = match[1];
-                if(localStorage.getItem('etherchannel_progress_' + id) === 'true') {
-                    cb.checked = true;
-                }
+            if(match && match[1] && localStorage.getItem(match[1]) === 'true') {
+                cb.checked = true;
             }
         });
 
-        // 3. Flashcards
+        // Flashcards data
         const flashcards = [
-            { q: "What are the two modes for LACP (802.3ad)?", a: "<strong>Active</strong> (actively initiates negotiation packets) and <strong>Passive</strong> (only responds to packets)." },
-            { q: "What are the two modes for PAgP (Cisco Proprietary)?", a: "<strong>Desirable</strong> (actively initiates) and <strong>Auto</strong> (only responds)." },
-            { q: "What does the 'SU' flag mean in `show etherchannel summary`?", a: "<strong>S</strong> = Layer 2 (Switched)<br><strong>U</strong> = In Use (Up and functioning)" },
-            { q: "What happens if you connect an Active port to a Passive port?", a: "An LACP EtherChannel <strong>forms successfully</strong> because the Active side initiates the conversation and the Passive side responds." },
-            { q: "How do you configure a Layer 3 EtherChannel?", a: "Issue <code class='bg-white px-1 border rounded text-slate-800 font-mono'>no switchport</code> on the physical interfaces before bundling, AND issue it on the Port-Channel interface itself to apply an IP address." },
-            { q: "How does a switch distribute traffic across an EtherChannel?", a: "It does NOT use round-robin. It uses a <strong>Load Balancing Hashing Algorithm</strong> (e.g., source-mac, dst-ip) to ensure frames from the same flow always use the same physical link, preventing out-of-order delivery." }
+            { q: "What is the crucial command required before making a Layer 3 EtherChannel?", a: "You must enter <strong><code>no switchport</code></strong> on the physical interfaces before you bundle them into the channel-group." },
+            { q: "What are the configuration modes for PAgP?", a: "<strong>Desirable</strong> (initiates negotiation) and <strong>Auto</strong> (waits for negotiation).<br>PAgP is Cisco Proprietary." },
+            { q: "What is the standard load-balancing method used by default on most Cisco switches?", a: "The default is usually <strong>src-mac</strong> (Source MAC Address)." },
+            { q: "How do you apply an IP address to a Layer 3 EtherChannel?", a: "You enter the logical interface using <strong><code>interface port-channel [number]</code></strong>, and then apply the <code>ip address</code> command there." },
+            { q: "If you apply a configuration (like switchport mode trunk) to a physical interface inside a bundle, what happens?", a: "It can cause the interface to be <strong>suspended</strong> from the bundle. You should always apply configurations directly to the logical <code>interface port-channel</code>." },
+            { q: "What does the 'RU' status mean in <code>show etherchannel summary</code>?", a: "<strong>R</strong> stands for Layer 3 (Routed).<br><strong>U</strong> stands for In Use (The bundle is successfully up and running)." }
         ];
 
         const grid = document.getElementById('flashcard-grid');
         if (grid) {
             flashcards.forEach((item, index) => {
                 const cardHTML = `
-                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                    <div class="cursor-pointer h-60 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
                         <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
-                            <!-- Front -->
                             <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
-                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
-                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
-                                <span class="absolute bottom-4 text-xs text-teal-600 font-semibold tracking-wide">CLICK TO FLIP</span>
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-300">Question ${index + 1}</span>
+                                <h5 class="text-sm md:text-base font-semibold text-slate-700">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-indigo-500 font-semibold tracking-wide">CLICK TO FLIP</span>
                             </div>
-                            <!-- Back -->
-                            <div class="absolute w-full h-full bg-teal-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
-                                <span class="absolute top-3 left-4 text-xs font-bold text-teal-700">Answer</span>
+                            <div class="absolute w-full h-full bg-indigo-50 border border-indigo-100 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-indigo-400">Answer</span>
                                 <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
                             </div>
                         </div>
@@ -737,14 +792,14 @@ body {
     }
 
     function saveProgress(id, cb) {
-        localStorage.setItem('etherchannel_progress_' + id, cb.checked);
+        localStorage.setItem(id, cb.checked);
     }
 
     // Initialize defaults on load
     document.addEventListener('DOMContentLoaded', () => {
         initChart();
         initFeatures();
-        playTrackerStep(1); // Load tracker state
+        playEcStep(1); // Default tracker state
     });
 </script>
 </body>
