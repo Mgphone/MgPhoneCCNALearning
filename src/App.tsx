@@ -3,6 +3,8 @@ import { ccnaData } from "./data/data";
 import { labData } from "./data/labdata";
 import { LandingPage } from "./components/LandingPage";
 import { StudyDashboard } from "./components/StudyDashboard";
+import { EUI64Calculator } from "./components/EUI64Calculator";
+import { HandsOnPractice } from "./components/HandsOnPractice";
 
 function App() {
   return (
@@ -32,6 +34,8 @@ function App() {
             />
           }
         />
+        <Route path="/hands-on" element={<HandsOnPractice />} />
+        <Route path="/hands-on/eui64" element={<EUI64Calculator />} />
       </Routes>
     </Router>
   );

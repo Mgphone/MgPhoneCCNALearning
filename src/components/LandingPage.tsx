@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, FlaskConical, ChevronRight } from 'lucide-react';
+import { BookOpen, FlaskConical, Cpu, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const LandingPage: React.FC = () => {
@@ -15,7 +15,7 @@ export const LandingPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
           <Link
             to="/course-notes"
             className="group relative bg-slate-900 border border-slate-800 p-8 rounded-3xl text-left transition-all hover:border-cyan-500/50 hover:bg-slate-800/50 hover:shadow-2xl hover:shadow-cyan-500/10"
@@ -45,6 +45,22 @@ export const LandingPage: React.FC = () => {
             </p>
             <div className="flex items-center text-blue-400 font-bold text-sm">
               Enter Laboratory <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          <Link
+            to="/hands-on"
+            className="group relative bg-slate-900 border border-slate-800 p-8 rounded-3xl text-left transition-all hover:border-violet-500/50 hover:bg-slate-800/50 hover:shadow-2xl hover:shadow-violet-500/10"
+          >
+            <div className="h-14 w-14 bg-violet-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Cpu className="text-violet-400" size={28} />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-3">CCNA Hands-On Practice</h2>
+            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+              Interactive calculators, quizzes, and utilities to build real networking skills.
+            </p>
+            <div className="flex items-center text-violet-400 font-bold text-sm">
+              Enter Tools <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
         </div>
