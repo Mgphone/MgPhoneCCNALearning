@@ -3,11 +3,11 @@ import { ccnaData } from "./data/data";
 import { labData } from "./data/labdata";
 import { LandingPage } from "./components/LandingPage";
 import { StudyDashboard } from "./components/StudyDashboard";
-import { EUI64Calculator } from "./components/EUI64Calculator";
-import { HandsOnPractice } from "./components/HandsOnPractice";
-import IPv4Calculator from "./components/IPv4Calculator";
-import VlanStpAnalyzer from "./components/VlanStpAnalyzer";
-import MultipleChoiceQuiz from "./components/MultipleChoiceQuiz";
+import { EUI64Calculator } from "./pages/EUI64Calculator";
+import { HandsOnPractice } from "./pages/HandsOnPractice";
+import IPv4Calculator from "./pages/IPv4Calculator";
+import VlanStpAnalyzer from "./pages/VlanStpAnalyzer";
+import MultipleChoiceQuiz from "./pages/MultipleChoiceQuiz";
 import NotFound from "./components/NotFound";
 
 function App() {

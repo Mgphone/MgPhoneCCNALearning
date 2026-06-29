@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Calculator, Network, Hash, Shuffle } from "lucide-react";
+import Vlsm from "../components/Vlsm";
 
 export default function IPv4Calculator() {
   const [activeTab, setActiveTab] = useState("address");
@@ -194,17 +195,7 @@ export default function IPv4Calculator() {
             </div>
           )}
 
-          {activeTab === "vlsm" && (
-            <div className="text-center py-12 text-slate-500 animate-in fade-in">
-              <Network className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <h3 className="text-lg font-medium text-slate-300">
-                VLSM Planner
-              </h3>
-              <p className="mt-2">
-                Variable Length Subnet Masking layout tool coming soon.
-              </p>
-            </div>
-          )}
+          {activeTab === "vlsm" && <Vlsm />}
 
           {activeTab === "cidr" && (
             <div className="text-center py-12 text-slate-500 animate-in fade-in">
