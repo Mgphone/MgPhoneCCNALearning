@@ -149,7 +149,17 @@ export default function Vlsm() {
 
     if (parsedReqs.length !== requirements.length) {
       setShadowSolution(null);
-      setErrorMsg(null);
+      const hasInvalid = requirements.some(
+        (r) =>
+          r.requestedHosts.trim() !== "" &&
+          (isNaN(parseInt(r.requestedHosts, 10)) ||
+            parseInt(r.requestedHosts, 10) <= 0),
+      );
+      setErrorMsg(
+        hasInvalid
+          ? "All host counts must be greater than 0."
+          : null,
+      );
       return;
     }
 
@@ -406,17 +416,33 @@ export default function Vlsm() {
                   <h4 className="font-bold text-slate-200 tracking-wide">
                     {req.name}
                   </h4>
-                  <div className="flex items-center gap-3">
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-                      Hosts Needed
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 30"
-                      value={req.requestedHosts}
-                      onChange={(e) => handleHostChange(req.id, e.target.value)}
-                      className="w-24 bg-slate-950 border-slate-700 font-mono h-8 focus-visible:ring-emerald-500"
-                    />
+                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                        Hosts Needed
+                      </label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="e.g. 30"
+                        value={req.requestedHosts}
+                        onChange={(e) => handleHostChange(req.id, e.target.value)}
+                        className={`w-24 bg-slate-950 border-slate-700 font-mono h-8 focus-visible:ring-emerald-500 ${
+                          req.requestedHosts.trim() !== "" &&
+                          (isNaN(parseInt(req.requestedHosts, 10)) ||
+                            parseInt(req.requestedHosts, 10) <= 0)
+                            ? "border-red-500/50 ring-1 ring-red-500/20"
+                            : ""
+                        }`}
+                      />
+                    </div>
+                    {req.requestedHosts.trim() !== "" &&
+                      (isNaN(parseInt(req.requestedHosts, 10)) ||
+                        parseInt(req.requestedHosts, 10) <= 0) && (
+                        <p className="text-[11px] text-red-400">
+                          Must be greater than 0
+                        </p>
+                      )}
                   </div>
                 </div>
 
