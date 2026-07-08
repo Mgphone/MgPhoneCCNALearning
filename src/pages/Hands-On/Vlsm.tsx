@@ -25,69 +25,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  SubnetRequirement,
+  UserInput,
+  ShadowAllocation,
+  solveVlsm,
+} from "@/lib/vlsm";
 
-// --- IPv4 Math Utilities ---
-const ipToLong = (ip: string): number => {
-  return (
-    ip
-      .split(".")
-      .reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0
-  );
-};
-
-const longToIp = (long: number): string => {
-  return [
-    (long >>> 24) & 255,
-    (long >>> 16) & 255,
-    (long >>> 8) & 255,
-    long & 255,
-  ].join(".");
-};
-
-const getRequiredCidr = (hosts: number): number | null => {
-  if (hosts <= 0) return null;
-  const requiredTotal = hosts + 2; // Network + Broadcast
-  for (let cidr = 30; cidr >= 8; cidr--) {
-    if (Math.pow(2, 32 - cidr) >= requiredTotal) return cidr;
-  }
-  return null;
-};
-
-const cidrToMask = (cidr: number): string => {
-  const mask = (0xffffffff << (32 - cidr)) >>> 0;
-  return longToIp(mask);
-};
-
-// --- Types ---
 type Difficulty = "easy" | "medium" | "hard";
-
-interface SubnetRequirement {
-  id: string;
-  name: string;
-  requestedHosts: string;
-}
-
-interface UserInput {
-  networkIp: string;
-  cidr: string;
-  firstHost: string;
-  lastHost: string;
-  broadcast: string;
-}
-
-interface ShadowAllocation {
-  id: string;
-  name: string;
-  requestedHosts: number;
-  allocatedSize: number;
-  networkAddress: string;
-  subnetMask: string;
-  cidr: number;
-  firstHost: string;
-  lastHost: string;
-  usableRange: string;
-  broadcast: string;
-}
 
 export default function Vlsm() {
   // --- Game State ---
@@ -142,83 +87,9 @@ export default function Vlsm() {
   // --- The Background VLSM Solver ---
   useEffect(() => {
     if (!baseNetwork.ip) return;
-
-    const parsedReqs = requirements
-      .map((r) => ({ ...r, num: parseInt(r.requestedHosts, 10) }))
-      .filter((r) => !isNaN(r.num) && r.num > 0);
-
-    if (parsedReqs.length !== requirements.length) {
-      setShadowSolution(null);
-      const hasInvalid = requirements.some(
-        (r) =>
-          r.requestedHosts.trim() !== "" &&
-          (isNaN(parseInt(r.requestedHosts, 10)) ||
-            parseInt(r.requestedHosts, 10) <= 0),
-      );
-      setErrorMsg(
-        hasInvalid
-          ? "All host counts must be greater than 0."
-          : null,
-      );
-      return;
-    }
-
-    const sortedReqs = [...parsedReqs].sort((a, b) => b.num - a.num);
-
-    let currentIpLong = ipToLong(baseNetwork.ip);
-    const maxCapacity = Math.pow(2, 32 - baseNetwork.cidr);
-    let usedCapacity = 0;
-
-    const solution: ShadowAllocation[] = [];
-    let isPossible = true;
-
-    for (const req of sortedReqs) {
-      const cidr = getRequiredCidr(req.num);
-      if (!cidr) {
-        isPossible = false;
-        break;
-      }
-
-      const blockSize = Math.pow(2, 32 - cidr);
-      usedCapacity += blockSize;
-
-      if (usedCapacity > maxCapacity) {
-        isPossible = false;
-        break;
-      }
-
-      const firstHostIp = longToIp(currentIpLong + 1);
-      const lastHostIp = longToIp(currentIpLong + blockSize - 2);
-
-      solution.push({
-        id: req.id,
-        name: req.name,
-        requestedHosts: req.num,
-        allocatedSize: blockSize,
-        networkAddress: longToIp(currentIpLong),
-        subnetMask: cidrToMask(cidr),
-        cidr: cidr,
-        firstHost: firstHostIp,
-        lastHost: lastHostIp,
-        usableRange: `${firstHostIp} - ${lastHostIp}`,
-        broadcast: longToIp(currentIpLong + blockSize - 1),
-      });
-
-      currentIpLong += blockSize;
-    }
-
-    if (!isPossible) {
-      setErrorMsg(
-        `Capacity Exceeded: Cannot fit these requirements into a /${baseNetwork.cidr} network.`,
-      );
-      setShadowSolution(null);
-    } else {
-      setErrorMsg(null);
-      const orderedSolution = requirements.map(
-        (r) => solution.find((s) => s.id === r.id)!,
-      );
-      setShadowSolution(orderedSolution);
-    }
+    const result = solveVlsm(baseNetwork.ip, baseNetwork.cidr, requirements);
+    setShadowSolution(result.solution);
+    setErrorMsg(result.error);
   }, [requirements, baseNetwork]);
 
   // --- Handlers ---
