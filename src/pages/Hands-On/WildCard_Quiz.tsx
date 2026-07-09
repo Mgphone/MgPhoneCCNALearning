@@ -4,10 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { calculateIpDetails, IpDetails } from "@/lib/calculateIpDetails";
+import { calculateIpDetails } from "@/lib/calculateIpDetails";
 
 type Difficulty = "easy" | "medium" | "expert";
-type QuestionType = "ip-to-wildcard" | "subnet-to-wildcard" | "wildcard-to-subnet";
+type QuestionType =
+  | "ip-to-wildcard"
+  | "subnet-to-wildcard"
+  | "wildcard-to-subnet";
 
 const CIDR_RANGES: Record<Difficulty, number[]> = {
   easy: [8, 16, 24],
@@ -31,7 +34,8 @@ function generateRandomIp(cidr: number): string {
   if (cidr === 0) {
     networkInt = 0;
   } else {
-    networkInt = (Math.floor(Math.random() * 0x100000000) & (~0 << (32 - cidr))) >>> 0;
+    networkInt =
+      (Math.floor(Math.random() * 0x100000000) & (~0 << (32 - cidr))) >>> 0;
   }
   let offset: number;
   if (hostCount <= 2) {
@@ -54,7 +58,12 @@ interface QuestionConfig {
   correctAnswer: string;
 }
 
-function buildQuestion(qType: QuestionType, ip: string, cidr: string, details: IpDetails): QuestionConfig {
+function buildQuestion(
+  qType: QuestionType,
+  ip: string,
+  cidr: string,
+  details: IpDetails,
+): QuestionConfig {
   switch (qType) {
     case "ip-to-wildcard":
       return {
@@ -85,7 +94,8 @@ function buildQuestion(qType: QuestionType, ip: string, cidr: string, details: I
 
 const WildCard_Quiz: React.FC = () => {
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
-  const [questionType, setQuestionType] = useState<QuestionType>("ip-to-wildcard");
+  const [questionType, setQuestionType] =
+    useState<QuestionType>("ip-to-wildcard");
   const [questionIp, setQuestionIp] = useState("");
   const [questionCidr, setQuestionCidr] = useState("");
   const [config, setConfig] = useState<QuestionConfig | null>(null);
@@ -151,7 +161,7 @@ const WildCard_Quiz: React.FC = () => {
               "flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all capitalize",
               difficulty === level
                 ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent",
             )}
           >
             {level}
@@ -185,7 +195,8 @@ const WildCard_Quiz: React.FC = () => {
               placeholder={config.inputPlaceholder}
               className={cn(
                 "bg-slate-950 border-slate-700 font-mono text-sm pr-10",
-                result === true && "border-emerald-500/50 ring-1 ring-emerald-500/20",
+                result === true &&
+                  "border-emerald-500/50 ring-1 ring-emerald-500/20",
                 result === false && "border-red-500/50 ring-1 ring-red-500/20",
               )}
               disabled={revealed}
@@ -204,7 +215,7 @@ const WildCard_Quiz: React.FC = () => {
             <p
               className={cn(
                 "text-xs",
-                result ? "text-emerald-400" : "text-red-400"
+                result ? "text-emerald-400" : "text-red-400",
               )}
             >
               {result ? "Correct" : "Incorrect"}
@@ -245,7 +256,7 @@ const WildCard_Quiz: React.FC = () => {
           <span
             className={cn(
               "text-sm font-medium ml-auto",
-              result ? "text-emerald-400" : "text-red-400"
+              result ? "text-emerald-400" : "text-red-400",
             )}
           >
             {result ? "Correct" : "Incorrect"}
@@ -257,9 +268,7 @@ const WildCard_Quiz: React.FC = () => {
       {checked && result && (
         <Card className="bg-emerald-950/20 border-emerald-900/30">
           <CardContent className="py-4 text-center">
-            <p className="text-emerald-400 font-semibold text-lg">
-              Correct!
-            </p>
+            <p className="text-emerald-400 font-semibold text-lg">Correct!</p>
           </CardContent>
         </Card>
       )}
