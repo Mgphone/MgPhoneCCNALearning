@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { calculateIpDetails } from "@/lib/calculateIpDetails";
+import { calculateIpDetails, type IpDetails } from "@/lib/calculateIpDetails";
 
 type Difficulty = "easy" | "medium" | "expert";
 type QuestionType =
