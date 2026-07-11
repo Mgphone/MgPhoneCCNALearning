@@ -6,6 +6,7 @@ import {
   FileQuestion,
   ChevronRight,
   Lock,
+  FerrisWheel,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -46,6 +47,15 @@ const tools = [
     route: "/hands-on/quiz",
     available: true,
   },
+  {
+    title: "CCNA Spin Wheel",
+    description:
+      "Can't decide what to study? Spin the wheel to randomly select your next CCNA practice topic.",
+    icon: FerrisWheel,
+    color: "lime",
+    route: "/hands-on/ccna-spin-wheel",
+    available: true,
+  },
 ] as const;
 
 const colorMap = {
@@ -72,6 +82,18 @@ const colorMap = {
     bg: "bg-rose-500/10",
     border: "hover:border-rose-500/50",
     shadow: "hover:shadow-rose-500/10",
+  },
+  lime: {
+    text: "text-lime-400",
+    bg: "bg-lime-500/10",
+    border: "hover:border-lime-500/50",
+    shadow: "hover:shadow-lime-500/10",
+  },
+  violet: {
+    text: "text-violet-400",
+    bg: "bg-violet-500/10",
+    border: "hover:border-violet-500/50",
+    shadow: "hover:shadow-violet-500/10",
   },
 };
 

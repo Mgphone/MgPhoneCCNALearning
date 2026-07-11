@@ -1,4 +1,10 @@
-import { BookOpen, CheckCircle, XCircle, HelpCircle, Clock } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle,
+  XCircle,
+  HelpCircle,
+  Clock,
+} from "lucide-react";
 import { formatElapsedTime, type QuizEngine } from "./useQuizEngine";
 
 export default function QuizPlaying({ engine }: { engine: QuizEngine }) {
@@ -31,8 +37,7 @@ export default function QuizPlaying({ engine }: { engine: QuizEngine }) {
               if (!d) return null;
               const colors: Record<string, string> = {
                 easy: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-                medium:
-                  "text-amber-400 bg-amber-500/10 border-amber-500/20",
+                medium: "text-amber-400 bg-amber-500/10 border-amber-500/20",
                 hard: "text-red-400 bg-red-500/10 border-red-500/20",
               };
               return (
@@ -82,8 +87,7 @@ export default function QuizPlaying({ engine }: { engine: QuizEngine }) {
               styleClasses =
                 "border-emerald-500/50 bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
             } else if (optionSelected && !isCorrect) {
-              styleClasses =
-                "border-red-500/50 bg-red-500/10 text-red-300";
+              styleClasses = "border-red-500/50 bg-red-500/10 text-red-300";
             } else {
               styleClasses =
                 "border-slate-800 bg-slate-950/30 text-slate-600 opacity-50";
@@ -100,9 +104,7 @@ export default function QuizPlaying({ engine }: { engine: QuizEngine }) {
               disabled={isSubmitted}
               className={`w-full text-left p-4 sm:p-5 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group ${styleClasses}`}
             >
-              <span className="text-sm sm:text-base font-medium">
-                {option}
-              </span>
+              <span className="text-sm sm:text-base font-medium">{option}</span>
               <div className="shrink-0 ml-4">
                 {!isSubmitted && optionSelected && (
                   <div className="w-5 h-5 rounded-full bg-cyan-500 animate-in zoom-in duration-200" />
@@ -124,10 +126,11 @@ export default function QuizPlaying({ engine }: { engine: QuizEngine }) {
 
       <div className="pt-4 border-t border-slate-800">
         {!isSubmitted ? (
-          <div className="flex flex-wrap gap-3 justify-end">
+          <div className="flex flex-wrap gap-3 justify-start ">
             <button
               onClick={giveUp}
-              className="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold transition-all border border-slate-700"
+              // className="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold transition-all border border-slate-700"
+              className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:bg-slate-700"
             >
               <HelpCircle size={16} className="mr-2 inline" />
               Give Up

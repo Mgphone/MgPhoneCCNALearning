@@ -9,6 +9,7 @@ import IPv4Calculator from "./pages/IPv4Calculator";
 import VlanStpAnalyzer from "./pages/VlanStpAnalyzer";
 import MultipleChoiceQuiz from "./pages/MultipleChoiceQuiz";
 import NotFound from "./components/NotFound";
+import Spin_Wheel_Ccna from "./pages/Hands-On/Spin_Wheel_Ccna";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
         <Route path="/hands-on/ipv4-calculator" element={<IPv4Calculator />} />
         <Route path="/hands-on/vlan-stp" element={<VlanStpAnalyzer />} />
         <Route path="/hands-on/quiz" element={<MultipleChoiceQuiz />} />
+        <Route path="/hands-on/ccna-spin-wheel" element={<Spin_Wheel_Ccna />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
