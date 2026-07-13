@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CheckCircle,
   XCircle,
+  Flag,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatElapsedTime, type QuizEngine } from "./useQuizEngine";
@@ -21,6 +22,7 @@ export default function QuizResults({ engine }: { engine: QuizEngine }) {
     barWidth,
     sessionQuestions,
     answers,
+    flaggedIds,
     elapsedSeconds,
     getSelectedTopicLabel,
     startQuiz,
@@ -162,6 +164,13 @@ export default function QuizResults({ engine }: { engine: QuizEngine }) {
                 <p className="text-xs text-slate-500 font-mono">
                   #{idx + 1}
                 </p>
+                {flaggedIds.has(q.id) && (
+                  <Flag
+                    size={14}
+                    className="text-amber-400"
+                    fill="currentColor"
+                  />
+                )}
                 {(() => {
                   const d = q.difficulty;
                   const colors: Record<string, string> = {

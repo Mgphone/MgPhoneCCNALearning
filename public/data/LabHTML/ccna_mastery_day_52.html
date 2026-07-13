@@ -1,365 +1,435 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CCNA Mastery: STP & FHRP Synchronization</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-/* Base Typography and Backgrounds */
-body { 
-    background-color: #fafafc; 
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-    color: #1e293b;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Interactive Guide: STP & FHRP Synchronization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Typography and Backgrounds */
+        body { 
+            background-color: #f8fafc; /* Slate 50 */
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; /* Slate 800 */
+        }
+        
+        /* Mandatory Chart Container Styling */
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 35vh; 
+            min-height: 250px;
+            max-height: 350px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
 
-/* Sidebar Custom Styling */
-.sidebar-nav { background-color: #0f111a; }
-.brand-header { background-color: #151824; }
+        /* View Management */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
 
-/* Chart Container */
-.chart-container { 
-    position: relative; 
-    width: 100%; 
-    max-width: 500px; 
-    margin-left: auto; 
-    margin-right: auto; 
-    height: 35vh; 
-    min-height: 250px;
-    max-height: 320px; 
-}
+        /* Navigation Buttons */
+        .nav-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-active { background-color: #f5f3ff; color: #7c3aed; border-left-color: #7c3aed; font-weight: 600; } /* Violet Theme */
+        .nav-inactive { color: #64748b; }
+        .nav-inactive:hover { background-color: #f1f5f9; color: #334155; }
 
-/* View Management */
-.view-section { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
-.view-section.active { display: block; opacity: 1; }
+        /* Accordion Animations */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
-/* Navigation Buttons */
-.nav-btn { transition: all 0.2s ease; border-radius: 0.375rem; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500;}
-.nav-active { background-color: #4f46e5; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); } 
-.nav-inactive { color: #94a3b8; }
-.nav-inactive:hover { background-color: rgba(255,255,255,0.05); color: #e2e8f0; }
-.nav-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        /* Code Block Styling */
+        .cli-window { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Courier New', Courier, monospace; 
+            padding: 1.25rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto; 
+            font-size: 0.875rem; 
+            border: 1px solid #1e293b; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
+            line-height: 1.5;
+        }
+        .cli-prompt { color: #a855f7; font-weight: bold; } /* Purple 400 */
+        .cli-comment { color: #64748b; font-style: italic; }
 
-/* Accordions */
-.accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-.accordion-content.expanded { max-height: 1500px; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px solid #f1f5f9; }
+        /* Interactive Tracker Node Effects */
+        .node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #7c3aed !important; box-shadow: 0 0 15px rgba(124, 58, 237, 0.5); }
+        .node-dim { opacity: 0.4; transition: all 0.3s; filter: grayscale(80%); }
+        .node-error { border-color: #ef4444 !important; background-color: #b91c1c !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
 
-/* Code Blocks */
-.cli-window { 
-    background-color: #1e1e1e; 
-    color: #e2e8f0; 
-    font-family: 'Courier New', Courier, monospace; 
-    padding: 1.25rem; 
-    border-radius: 0.5rem; 
-    overflow-x: auto; 
-    font-size: 0.875rem; 
-    border: 1px solid #334155; 
-    box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.2); 
-    line-height: 1.6;
-}
-.cli-prompt { color: #4ade80; font-weight: bold; } 
-.cli-comment { color: #94a3b8; font-style: italic; }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(124, 58, 237, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.8); }
+        }
 
-/* Tracker Effects */
-.node-highlight { animation: pulseGlow 1.5s infinite alternate; border-color: #4f46e5 !important; box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+        @keyframes flowTraffic {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        .traffic-flow {
+            background: linear-gradient(90deg, rgba(124,58,237,1) 0%, rgba(2ede,232,255,1) 50%, rgba(124,58,237,1) 100%);
+            background-size: 200% 100%;
+            animation: flowTraffic 1s linear infinite;
+        }
+        .traffic-flow-blocked {
+            background-color: #ef4444; /* Red */
+        }
 
-@keyframes pulseGlow { 0% { box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); } 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.8); } }
+        /* 3D Flip Utilities for Flashcards */
+        .perspective { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
 
-@keyframes flowTraffic { 0% { background-position: 0% 0%; } 100% { background-position: 100% 0%; } }
-.traffic-flow-indigo {
-    background: linear-gradient(90deg, #4f46e5 0%, #c7d2fe 50%, #4f46e5 100%);
-    background-size: 200% 100%;
-    animation: flowTraffic 1.5s linear infinite;
-}
-.traffic-flow-amber {
-    background: linear-gradient(90deg, #f59e0b 0%, #fde68a 50%, #f59e0b 100%);
-    background-size: 200% 100%;
-    animation: flowTraffic 1.5s linear infinite;
-}
-
-/* 3D Flip Utilities */
-.perspective { perspective: 1000px; }
-.transform-style-3d { transform-style: preserve-3d; }
-.rotate-y-180 { transform: rotateY(180deg); }
-.backface-hidden { backface-visibility: hidden; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-</style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-indigo-200">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-violet-200">
 
-<!-- Sidebar Navigation -->
-<nav class="sidebar-nav border-r border-slate-800 w-full md:w-64 flex-shrink-0 md:h-full flex flex-col shadow-2xl z-20 transition-all">
-    <div class="brand-header p-6 border-b border-slate-800 flex items-center gap-3">
-        <svg class="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>
+<nav class="bg-white border-r border-slate-200 w-full md:w-72 flex-shrink-0 md:h-full flex flex-col shadow-xl z-20 transition-all">
+    <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center gap-3">
+        <span class="text-3xl text-violet-500">⚖️</span>
         <div>
-            <h1 class="text-sm font-bold text-white tracking-wide">CCNA Mastery</h1>
-            <p class="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mt-0.5">Day 52 Lab</p>
+            <h1 class="text-lg font-bold leading-tight text-white">CCNA Mastery</h1>
+            <p class="text-xs text-violet-400 font-semibold tracking-wide uppercase mt-1">STP & FHRP Sync</p>
         </div>
     </div>
-    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-6 px-4 flex flex-row md:flex-col gap-1">
-        <button onclick="navigate('view-theory', this)" class="nav-btn nav-active w-full text-left px-4 py-2.5 flex items-center gap-3">
-            <svg class="nav-icon"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            Theory
+    <div class="flex-1 overflow-x-auto md:overflow-y-auto py-4 px-3 flex flex-row md:flex-col gap-1">
+        <button onclick="switchTab('tab-concepts', this)" class="nav-btn nav-active w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors bg-violet-600 text-white shadow-md">
+            <span class="text-xl">📊</span> Alignment Concepts
         </button>
-        <button onclick="navigate('view-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
-            <svg class="nav-icon"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-            Path Visualizer
+        <button onclick="switchTab('tab-tracker', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🔍</span> Suboptimal Tracker
         </button>
-        <button onclick="navigate('view-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
-            <svg class="nav-icon"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            Device Configs
+        <button onclick="switchTab('tab-config', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">💻</span> Device Configs
         </button>
-        <button onclick="navigate('view-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
-            <svg class="nav-icon"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-            Lab Walkthrough
+        <button onclick="switchTab('tab-qa', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📝</span> Lab Tasks & Q&A
         </button>
-        <button onclick="navigate('view-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
-            <svg class="nav-icon"><path d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-            Command Matrix
+        <button onclick="switchTab('tab-reference', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">📋</span> Command Matrix
         </button>
-        <button onclick="navigate('view-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-2.5 flex items-center gap-3">
-            <svg class="nav-icon"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            Flashcards
+        <button onclick="switchTab('tab-flashcards', this)" class="nav-btn nav-inactive w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-slate-800 text-slate-300">
+            <span class="text-xl">🎴</span> Flashcards
         </button>
     </div>
 </nav>
 
-<main class="flex-1 overflow-y-auto p-6 md:p-10 relative scroll-smooth bg-white">
-    <!-- Header Banner -->
-    <header class="mb-10 max-w-5xl mx-auto">
-        <div class="flex items-center gap-3 mb-2">
-            <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Network Design</span>
-            <span class="text-slate-400 text-sm">Jeremy's IT Lab Day 52</span>
-        </div>
-        <h2 class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">STP & FHRP (HSRP) Synchronization</h2>
-        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded-r-lg">
-            <p class="text-indigo-900 text-sm md:text-base leading-relaxed">
-                Preventing Suboptimal Paths. When the STP Root Bridge and HSRP Active Router are on different devices, data takes a longer path across inter-switch links. Here we learn how to synchronize them to create an optimal path.
-            </p>
-        </div>
+<main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+    <header class="mb-8 max-w-6xl mx-auto border-b border-slate-200 pb-6">
+        <h2 class="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">STP & FHRP Synchronization</h2>
+        <p class="text-lg text-slate-600 border-l-4 border-violet-500 pl-4 bg-violet-50 py-3 pr-3 rounded-r-lg shadow-sm">
+            In modern networks, Spanning Tree Protocol (Layer 2) and First Hop Redundancy Protocols like HSRP (Layer 3) must be configured to agree with each other. Learn how to align their active roles to prevent suboptimal routing and enable load balancing.
+        </p>
     </header>
 
-    <!-- SECTION 1: THEORY / CHART -->
-    <div id="view-theory" class="view-section active max-w-5xl mx-auto space-y-8">
-        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                Path Optimization
+    <!-- SECTION 1: THEORY -->
+    <div id="tab-concepts" class="tab-content active max-w-6xl mx-auto space-y-8">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-violet-500">🧠</span> The Synchronization Problem
             </h3>
             
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 <div class="space-y-6">
-                    <p class="text-sm text-slate-600">The problem occurs when we forget to configure spanning-tree and HSRP priorities on our Distribution Switches properly.</p>
-                    
-                    <ul class="space-y-4 text-sm text-slate-700">
-                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
-                            <strong class="text-amber-600 mb-1">Suboptimal Path (Unsynchronized)</strong>
-                            <span>If DSW1 is the Root (STP) and DSW2 is Active (HSRP), data from the PC goes to DSW1 first, crosses the inter-switch link to DSW2, and then out to the Internet. (Extra hops).</span>
-                        </li>
-                        <li class="flex flex-col bg-slate-50 p-4 rounded border border-slate-100">
-                            <strong class="text-indigo-700 mb-1">Optimal Path (Synchronized)</strong>
-                            <span>We make DSW1 both the Root (STP) and Active (HSRP). Data travels directly from the PC to DSW1, then out to the Internet. (Fewer hops).</span>
-                        </li>
-                    </ul>
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-lg text-slate-800 mb-4">Why Align L2 and L3?</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-violet-700">The Layer 2 Path (STP)</strong>
+                                <span>Access switches forward traffic toward the STP Root Bridge. If an access switch has redundant uplinks, it blocks all paths except the one leading directly to the Root Bridge.</span>
+                            </li>
+                            <li class="flex flex-col border-b border-slate-200 pb-2">
+                                <strong class="text-violet-700">The Layer 3 Path (HSRP)</strong>
+                                <span>End hosts send inter-subnet traffic to their Default Gateway. In an FHRP setup, this is the Virtual IP (VIP) hosted by the HSRP Active router.</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <strong class="text-rose-600">The Suboptimal Result</strong>
+                                <span>If DSW1 is the HSRP Active router, but DSW2 is the STP Root Bridge, the access switch will send traffic to DSW2 first. DSW2 must then forward it across the inter-switch trunk link to DSW1 to be routed. This adds unnecessary hops, latency, and consumes trunk bandwidth.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-violet-50 border border-violet-200 p-4 rounded-xl shadow-sm text-sm">
+                        <h4 class="font-bold text-violet-900 mb-1">The Load Balancing Solution</h4>
+                        <p class="text-violet-800">To utilize all your expensive hardware, you divide your network. For VLAN 10, make DSW1 both the STP Root and the HSRP Active router. For VLAN 20, make DSW2 both the STP Root and HSRP Active router. This achieves perfect alignment and efficient load sharing.</p>
+                    </div>
                 </div>
 
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <h4 class="text-center font-bold text-slate-700 mb-2 text-sm">Hop Count Comparison</h4>
+                <div class="bg-white p-6 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center">
+                    <h4 class="text-center font-bold text-slate-800 mb-2">Impact of Misalignment</h4>
+                    <p class="text-xs text-center text-slate-500 mb-4">Switch Hops to reach the active Gateway.</p>
                     <div class="chart-container w-full flex-grow flex items-center justify-center">
                         <canvas id="hopChart"></canvas>
                     </div>
+                    <p class="text-xs text-slate-500 mt-4 text-center bg-slate-50 p-3 rounded border border-slate-100 shadow-sm">
+                        Misalignment forces traffic across the Distribution switch interconnect link, effectively doubling the Layer 2 path length.
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- SECTION 2: TOPOLOGY TRACKER -->
-    <div id="view-tracker" class="view-section max-w-5xl mx-auto space-y-8">
+    <div id="tab-tracker" class="tab-content max-w-6xl mx-auto space-y-8">
         <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
-                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                Path Visualizer
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-violet-500">🔍</span> Suboptimal Routing Tracker
             </h3>
-            <p class="text-sm text-slate-600 mb-6">Observe how traffic changes when we synchronize HSRP and STP.</p>
+            <p class="text-sm text-slate-600 mb-6">Observe the path traffic takes from an Access Switch (ASW1) to the Internet when Spanning Tree and HSRP are misaligned, and how we fix it.</p>
 
             <!-- Tracker Controls -->
-            <div class="flex flex-wrap gap-3 mb-6 bg-slate-50 p-2 rounded-lg border border-slate-200 justify-center">
-                <button onclick="playSyncStep(1)" id="btn-sec-1" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-amber-600 transition">1. Unsynchronized (Suboptimal)</button>
-                <button onclick="playSyncStep(2)" id="btn-sec-2" class="px-4 py-2 text-sm font-medium bg-white text-slate-600 border border-slate-200 rounded shadow-sm hover:text-indigo-600 transition">2. Synchronized (Optimal)</button>
+            <div class="flex flex-wrap gap-3 mb-6 bg-slate-100 p-2 rounded-xl border border-slate-200 justify-center">
+                <button onclick="playSyncStep(1)" id="btn-sync-1" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">1. Unsynced (Suboptimal)</button>
+                <button onclick="playSyncStep(2)" id="btn-sync-2" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">2. Synced (Optimal V10)</button>
+                <button onclick="playSyncStep(3)" id="btn-sync-3" class="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm transition">3. Load Balancing (V20)</button>
             </div>
 
             <!-- Visualization -->
-            <div class="bg-slate-900 rounded-xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[420px] relative overflow-hidden">
+            <div class="bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-800 shadow-inner flex flex-col items-center justify-center min-h-[450px] relative overflow-hidden">
                 
-                <div class="relative w-full max-w-lg h-72 mx-auto mt-4">
-                    <!-- DSW1 (Top Left) -->
-                    <div id="node-dsw1" class="absolute top-4 left-1/4 transform -translate-x-1/2 w-32 h-20 rounded bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                <!-- Topology -->
+                <div class="relative w-full max-w-md h-72 mx-auto mt-4">
+                    
+                    <!-- Core Router (Top) -->
+                    <div id="node-core" class="absolute -top-6 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 transition-all shadow-lg">Core</div>
+                    
+                    <!-- DSW1 (Mid Left) -->
+                    <div id="node-dsw1" class="absolute top-1/3 left-0 transform -translate-y-1/2 w-20 h-20 rounded-lg bg-blue-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-500 z-10 shadow-lg transition-all">
                         DSW1
-                        <span id="dsw1-role" class="text-[9px] mt-1 bg-slate-700 px-2 py-0.5 rounded text-white font-mono">Root (STP)</span>
+                        <span id="lbl-dsw1-hsrp" class="absolute -top-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-emerald-400 border border-slate-600 whitespace-nowrap">HSRP Active</span>
+                        <span id="lbl-dsw1-stp" class="absolute -bottom-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-rose-400 border border-slate-600 whitespace-nowrap hidden">STP Root</span>
                     </div>
                     
-                    <!-- DSW2 (Top Right) -->
-                    <div id="node-dsw2" class="absolute top-4 right-1/4 transform translate-x-1/2 w-32 h-20 rounded bg-slate-800 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg transition-all">
+                    <!-- DSW2 (Mid Right) -->
+                    <div id="node-dsw2" class="absolute top-1/3 right-0 transform -translate-y-1/2 w-20 h-20 rounded-lg bg-blue-700 text-white font-bold flex flex-col items-center justify-center text-lg border-4 border-blue-500 z-10 shadow-lg transition-all">
                         DSW2
-                        <span id="dsw2-role" class="text-[9px] mt-1 bg-amber-600 px-2 py-0.5 rounded text-white font-mono">Active (HSRP)</span>
+                        <span id="lbl-dsw2-hsrp" class="absolute -top-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-slate-400 border border-slate-600 whitespace-nowrap">HSRP Standby</span>
+                        <span id="lbl-dsw2-stp" class="absolute -bottom-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-rose-400 border border-slate-600 whitespace-nowrap">STP Root</span>
                     </div>
+                    
+                    <!-- ASW1 (Bottom) -->
+                    <div id="node-asw1" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-20 h-16 rounded-lg bg-slate-700 text-white font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-md transition-all">ASW1</div>
 
-                    <!-- ASW1 (Bottom Center) -->
-                    <div id="node-asw1" class="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-28 h-16 rounded bg-slate-700 text-slate-300 font-bold flex flex-col items-center justify-center text-sm border-2 border-slate-500 z-10 shadow-lg">
-                        ASW1 (Access)
-                    </div>
-
-                    <!-- PC (Very Bottom) -->
-                    <div id="node-pc" class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-8 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-[10px] border border-slate-500 z-10">
-                        PC
-                    </div>
+                    <!-- PC1 (Bottom Left) -->
+                    <div id="node-pc" class="absolute -bottom-8 left-[25%] transform -translate-x-1/2 w-12 h-12 rounded bg-slate-600 text-white font-bold flex flex-col items-center justify-center text-xs border-2 border-slate-400 z-10 shadow-md transition-all">PC1<span id="pc-vlan" class="text-[8px] font-mono text-cyan-200">VLAN 10</span></div>
 
                     <!-- Links -->
-                    <div id="link-pc-asw" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-slate-600 transition-all z-0"></div>
+                    <!-- Core Links -->
+                    <div id="link-c-dsw1" class="absolute top-4 left-1/4 w-[100px] h-1 bg-slate-600 transform origin-bottom-right rotate-[40deg] transition-all z-0"></div>
+                    <div id="link-c-dsw2" class="absolute top-4 right-1/4 w-[100px] h-1 bg-slate-600 transform origin-bottom-left -rotate-[40deg] transition-all z-0"></div>
+
+                    <!-- Inter-Switch Link -->
+                    <div id="link-dsw1-dsw2" class="absolute top-1/3 left-[20%] w-[60%] h-2 bg-slate-600 transform -translate-y-1/2 transition-all z-0 flex items-center justify-center"></div>
+
+                    <!-- Access Links -->
+                    <div id="link-asw1-dsw1" class="absolute bottom-16 left-[25%] w-[120px] h-2 bg-slate-600 transform origin-top-left -rotate-[50deg] transition-all z-0 flex items-center justify-center">
+                        <span id="blk-dsw1" class="absolute text-[9px] bg-red-600 text-white px-1 rounded font-bold shadow-md opacity-0 transition-opacity">BLK</span>
+                    </div>
+                    <div id="link-asw1-dsw2" class="absolute bottom-16 right-[25%] w-[120px] h-2 bg-slate-600 transform origin-top-right rotate-[50deg] transition-all z-0 flex items-center justify-center">
+                        <span id="blk-dsw2" class="absolute text-[9px] bg-red-600 text-white px-1 rounded font-bold shadow-md opacity-0 transition-opacity">BLK</span>
+                    </div>
                     
-                    <div id="link-asw-dsw1" class="absolute top-[5rem] left-[35%] w-1 h-24 bg-slate-600 origin-bottom transform rotate-[35deg] transition-all z-0"></div>
-                    <div id="link-asw-dsw2" class="absolute top-[5rem] right-[35%] w-1 h-24 bg-slate-600 origin-bottom transform -rotate-[35deg] transition-all z-0"></div>
-                    
-                    <div id="link-dsw1-dsw2" class="absolute top-12 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-slate-600 transition-all z-0"></div>
-                    
-                    <!-- Arrow to Internet -->
-                    <div class="absolute top-0 right-1/4 transform translate-x-1/2 -translate-y-full w-1 h-8 border-l-2 border-dashed border-slate-500 z-0 hidden" id="out-dsw2"></div>
-                    <div class="absolute top-0 left-1/4 transform -translate-x-1/2 -translate-y-full w-1 h-8 border-l-2 border-dashed border-slate-500 z-0 hidden" id="out-dsw1"></div>
+                    <!-- PC Link -->
+                    <div id="link-pc-asw1" class="absolute bottom-4 left-[35%] w-[60px] h-1 bg-slate-600 transform origin-bottom-left -rotate-[30deg] transition-all z-0"></div>
+
                 </div>
 
                 <!-- Dynamic Overlay -->
-                <div id="sec-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800 border border-slate-600 p-4 rounded shadow-xl">
-                    Click step 1 to view the suboptimal path.
+                <div id="sync-desc" class="absolute bottom-4 left-4 right-4 text-center text-slate-200 text-sm bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-xl">
+                    Click step 1 to evaluate alignment logic.
                 </div>
             </div>
         </div>
     </div>
 
     <!-- SECTION 3: DEVICE CONFIGURATIONS -->
-    <div id="view-config" class="view-section max-w-5xl mx-auto space-y-8">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 px-6 py-5 border-b border-slate-200">
-                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    Device Configs
+    <div id="tab-config" class="tab-content max-w-6xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-violet-500">💻</span> Device Configuration Lab
                 </h3>
+                <p class="text-sm text-slate-500 mt-1">Review the commands to perfectly align STP Root Bridges with HSRP Active routers across multiple VLANs.</p>
             </div>
             
-            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-1 overflow-x-auto">
-                <button onclick="switchDeviceTab('dsw1', this)" class="device-tab-btn active px-5 py-2.5 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">DSW1 (Root + Active)</button>
-                <button onclick="switchDeviceTab('dsw2', this)" class="device-tab-btn px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">DSW2 (Secondary + Standby)</button>
+            <div class="flex border-b border-slate-200 bg-white px-2 pt-2 gap-2 overflow-x-auto">
+                <button onclick="switchDeviceTab('dsw1', this)" class="device-tab-btn active px-4 py-2 text-sm font-bold text-violet-600 border-b-2 border-violet-600 transition-colors">DSW1 (VLAN 10 Primary)</button>
+                <button onclick="switchDeviceTab('dsw2', this)" class="device-tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">DSW2 (VLAN 20 Primary)</button>
             </div>
 
-            <!-- Tab 1 -->
+            <!-- DSW1 Tab -->
             <div id="config-dsw1" class="device-tab-content block p-6">
-                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Make DSW1 the primary for both STP and HSRP (Synchronization).</p>
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Make DSW1 the Primary Root and Active Gateway for VLAN 10, and the Secondary backup for VLAN 20.</p>
                 <div class="cli-window">
-                    <span class="cli-comment">! Assign DSW1 as the Root Bridge for VLAN 10</span><br>
-                    <span class="cli-prompt">DSW1(config)#</span> spanning-tree vlan 10 root primary<br><br>
+                    <span class="cli-prompt">DSW1&gt;</span> enable<br>
+                    <span class="cli-prompt">DSW1#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! --- LAYER 2: SPANNING TREE ALIGNMENT ---</span><br>
+                    <span class="cli-comment">! Set as Primary Root for VLAN 10 (Drops priority to 24576)</span><br>
+                    <span class="cli-prompt">DSW1(config)#</span> spanning-tree vlan 10 root primary<br>
+                    <span class="cli-comment">! Set as Secondary Root for VLAN 20 (Drops priority to 28672)</span><br>
+                    <span class="cli-prompt">DSW1(config)#</span> spanning-tree vlan 20 root secondary<br><br>
 
-                    <span class="cli-comment">! Configure HSRP on the SVI</span><br>
+                    <span class="cli-comment">! --- LAYER 3: HSRP ALIGNMENT ---</span><br>
+                    <span class="cli-comment">! Configure SVI 10</span><br>
                     <span class="cli-prompt">DSW1(config)#</span> interface vlan 10<br>
                     <span class="cli-prompt">DSW1(config-if)#</span> ip address 10.0.10.252 255.255.255.0<br>
-                    <span class="cli-prompt">DSW1(config-if)#</span> standby 10 ip 10.0.10.254<br><br>
+                    <span class="cli-comment">! HSRP Configuration for VLAN 10 (Make it Active)</span><br>
+                    <span class="cli-prompt">DSW1(config-if)#</span> standby 10 ip 10.0.10.254<br>
+                    <span class="cli-prompt">DSW1(config-if)#</span> standby 10 priority 110<br>
+                    <span class="cli-prompt">DSW1(config-if)#</span> standby 10 preempt<br>
+                    <span class="cli-prompt">DSW1(config-if)#</span> exit<br><br>
 
-                    <span class="cli-comment">! Increase priority to make it Active (Default: 100)</span><br>
-                    <span class="cli-prompt">DSW1(config-if)#</span> standby 10 priority 150<br><br>
-
-                    <span class="cli-comment">! Enable Preempt so it reclaims its role if it fails and recovers</span><br>
-                    <span class="cli-prompt">DSW1(config-if)#</span> standby 10 preempt
+                    <span class="cli-comment">! Configure SVI 20</span><br>
+                    <span class="cli-prompt">DSW1(config)#</span> interface vlan 20<br>
+                    <span class="cli-prompt">DSW1(config-if)#</span> ip address 10.0.20.252 255.255.255.0<br>
+                    <span class="cli-comment">! HSRP Configuration for VLAN 20 (Leave priority at default 100 to be Standby)</span><br>
+                    <span class="cli-prompt">DSW1(config-if)#</span> standby 20 ip 10.0.20.254<br>
+                    <span class="cli-prompt">DSW1(config-if)#</span> standby 20 preempt
                 </div>
             </div>
 
-            <!-- Tab 2 -->
+            <!-- DSW2 Tab -->
             <div id="config-dsw2" class="device-tab-content hidden p-6">
-                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> Make DSW2 the backup device (Secondary / Standby).</p>
+                <p class="text-sm text-slate-600 mb-3"><strong>Goal:</strong> The exact opposite of DSW1. Make DSW2 the Primary Root and Active Gateway for VLAN 20, and the Secondary backup for VLAN 10. This achieves perfect Load Balancing.</p>
                 <div class="cli-window">
-                    <span class="cli-comment">! Assign DSW2 as the Secondary Root Bridge for VLAN 10</span><br>
-                    <span class="cli-prompt">DSW2(config)#</span> spanning-tree vlan 10 root secondary<br><br>
+                    <span class="cli-prompt">DSW2&gt;</span> enable<br>
+                    <span class="cli-prompt">DSW2#</span> configure terminal<br><br>
+                    
+                    <span class="cli-comment">! --- LAYER 2: SPANNING TREE ALIGNMENT ---</span><br>
+                    <span class="cli-comment">! Set as Secondary Root for VLAN 10</span><br>
+                    <span class="cli-prompt">DSW2(config)#</span> spanning-tree vlan 10 root secondary<br>
+                    <span class="cli-comment">! Set as Primary Root for VLAN 20</span><br>
+                    <span class="cli-prompt">DSW2(config)#</span> spanning-tree vlan 20 root primary<br><br>
 
-                    <span class="cli-comment">! Configure HSRP (No need to raise priority, leave as 100)</span><br>
+                    <span class="cli-comment">! --- LAYER 3: HSRP ALIGNMENT ---</span><br>
+                    <span class="cli-comment">! Configure SVI 10</span><br>
                     <span class="cli-prompt">DSW2(config)#</span> interface vlan 10<br>
                     <span class="cli-prompt">DSW2(config-if)#</span> ip address 10.0.10.253 255.255.255.0<br>
-                    <span class="cli-prompt">DSW2(config-if)#</span> standby 10 ip 10.0.10.254<br><br>
+                    <span class="cli-comment">! HSRP Configuration for VLAN 10 (Leave priority at default 100 to be Standby)</span><br>
+                    <span class="cli-prompt">DSW2(config-if)#</span> standby 10 ip 10.0.10.254<br>
+                    <span class="cli-prompt">DSW2(config-if)#</span> standby 10 preempt<br>
+                    <span class="cli-prompt">DSW2(config-if)#</span> exit<br><br>
 
-                    <span class="cli-comment">! Enable Preempt here as well</span><br>
-                    <span class="cli-prompt">DSW2(config-if)#</span> standby 10 preempt
+                    <span class="cli-comment">! Configure SVI 20</span><br>
+                    <span class="cli-prompt">DSW2(config)#</span> interface vlan 20<br>
+                    <span class="cli-prompt">DSW2(config-if)#</span> ip address 10.0.20.253 255.255.255.0<br>
+                    <span class="cli-comment">! HSRP Configuration for VLAN 20 (Make it Active)</span><br>
+                    <span class="cli-prompt">DSW2(config-if)#</span> standby 20 ip 10.0.20.254<br>
+                    <span class="cli-prompt">DSW2(config-if)#</span> standby 20 priority 110<br>
+                    <span class="cli-prompt">DSW2(config-if)#</span> standby 20 preempt
                 </div>
             </div>
+
         </div>
     </div>
 
     <!-- SECTION 4: LAB Q&A -->
-    <div id="view-qa" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
-        <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-            <h3 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-2">
-                📝 Lab Walkthrough Checklist
+    <div id="tab-qa" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-violet-500">📝</span> Lab Tasks & Solutions
             </h3>
-            <p class="text-slate-500 text-sm mb-6 border-b border-slate-100 pb-6">Check off the steps as you complete them to save your progress.</p>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Check off the steps as you complete them to save your progress.
+            </p>
 
-            <div class="space-y-3">
-                <div class="bg-white rounded border border-slate-200 overflow-hidden">
-                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa1', this)">
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa1', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-violet-50 flex justify-between items-center focus:outline-none transition-colors">
                         <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('sync_qa1', this)">
-                            <span class="text-sm">1. Assign the Root Bridge (STP)</span>
+                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('sync_qa1', this)">
+                            <span class="pr-6">1. Determine the current STP Root Bridge and HSRP Active router for VLAN 10.</span>
                         </div>
-                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
                     </button>
-                    <div id="qa1" class="accordion-content bg-white px-5">
-                        <div class="py-4 text-sm text-slate-600 space-y-3">
-                            <p>Use the <code>spanning-tree vlan X root primary</code> command on DSW1, and <code>root secondary</code> on DSW2.</p>
+                    <div id="qa1" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <div class="cli-window text-xs mb-3">
+                                <span class="cli-prompt">DSW1#</span> show spanning-tree vlan 10<br>
+                                <span class="cli-comment">! Look for "This bridge is the root" or check which ports are Root Ports vs Designated.</span><br><br>
+                                <span class="cli-prompt">DSW1#</span> show standby brief<br>
+                                <span class="cli-comment">! Look at the State column to see if it is Active or Standby.</span>
+                            </div>
+                            <p><strong>Result (Pre-Config):</strong> DSW2 is the STP Root (due to a lower MAC address, since priorities are default 32768). However, DSW1 is the HSRP Active router. They are unsynced.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded border border-slate-200 overflow-hidden">
-                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa2', this)">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa2', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-violet-50 flex justify-between items-center focus:outline-none transition-colors">
                         <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('sync_qa2', this)">
-                            <span class="text-sm">2. Configure HSRP and Virtual IP</span>
+                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('sync_qa2', this)">
+                            <span>2. Align VLAN 10 so DSW1 is both STP Root Primary and HSRP Active.</span>
                         </div>
-                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
                     </button>
-                    <div id="qa2" class="accordion-content bg-white px-5">
-                        <div class="py-4 text-sm text-slate-600 space-y-3">
-                            <p>Enter <code>interface vlan 10</code> then type <code>standby 10 ip 10.0.10.254</code> on both switches.</p>
+                    <div id="qa2" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Configure DSW1 to take over both roles.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">DSW1(config)#</span> spanning-tree vlan 10 root primary<br>
+                                <span class="cli-prompt">DSW1(config)#</span> interface vlan 10<br>
+                                <span class="cli-prompt">DSW1(config-if)#</span> standby 10 priority 110<br>
+                                <span class="cli-prompt">DSW1(config-if)#</span> standby 10 preempt
+                            </div>
+                            <p class="text-violet-700 italic">Don't forget to configure DSW2 as the STP secondary root for VLAN 10 as a backup!</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded border border-slate-200 overflow-hidden">
-                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa3', this)">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa3', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-violet-50 flex justify-between items-center focus:outline-none transition-colors">
                         <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('sync_qa3', this)">
-                            <span class="text-sm">3. Set Priority to Achieve Synchronization</span>
+                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('sync_qa3', this)">
+                            <span>3. Align VLAN 20 so DSW2 is both STP Root Primary and HSRP Active.</span>
                         </div>
-                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
                     </button>
-                    <div id="qa3" class="accordion-content bg-white px-5">
-                        <div class="py-4 text-sm text-slate-600 space-y-3">
-                            <p>Make DSW1's priority higher than 100 (e.g., 150) using <code>standby 10 priority 150</code>. This makes it the Active Router.</p>
+                    <div id="qa3" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-3">
+                            <p>Configure DSW2 to balance the load by taking over VLAN 20.</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">DSW2(config)#</span> spanning-tree vlan 20 root primary<br>
+                                <span class="cli-prompt">DSW2(config)#</span> interface vlan 20<br>
+                                <span class="cli-prompt">DSW2(config-if)#</span> standby 20 priority 110<br>
+                                <span class="cli-prompt">DSW2(config-if)#</span> standby 20 preempt
+                            </div>
+                            <p class="text-violet-700 italic">Likewise, configure DSW1 as the STP secondary root for VLAN 20.</p>
                         </div>
                     </div>
                 </div>
-                
-                <div class="bg-white rounded border border-slate-200 overflow-hidden">
-                    <button class="w-full text-left px-5 py-4 font-semibold text-slate-700 hover:bg-slate-50 flex justify-between items-center focus:outline-none transition-colors" onclick="toggleAccordion('qa4', this)">
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <button onclick="toggleAccordion('qa4', this)" class="w-full text-left px-6 py-4 font-bold text-slate-800 hover:bg-violet-50 flex justify-between items-center focus:outline-none transition-colors">
                         <div class="flex items-center gap-3">
-                            <input type="checkbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onclick="event.stopPropagation(); saveProgress('sync_qa4', this)">
-                            <span class="text-sm">4. Enable Preemption</span>
+                            <input type="checkbox" class="w-5 h-5 text-violet-600 rounded border-slate-300 focus:ring-violet-500" onclick="event.stopPropagation(); saveProgress('sync_qa4', this)">
+                            <span class="pr-6">4. Use <code>tracert</code> on PC1 (VLAN 10) to verify the new optimal path.</span>
                         </div>
-                        <span class="text-xl text-slate-400 font-light transition-transform duration-300 transform">+</span>
+                        <span class="text-2xl text-slate-400 transition-transform duration-300 transform">+</span>
                     </button>
-                    <div id="qa4" class="accordion-content bg-white px-5">
-                        <div class="py-4 text-sm text-slate-600 space-y-3">
-                            <p>If DSW1 goes down and recovers, the <code>standby 10 preempt</code> feature allows it to immediately reclaim its role as the Active Router.</p>
+                    <div id="qa4" class="accordion-content bg-slate-50 px-6 border-t border-slate-100">
+                        <div class="py-5 text-sm text-slate-700 space-y-4">
+                            <p>Before the configuration, traceroute went through DSW2's IP before hitting the Core. Now:</p>
+                            <div class="cli-window text-xs py-2 px-3">
+                                <span class="cli-prompt">C:\&gt;</span> tracert 8.8.8.8<br>
+                                <span class="cli-comment">Tracing route to 8.8.8.8 over a maximum of 30 hops:</span><br>
+                                <span class="cli-comment">  1     1 ms     1 ms     1 ms  10.0.10.252 (DSW1 SVI)</span><br>
+                                <span class="cli-comment">  2     2 ms     1 ms     2 ms  10.0.1.2 (Core Router)</span><br>
+                                <span class="cli-comment">  3     3 ms     2 ms     3 ms  8.8.8.8 (Destination)</span>
+                            </div>
+                            <p class="text-emerald-600 font-bold mt-2">Because DSW1 is the STP Root, ASW1's port to DSW1 is Forwarding. Traffic flows directly to DSW1, which routes it immediately to the Core. No trunk hopping required!</p>
                         </div>
                     </div>
                 </div>
@@ -369,57 +439,56 @@ body {
     </div>
 
     <!-- SECTION 5: COMMAND REFERENCE -->
-    <div id="view-reference" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
-        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
-                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-                Command Matrix
+    <div id="tab-reference" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-violet-500">📋</span> Command Reference
             </h3>
             
             <div class="mb-6 relative">
-                <svg class="absolute inset-y-0 left-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search commands..." class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-lg">🔍</span>
+                <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search by command..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 transition-shadow">
             </div>
 
-            <div class="overflow-x-auto rounded border border-slate-200 shadow-sm">
+            <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
                 <table class="min-w-full divide-y divide-slate-200 text-left text-sm" id="cmdTable">
                     <thead class="bg-slate-50 text-slate-700">
                         <tr>
-                            <th class="px-5 py-3 font-semibold tracking-wide w-1/3">Command</th>
-                            <th class="px-5 py-3 font-semibold tracking-wide w-1/4">Mode</th>
-                            <th class="px-5 py-3 font-semibold tracking-wide">Purpose</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/3">Command</th>
+                            <th class="px-6 py-4 font-bold tracking-wider w-1/4">Mode</th>
+                            <th class="px-6 py-4 font-bold tracking-wider">Purpose</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-slate-100">
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">spanning-tree vlan 10 root primary</td>
-                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Global Config</span></td>
-                            <td class="px-5 py-3 text-slate-600">Makes the switch the primary Root Bridge.</td>
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">spanning-tree vlan [x] root primary</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Forces the switch to become the STP Root Bridge for a specific VLAN (usually drops priority to 24576).</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">spanning-tree vlan 10 root secondary</td>
-                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Global Config</span></td>
-                            <td class="px-5 py-3 text-slate-600">Makes the switch the secondary Root Bridge.</td>
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">spanning-tree vlan [x] root secondary</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Global Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets the switch as the backup STP Root Bridge (usually drops priority to 28672).</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">standby 10 ip [IP]</td>
-                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Interface Config</span></td>
-                            <td class="px-5 py-3 text-slate-600">Sets the virtual IP address for the HSRP group.</td>
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">standby [grp] priority [num]</td>
+                            <td class="px-6 py-4"><span class="bg-violet-50 text-violet-800 text-xs px-2 py-1 rounded border border-violet-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Sets HSRP election priority. Set > 100 to make the router the Active gateway.</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">standby 10 priority [1-255]</td>
-                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Interface Config</span></td>
-                            <td class="px-5 py-3 text-slate-600">Changes priority (Default 100). Highest number wins.</td>
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">standby [grp] preempt</td>
+                            <td class="px-6 py-4"><span class="bg-violet-50 text-violet-800 text-xs px-2 py-1 rounded border border-violet-200">Interface Config</span></td>
+                            <td class="px-6 py-4 text-slate-600">Crucial: Allows the router to reclaim the HSRP Active role if it reboots and comes back online.</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">standby 10 preempt</td>
-                            <td class="px-5 py-3"><span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">Interface Config</span></td>
-                            <td class="px-5 py-3 text-slate-600">Allows the router to reclaim the Active role if it has the highest priority.</td>
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">show spanning-tree vlan [x]</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Verifies if "This bridge is the root" for the specific VLAN.</td>
                         </tr>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-5 py-3 font-mono text-indigo-600 whitespace-nowrap">show standby</td>
-                            <td class="px-5 py-3"><span class="bg-indigo-50 text-indigo-800 text-xs px-2 py-1 rounded">Priv EXEC</span></td>
-                            <td class="px-5 py-3 text-slate-600">Displays HSRP status (Active/Standby) and Virtual IP.</td>
+                            <td class="px-6 py-4 font-mono text-violet-700 whitespace-nowrap">show standby brief</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded border border-slate-200">Privileged EXEC</span></td>
+                            <td class="px-6 py-4 text-slate-600">Verifies if the router is Active or Standby for its configured HSRP groups.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -429,12 +498,14 @@ body {
     </div>
 
     <!-- SECTION 6: FLASHCARDS -->
-    <div id="view-flashcards" class="view-section max-w-5xl mx-auto space-y-8 pb-12">
-        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 flex items-center gap-2">
-                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                Flashcards
+    <div id="tab-flashcards" class="tab-content max-w-6xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <span class="text-violet-500">🎴</span> Active Recall Flashcards
             </h3>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Click a card to flip and verify your understanding of alignment logic and preemption.
+            </p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="flashcard-grid">
                 <!-- Injected via JS -->
             </div>
@@ -446,20 +517,19 @@ body {
 <script>
     // --- Chart.js Logic ---
     let chartRendered = false;
-    let hopChartInstance = null;
-
     function initChart() {
         if (chartRendered) return;
         const ctx = document.getElementById('hopChart').getContext('2d');
-        hopChartInstance = new Chart(ctx, {
+        chartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Unsynchronized (Suboptimal)', 'Synchronized (Optimal)'],
+                labels: ['Unsynced (Suboptimal)', 'Synced (Optimal)'],
                 datasets: [
                     {
-                        label: 'Hops to Internet',
-                        data: [3, 2], // 3 hops vs 2 hops
-                        backgroundColor: ['#f59e0b', '#4f46e5'], // Amber for sub, Indigo for optimal
+                        label: 'Switch Hops to Gateway',
+                        data: [3, 2], // Unsynced: Access -> Root(DSW2) -> Active(DSW1). Synced: Access -> Root/Active(DSW1)
+                        backgroundColor: ['#ef4444', '#10b981'], // Red, Emerald
+                        borderWidth: 0,
                         borderRadius: 4
                     }
                 ]
@@ -472,15 +542,18 @@ body {
                         beginAtZero: true, 
                         max: 4, 
                         ticks: { stepSize: 1 },
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'Number of Hops', font: {weight: 'bold', color: '#64748b'} }
                     },
                     x: { grid: { display: false } }
                 },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        padding: 12, cornerRadius: 8,
                         callbacks: {
-                            label: function(context) { 
-                                return ` Hops: ${context.raw}`; 
+                            label: function(context) {
+                                return ` ${context.raw} Switch Hops`;
                             }
                         }
                     }
@@ -491,21 +564,22 @@ body {
     }
 
     // --- Navigation Logic ---
-    function navigate(viewId, btnElement) {
-        document.querySelectorAll('.view-section').forEach(view => {
+    function switchTab(viewId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(view => {
             view.classList.remove('active');
         });
         document.getElementById(viewId).classList.add('active');
         
         document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('nav-active');
-            btn.classList.add('nav-inactive');
+            btn.classList.remove('nav-active', 'bg-violet-600', 'text-white', 'shadow-md');
+            btn.classList.add('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
         });
         
-        btnElement.classList.remove('nav-inactive');
-        btnElement.classList.add('nav-active');
+        btnElement.classList.remove('nav-inactive', 'hover:bg-slate-800', 'text-slate-300');
+        btnElement.classList.add('nav-active', 'bg-violet-600', 'text-white', 'shadow-md');
 
-        if(viewId === 'view-theory') { initChart(); } 
+        if(viewId === 'tab-concepts') { initChart(); }
+        if(viewId === 'tab-tracker') { playSyncStep(1); }
     }
 
     // --- Config Tab Logic ---
@@ -515,14 +589,14 @@ body {
             content.classList.add('hidden');
         });
         document.querySelectorAll('.device-tab-btn').forEach(btn => {
-            btn.classList.remove('text-indigo-600', 'border-indigo-600', 'font-bold');
+            btn.classList.remove('text-violet-600', 'border-violet-600', 'font-bold');
             btn.classList.add('text-slate-500', 'border-transparent', 'font-medium');
         });
         document.getElementById('config-' + deviceId).classList.remove('hidden');
         document.getElementById('config-' + deviceId).classList.add('block');
         
         btnElement.classList.remove('text-slate-500', 'border-transparent', 'font-medium');
-        btnElement.classList.add('text-indigo-600', 'border-indigo-600', 'font-bold');
+        btnElement.classList.add('text-violet-600', 'border-violet-600', 'font-bold');
     }
 
     // --- Accordion Logic ---
@@ -560,127 +634,191 @@ body {
         document.getElementById('cmdTable').style.display = visibleCount === 0 ? 'none' : 'table';
     }
 
-    // --- Tracker Logic ---
+    // --- Suboptimal Simulator Logic ---
     function playSyncStep(stepIndex) {
-        // Button styling
-        document.getElementById('btn-sec-1').classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
-        document.getElementById('btn-sec-2').classList.remove('ring-2', 'ring-indigo-500', 'border-indigo-500');
-        document.getElementById('btn-sec-'+stepIndex).classList.add('ring-2', 'ring-indigo-500', 'border-indigo-500');
+        // Reset buttons
+        for(let i=1; i<=3; i++) {
+            const btn = document.getElementById('btn-sync-'+i);
+            if(btn) {
+                btn.classList.remove('bg-violet-600', 'text-white', 'border-violet-600');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+            }
+        }
 
-        const roleDsw1 = document.getElementById('dsw1-role');
-        const roleDsw2 = document.getElementById('dsw2-role');
-        
-        const linkPc = document.getElementById('link-pc-asw');
-        const linkAswDsw1 = document.getElementById('link-asw-dsw1');
-        const linkAswDsw2 = document.getElementById('link-asw-dsw2');
-        const linkCross = document.getElementById('link-dsw1-dsw2');
-        
-        const outDsw1 = document.getElementById('out-dsw1');
-        const outDsw2 = document.getElementById('out-dsw2');
-        
-        const desc = document.getElementById('sec-desc');
+        const activeBtn = document.getElementById('btn-sync-'+stepIndex);
+        if(activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            activeBtn.classList.add('bg-violet-600', 'text-white', 'border-violet-600');
+        }
 
-        // Reset Styles
-        linkPc.className = "absolute bottom-8 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-slate-600 transition-all z-0";
-        linkAswDsw1.className = "absolute top-[5rem] left-[35%] w-1 h-24 bg-slate-600 origin-bottom transform rotate-[35deg] transition-all z-0";
-        linkAswDsw2.className = "absolute top-[5rem] right-[35%] w-1 h-24 bg-slate-600 origin-bottom transform -rotate-[35deg] transition-all z-0";
-        linkCross.className = "absolute top-12 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-slate-600 transition-all z-0";
+        // Nodes
+        const dsw1 = document.getElementById('node-dsw1');
+        const dsw2 = document.getElementById('node-dsw2');
+        const asw1 = document.getElementById('node-asw1');
+        const pc = document.getElementById('node-pc');
+        const core = document.getElementById('node-core');
         
-        outDsw1.classList.add('hidden');
-        outDsw2.classList.add('hidden');
+        // Links
+        const l_dsw1_dsw2 = document.getElementById('link-dsw1-dsw2');
+        const l_asw1_dsw1 = document.getElementById('link-asw1-dsw1');
+        const l_asw1_dsw2 = document.getElementById('link-asw1-dsw2');
+        const l_pc_asw1 = document.getElementById('link-pc-asw1');
+        const l_c_dsw1 = document.getElementById('link-c-dsw1');
+        const l_c_dsw2 = document.getElementById('link-c-dsw2');
+        
+        // Labels
+        const lblHSRP1 = document.getElementById('lbl-dsw1-hsrp');
+        const lblSTP1 = document.getElementById('lbl-dsw1-stp');
+        const lblHSRP2 = document.getElementById('lbl-dsw2-hsrp');
+        const lblSTP2 = document.getElementById('lbl-dsw2-stp');
+        const blkDsw1 = document.getElementById('blk-dsw1');
+        const blkDsw2 = document.getElementById('blk-dsw2');
+        const pcVlan = document.getElementById('pc-vlan');
+        
+        const desc = document.getElementById('sync-desc');
+
+        // Reset Visuals
+        [dsw1, dsw2, asw1, pc, core].forEach(n => n.classList.remove('node-highlight', 'node-dim', 'node-error'));
+        [l_dsw1_dsw2, l_asw1_dsw1, l_asw1_dsw2, l_pc_asw1, l_c_dsw1, l_c_dsw2].forEach(l => {
+            l.className = l.className.replace(/traffic-flow|traffic-flow-blocked|bg-slate-600|opacity-30/g, '').trim() + " bg-slate-600 opacity-30";
+            l.classList.remove('shadow-[0_0_10px_rgba(124,58,237,0.5)]');
+        });
+        
+        lblSTP1.classList.add('hidden');
+        lblSTP2.classList.add('hidden');
+        blkDsw1.classList.replace('opacity-100', 'opacity-0');
+        blkDsw2.classList.replace('opacity-100', 'opacity-0');
 
         if (stepIndex === 1) {
-            // Suboptimal: DSW1 = Root, DSW2 = Active
-            roleDsw1.innerText = "Root (STP)";
-            roleDsw1.className = "text-[9px] mt-1 bg-slate-700 px-2 py-0.5 rounded text-white font-mono";
-            roleDsw2.innerText = "Active (HSRP)";
-            roleDsw2.className = "text-[9px] mt-1 bg-amber-600 px-2 py-0.5 rounded text-white font-mono";
+            // Unsynced
+            [pc, asw1, dsw2, dsw1, core].forEach(n => n.classList.add('node-highlight'));
+            pcVlan.innerText = "VLAN 10";
             
-            // Flow: PC -> ASW1 -> DSW1 -> DSW2 -> Out
-            linkPc.className = "absolute bottom-8 left-1/2 transform -translate-x-1/2 w-2 h-8 traffic-flow-amber transition-all z-0";
-            linkAswDsw1.className = "absolute top-[5rem] left-[35%] w-2 h-24 traffic-flow-amber origin-bottom transform rotate-[35deg] transition-all z-0";
-            linkCross.className = "absolute top-12 left-1/2 transform -translate-x-1/2 w-32 h-2 traffic-flow-amber transition-all z-0";
+            lblHSRP1.innerText = "HSRP Active"; lblHSRP1.className = "absolute -top-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-emerald-400 border border-slate-600 whitespace-nowrap";
+            lblHSRP2.innerText = "HSRP Standby"; lblHSRP2.className = "absolute -top-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-slate-400 border border-slate-600 whitespace-nowrap";
             
-            outDsw2.classList.remove('hidden');
+            lblSTP2.classList.remove('hidden'); // DSW2 is Root
+            blkDsw1.classList.replace('opacity-0', 'opacity-100'); // ASW1 blocks path to DSW1
             
-            desc.innerHTML = "<span class='text-amber-500 font-bold'>Step 1 (Unsynchronized):</span> STP sends data to DSW1 (Root). But DSW2 is the Active Router. Therefore, data must cross the link between them. (Long path!).";
+            [l_pc_asw1, l_asw1_dsw2, l_dsw1_dsw2, l_c_dsw1].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.remove('opacity-30');
+            });
+            l_asw1_dsw1.classList.replace('bg-slate-600', 'traffic-flow-blocked');
+            l_asw1_dsw1.classList.remove('opacity-30');
+            
+            desc.innerHTML = "<span class='text-red-400 font-bold'>Step 1 (Unsynced):</span> DSW2 is the STP Root. DSW1 is the HSRP Active router. ASW1 blocks its link to DSW1 to prevent loops. Traffic from PC1 must travel to DSW2, cross the trunk to DSW1, and then route out. This is suboptimal!";
         } else if (stepIndex === 2) {
-            // Optimal: DSW1 = Root + Active
-            roleDsw1.innerText = "Root + Active";
-            roleDsw1.className = "text-[9px] mt-1 bg-indigo-600 px-2 py-0.5 rounded text-white font-mono";
-            roleDsw2.innerText = "Secondary + Standby";
-            roleDsw2.className = "text-[9px] mt-1 bg-slate-700 px-2 py-0.5 rounded text-white font-mono";
+            // Synced V10
+            [pc, asw1, dsw1, core].forEach(n => n.classList.add('node-highlight'));
+            dsw2.classList.add('node-dim');
+            pcVlan.innerText = "VLAN 10";
             
-            // Flow: PC -> ASW1 -> DSW1 -> Out
-            linkPc.className = "absolute bottom-8 left-1/2 transform -translate-x-1/2 w-2 h-8 traffic-flow-indigo transition-all z-0";
-            linkAswDsw1.className = "absolute top-[5rem] left-[35%] w-2 h-24 traffic-flow-indigo origin-bottom transform rotate-[35deg] transition-all z-0";
+            lblHSRP1.innerText = "HSRP Active"; lblHSRP1.className = "absolute -top-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-emerald-400 border border-slate-600 whitespace-nowrap";
+            lblHSRP2.innerText = "HSRP Standby"; lblHSRP2.className = "absolute -top-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-slate-400 border border-slate-600 whitespace-nowrap";
             
-            outDsw1.classList.remove('hidden');
+            lblSTP1.classList.remove('hidden'); // DSW1 is Root
+            blkDsw2.classList.replace('opacity-0', 'opacity-100'); // ASW1 blocks path to DSW2
             
-            desc.innerHTML = "<span class='text-indigo-400 font-bold'>Step 2 (Synchronized):</span> DSW1 is now both Root and Active. Data goes directly from DSW1 to the Internet. (Short and optimal path!).";
+            [l_pc_asw1, l_asw1_dsw1, l_c_dsw1].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.remove('opacity-30');
+            });
+            l_asw1_dsw2.classList.replace('bg-slate-600', 'traffic-flow-blocked');
+            l_asw1_dsw2.classList.remove('opacity-30');
+
+            desc.innerHTML = "<span class='text-emerald-400 font-bold'>Step 2 (Synced VLAN 10):</span> We configure DSW1 as the <code>root primary</code> for VLAN 10. ASW1 now forwards directly to DSW1, which is also the HSRP Active router. Traffic takes the optimal direct path to the Core.";
+        } else if (stepIndex === 3) {
+            // Synced V20
+            [pc, asw1, dsw2, core].forEach(n => n.classList.add('node-highlight'));
+            dsw1.classList.add('node-dim');
+            pcVlan.innerText = "VLAN 20";
+            
+            lblHSRP1.innerText = "HSRP Standby"; lblHSRP1.className = "absolute -top-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-slate-400 border border-slate-600 whitespace-nowrap";
+            lblHSRP2.innerText = "HSRP Active"; lblHSRP2.className = "absolute -top-4 text-[9px] font-mono bg-slate-800 px-1 rounded text-emerald-400 border border-slate-600 whitespace-nowrap";
+            
+            lblSTP2.classList.remove('hidden'); // DSW2 is Root
+            blkDsw1.classList.replace('opacity-0', 'opacity-100'); // ASW1 blocks path to DSW1
+            
+            [l_pc_asw1, l_asw1_dsw2, l_c_dsw2].forEach(l => {
+                l.classList.replace('bg-slate-600', 'traffic-flow');
+                l.classList.remove('opacity-30');
+            });
+            l_asw1_dsw1.classList.replace('bg-slate-600', 'traffic-flow-blocked');
+            l_asw1_dsw1.classList.remove('opacity-30');
+
+            desc.innerHTML = "<span class='text-violet-400 font-bold'>Step 3 (Load Balancing VLAN 20):</span> For VLAN 20, we configure DSW2 as BOTH the STP <code>root primary</code> and the HSRP Active router. Now VLAN 10 traffic uses the left side of the network, and VLAN 20 uses the right side. Perfect load balancing!";
         }
     }
 
-    // --- Features ---
+    // --- Features (Copy, Progress, Flashcards) ---
     function initFeatures() {
-        // Copy buttons
+        // 1. Copy Buttons
         document.querySelectorAll('.cli-window').forEach(block => {
             if(block.parentElement.classList.contains('group')) return;
+
             const wrapper = document.createElement('div');
             wrapper.className = 'relative group mt-2 mb-4';
             block.parentNode.insertBefore(wrapper, block);
             wrapper.appendChild(block);
             
             const btn = document.createElement('button');
-            btn.className = 'absolute top-2 right-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow z-10';
-            btn.innerText = 'Copy'; 
+            btn.className = 'absolute top-2 right-2 bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm z-10';
+            btn.innerText = 'Copy';
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const textArea = document.createElement("textarea");
                 textArea.value = block.innerText.replace(/Copy$/, '').trim(); 
                 document.body.appendChild(textArea);
                 textArea.select();
-                document.execCommand('copy');
+                try {
+                    document.execCommand('copy');
+                    btn.innerText = 'Copied!';
+                } catch (err) {
+                    btn.innerText = 'Failed';
+                }
                 document.body.removeChild(textArea);
-                btn.innerText = 'Copied!'; 
                 setTimeout(() => btn.innerText = 'Copy', 2000);
             };
             wrapper.appendChild(btn);
         });
 
-        // Load checkboxes
+        // 2. Load Progress
         document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             const match = cb.getAttribute('onclick')?.match(/'([^']+)'/);
-            if(match && match[1] && localStorage.getItem(match[1]) === 'true') {
-                cb.checked = true;
+            if(match && match[1]) {
+                const id = match[1];
+                if(localStorage.getItem('stp_fhrp_sync_progress_' + id) === 'true') {
+                    cb.checked = true;
+                }
             }
         });
 
-        // Flashcards data
+        // 3. Flashcards
         const flashcards = [
-            { q: "What is the problem with unsynchronized STP and HSRP?", a: "It leads to <strong>Suboptimal routing</strong> where data crosses the inter-switch links unnecessarily before exiting the network." },
-            { q: "How do you make a switch the primary Root Bridge?", a: "By using the command:<br><code>spanning-tree vlan [id] root primary</code>" },
-            { q: "What is the default priority in HSRP?", a: "The default priority is <strong>100</strong>." },
-            { q: "What does the 'preempt' feature do in HSRP?", a: "It allows the router with the highest priority to <strong>immediately</strong> reclaim the Active role after recovering from a failure." },
-            { q: "Where should the STP Root Bridge and HSRP Active Router be located?", a: "They should be on the <strong>same device</strong> (Same Distribution Switch) to achieve an optimal path." },
-            { q: "What is the command to set the HSRP Virtual IP?", a: "By using the command:<br><code>standby [group] ip [ip-address]</code>" }
+            { q: "What is the primary consequence of STP and HSRP misalignment?", a: "<strong>Suboptimal Routing.</strong><br><br>Traffic is forced to cross the inter-switch trunk link unnecessarily, adding latency and consuming bandwidth." },
+            { q: "How do you align STP and HSRP for a specific VLAN?", a: "Ensure that the router configured as <strong>HSRP Active</strong> is also configured as the <strong>STP Root Bridge</strong> for that VLAN." },
+            { q: "Why do we configure DSW1 as Active for VLAN 10, and DSW2 as Active for VLAN 20?", a: "<strong>Load Balancing.</strong><br><br>It allows us to utilize the full bandwidth of both distribution switches and both uplinks, rather than having one switch do all the work while the other sits idle." },
+            { q: "What happens if a switch reboots and HSRP preemption is NOT configured?", a: "The backup router takes over. When the original router recovers, it will <strong>remain in Standby mode</strong>, permanently destroying your carefully planned alignment." },
+            { q: "What command forces a switch to become the STP Root Bridge?", a: "<code class='bg-white px-1 border rounded text-slate-800 font-mono'>spanning-tree vlan [id] root primary</code>" },
+            { q: "What command gives a router preference to become the HSRP Active gateway?", a: "<code class='bg-white px-1 border rounded text-slate-800 font-mono'>standby [group] priority [value > 100]</code>" }
         ];
 
         const grid = document.getElementById('flashcard-grid');
         if (grid) {
             flashcards.forEach((item, index) => {
                 const cardHTML = `
-                    <div class="cursor-pointer h-56 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
+                    <div class="cursor-pointer h-64 relative perspective" onclick="this.querySelector('.f-inner').classList.toggle('rotate-y-180')">
                         <div class="f-inner w-full h-full relative duration-500 shadow-sm hover:shadow-md rounded-xl border border-slate-200 transform-style-3d transition-transform">
                             <!-- Front -->
                             <div class="absolute w-full h-full bg-white p-6 flex flex-col justify-center items-center text-center rounded-xl backface-hidden">
-                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-300">Question ${index + 1}</span>
-                                <h5 class="text-sm md:text-base font-semibold text-slate-700">${item.q}</h5>
-                                <span class="absolute bottom-4 text-xs text-indigo-500 font-semibold tracking-wide">CLICK TO FLIP</span>
+                                <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">Card ${index + 1}</span>
+                                <h5 class="text-lg font-semibold text-slate-800">${item.q}</h5>
+                                <span class="absolute bottom-4 text-xs text-violet-600 font-semibold tracking-wide">CLICK TO FLIP</span>
                             </div>
                             <!-- Back -->
-                            <div class="absolute w-full h-full bg-indigo-50 border border-indigo-100 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
-                                <span class="absolute top-3 left-4 text-xs font-bold text-indigo-400">Answer</span>
+                            <div class="absolute w-full h-full bg-violet-50 p-6 flex flex-col justify-center text-center rounded-xl backface-hidden rotate-y-180">
+                                <span class="absolute top-3 left-4 text-xs font-bold text-violet-700">Answer</span>
                                 <div class="text-slate-800 w-full text-sm leading-relaxed">${item.a}</div>
                             </div>
                         </div>
@@ -692,14 +830,14 @@ body {
     }
 
     function saveProgress(id, cb) {
-        localStorage.setItem(id, cb.checked);
+        localStorage.setItem('stp_fhrp_sync_progress_' + id, cb.checked);
     }
 
     // Initialize defaults on load
     document.addEventListener('DOMContentLoaded', () => {
         initChart();
         initFeatures();
-        playSyncStep(1); // Default tracker state
+        playSyncStep(1); // Load tracker state
     });
 </script>
 </body>

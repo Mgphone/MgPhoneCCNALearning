@@ -4,6 +4,7 @@ import {
   XCircle,
   HelpCircle,
   Clock,
+  Flag,
 } from "lucide-react";
 import { formatElapsedTime, type QuizEngine } from "./useQuizEngine";
 
@@ -17,6 +18,8 @@ export default function QuizPlaying({ engine }: { engine: QuizEngine }) {
     score,
     elapsedSeconds,
     answers,
+    flaggedIds,
+    toggleFlag,
     handleAnswerClick,
     submitAnswer,
     giveUp,
@@ -57,6 +60,17 @@ export default function QuizPlaying({ engine }: { engine: QuizEngine }) {
             <span className="text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
               Score: {score}
             </span>
+            <button
+              onClick={() => toggleFlag(sessionQuestions[currentIndex].id)}
+              className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-500 transition-all hover:border-amber-500/50 hover:text-amber-400"
+              title={flaggedIds.has(sessionQuestions[currentIndex].id) ? "Unflag" : "Flag for review"}
+            >
+              <Flag
+                size={16}
+                className={flaggedIds.has(sessionQuestions[currentIndex].id) ? "text-amber-400" : ""}
+                fill={flaggedIds.has(sessionQuestions[currentIndex].id) ? "currentColor" : "none"}
+              />
+            </button>
           </span>
         </div>
         <div className="w-full bg-slate-950 rounded-full h-2 border border-slate-800">

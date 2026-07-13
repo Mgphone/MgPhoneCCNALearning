@@ -33,6 +33,8 @@ export interface QuizEngine {
   isRevealed: boolean;
   answers: Record<number, number>;
   revealedIds: Set<number>;
+  flaggedIds: Set<number>;
+  toggleFlag: (id: number) => void;
   score: number;
   elapsedSeconds: number;
   startQuiz: () => void;
@@ -113,6 +115,7 @@ export function useQuizEngine(): QuizEngine {
   const [isRevealed, setIsRevealed] = useState(false);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [revealedIds, setRevealedIds] = useState<Set<number>>(new Set());
+  const [flaggedIds, setFlaggedIds] = useState<Set<number>>(new Set());
   const [score, setScore] = useState(0);
 
   // Results animation
@@ -135,6 +138,15 @@ export function useQuizEngine(): QuizEngine {
     questionCount >= 1 &&
     questionCount <= maxQuestions;
 
+  const toggleFlag = (id: number) => {
+    setFlaggedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const getSelectedTopicLabel = (): string => {
     if (selectedTopicKey === "mixed") return "Mixed Quiz";
     if (selectedTopicKeys.size === 1) return getTopicName([...selectedTopicKeys][0]);
@@ -156,6 +168,7 @@ export function useQuizEngine(): QuizEngine {
     setIsRevealed(false);
     setAnswers({});
     setRevealedIds(new Set());
+    setFlaggedIds(new Set());
     setScore(0);
     setElapsedSeconds(0);
     setPhase("playing");
@@ -274,6 +287,8 @@ export function useQuizEngine(): QuizEngine {
     isRevealed,
     answers,
     revealedIds,
+    flaggedIds,
+    toggleFlag,
     score,
     elapsedSeconds,
     startQuiz,
