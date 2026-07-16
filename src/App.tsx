@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ccnaData } from "./data/data";
 import { labData } from "./data/labdata";
 import { LandingPage } from "./components/LandingPage";
@@ -10,12 +11,25 @@ import VlanStpAnalyzer from "./pages/VlanStpAnalyzer";
 import MultipleChoiceQuiz from "./pages/MultipleChoiceQuiz";
 import NotFound from "./components/NotFound";
 import Spin_Wheel_Ccna from "./pages/Hands-On/Spin_Wheel_Ccna";
+import QuizHistory from "./pages/QuizHistory";
+import { AuthScreen } from "./components/AuthScreen";
+import { useAuth } from "./hooks/useAuth";
 
 function App() {
+  const { isAuthenticated, userId, username, loading, login, signup, logout } = useAuth();
+
+  if (loading) {
+    return <LoadingSpinner message="Signing in..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <AuthScreen onLogin={login} onSignup={signup} />;
+  }
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage username={username} onLogout={logout} />} />
         <Route
           path="/course-notes"
           element={
@@ -45,6 +59,7 @@ function App() {
         <Route path="/hands-on/vlan-stp" element={<VlanStpAnalyzer />} />
         <Route path="/hands-on/quiz" element={<MultipleChoiceQuiz />} />
         <Route path="/hands-on/ccna-spin-wheel" element={<Spin_Wheel_Ccna />} />
+        <Route path="/quiz-history" element={<QuizHistory />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

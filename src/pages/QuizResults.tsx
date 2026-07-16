@@ -6,6 +6,7 @@ import {
   CheckCircle,
   XCircle,
   Flag,
+  BarChart3,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatElapsedTime, type QuizEngine } from "./useQuizEngine";
@@ -248,6 +249,13 @@ export default function QuizResults({ engine }: { engine: QuizEngine }) {
           <BookOpen size={18} />
           Choose Topic
         </button>
+        <Link
+          to="/quiz-history"
+          className="flex items-center gap-2 px-6 py-3.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl font-semibold transition-all"
+        >
+          <BarChart3 size={18} />
+          History
+        </Link>
         <Link
           to="/"
           className="flex items-center gap-2 px-6 py-3.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl font-semibold transition-all"

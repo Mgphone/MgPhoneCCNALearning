@@ -1,10 +1,29 @@
 import React from 'react';
-import { BookOpen, FlaskConical, Cpu, ChevronRight } from 'lucide-react';
+import { BookOpen, FlaskConical, Cpu, ChevronRight, LogOut, User, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export const LandingPage: React.FC = () => {
+interface LandingPageProps {
+  username: string | null;
+  onLogout: () => void;
+}
+
+export const LandingPage: React.FC<LandingPageProps> = ({ username, onLogout }) => {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6">
+      {/* User badge */}
+      {username && (
+        <div className="fixed top-4 right-4 flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2">
+          <User size={16} className="text-cyan-400" />
+          <span className="text-sm text-slate-200 font-medium">{username}</span>
+          <button
+            onClick={onLogout}
+            className="text-slate-500 hover:text-red-400 transition-colors"
+            title="Sign out"
+          >
+            <LogOut size={14} />
+          </button>
+        </div>
+      )}
       <div className="max-w-4xl w-full text-center space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="space-y-4">
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight">
@@ -15,7 +34,15 @@ export const LandingPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
+        <Link
+          to="/quiz-history"
+          className="inline-flex items-center gap-2.5 px-6 py-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-400 font-bold text-sm hover:bg-amber-500/20 hover:border-amber-500/50 transition-all"
+        >
+          <BarChart3 size={18} />
+          View Quiz History
+        </Link>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
           <Link
             to="/course-notes"
             className="group relative bg-slate-900 border border-slate-800 p-8 rounded-3xl text-left transition-all hover:border-cyan-500/50 hover:bg-slate-800/50 hover:shadow-2xl hover:shadow-cyan-500/10"

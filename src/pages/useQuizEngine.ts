@@ -59,7 +59,7 @@ export function formatElapsedTime(totalSeconds: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function useQuizEngine(): QuizEngine {
+export function useQuizEngine(seedQuestions?: QuizQuestion[], seedTopic?: string): QuizEngine {
   const [phase, setPhase] = useState<Phase>("setup");
 
   // Setup state
@@ -118,6 +118,22 @@ export function useQuizEngine(): QuizEngine {
   const [flaggedIds, setFlaggedIds] = useState<Set<number>>(new Set());
   const [score, setScore] = useState(0);
 
+  // When seedQuestions arrive asynchronously, start playing immediately
+  useEffect(() => {
+    if (!seedQuestions || seedQuestions.length === 0) return;
+    setSessionQuestions(shuffle(seedQuestions));
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setIsSubmitted(false);
+    setIsRevealed(false);
+    setAnswers({});
+    setRevealedIds(new Set());
+    setFlaggedIds(new Set());
+    setScore(0);
+    setElapsedSeconds(0);
+    setPhase("playing");
+  }, [seedQuestions]);
+
   // Results animation
   const [barWidth, setBarWidth] = useState(0);
 
@@ -152,6 +168,7 @@ export function useQuizEngine(): QuizEngine {
     if (selectedTopicKeys.size === 1) return getTopicName([...selectedTopicKeys][0]);
     if (selectedTopicKeys.size > 1) return `${selectedTopicKeys.size} Topics Selected`;
     if (selectedTopicKey) return getTopicName(selectedTopicKey);
+    if (seedTopic) return seedTopic;
     return "";
   };
 
