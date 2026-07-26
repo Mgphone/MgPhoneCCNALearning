@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, Target, BarChart3 } from "lucide-react";
+import { ArrowLeft, Target, BarChart3, LogIn } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useQuizEngine } from "./useQuizEngine";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import type { QuizQuestion } from "@/data/quiz/types";
 import QuizSetup from "./QuizSetup";
 import QuizPlaying from "./QuizPlaying";
@@ -43,7 +43,7 @@ export default function MultipleChoiceQuiz() {
   }, [retakeId]);
 
   const engine = useQuizEngine(seedQuestions, seedTopic);
-  const { userId } = useAuth();
+  const { userId, isAuthenticated, openAuth } = useAuth();
   const savedRef = useRef(false);
 
   useEffect(() => {
@@ -134,6 +134,20 @@ export default function MultipleChoiceQuiz() {
             <QuizPlaying engine={engine} />
           )}
           {engine.phase === "results" && <QuizResults engine={engine} />}
+          {engine.phase === "results" && !isAuthenticated && (
+            <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-center">
+              <p className="text-amber-300 text-sm font-medium mb-3">
+                Sign in to save your quiz results and track your progress over time.
+              </p>
+              <button
+                onClick={openAuth}
+                className="inline-flex items-center gap-2 px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-semibold transition-all"
+              >
+                <LogIn size={15} />
+                Sign In
+              </button>
+            </div>
+          )}
         </div>
       </main>
     </div>

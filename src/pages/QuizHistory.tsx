@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Trophy, Clock, Target, Loader2, CheckCircle, XCircle, BarChart3, RotateCcw, Trash2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Trophy, Clock, Target, Loader2, CheckCircle, XCircle, BarChart3, RotateCcw, Trash2, ChevronDown, LogIn } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 const PAGE_SIZE = 10;
@@ -52,7 +52,7 @@ function formatDate(iso: string): string {
 
 export default function QuizHistory() {
   const navigate = useNavigate();
-  const { userId } = useAuth();
+  const { userId, isAuthenticated, openAuth } = useAuth();
   const [quizzes, setQuizzes] = useState<QuizRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -104,6 +104,43 @@ export default function QuizHistory() {
       if (expandedId === id) setExpandedId(null);
     });
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-950 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center gap-4 mb-8">
+            <button
+              onClick={() => navigate('/')}
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-600 transition-all"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="bg-cyan-500/10 p-2 rounded-lg">
+                <BarChart3 className="text-cyan-400" size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Quiz History</h1>
+                <p className="text-xs sm:text-sm text-slate-500">Sign in to track your results</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center py-20">
+            <Target size={48} className="mx-auto mb-4 text-slate-700" />
+            <p className="text-slate-400 text-sm mb-6">Sign in to view your quiz history</p>
+            <button
+              onClick={openAuth}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-semibold transition-all"
+            >
+              <LogIn size={16} />
+              Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return <LoadingSpinner message="Loading quiz history..." />;

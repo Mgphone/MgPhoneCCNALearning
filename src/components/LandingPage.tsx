@@ -1,29 +1,40 @@
 import React from 'react';
-import { BookOpen, FlaskConical, Cpu, ChevronRight, LogOut, User, BarChart3 } from 'lucide-react';
+import { BookOpen, FlaskConical, Cpu, ChevronRight, LogOut, User, BarChart3, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface LandingPageProps {
   username: string | null;
   onLogout: () => void;
+  onSignIn: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ username, onLogout }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ username, onLogout, onSignIn }) => {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6">
-      {/* User badge */}
-      {username && (
-        <div className="fixed top-4 right-4 flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2">
-          <User size={16} className="text-cyan-400" />
-          <span className="text-sm text-slate-200 font-medium">{username}</span>
+      {/* User badge or Sign In button */}
+      <div className="fixed top-4 right-4 flex items-center gap-3">
+        {username ? (
+          <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2">
+            <User size={16} className="text-cyan-400" />
+            <span className="text-sm text-slate-200 font-medium">{username}</span>
+            <button
+              onClick={onLogout}
+              className="text-slate-500 hover:text-red-400 transition-colors"
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        ) : (
           <button
-            onClick={onLogout}
-            className="text-slate-500 hover:text-red-400 transition-colors"
-            title="Sign out"
+            onClick={onSignIn}
+            className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl px-4 py-2 text-sm font-semibold transition-all"
           >
-            <LogOut size={14} />
+            <LogIn size={16} />
+            Sign In
           </button>
-        </div>
-      )}
+        )}
+      </div>
       <div className="max-w-4xl w-full text-center space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="space-y-4">
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight">

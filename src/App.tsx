@@ -12,24 +12,19 @@ import MultipleChoiceQuiz from "./pages/MultipleChoiceQuiz";
 import NotFound from "./components/NotFound";
 import Spin_Wheel_Ccna from "./pages/Hands-On/Spin_Wheel_Ccna";
 import QuizHistory from "./pages/QuizHistory";
-import { AuthScreen } from "./components/AuthScreen";
-import { useAuth } from "./hooks/useAuth";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
-function App() {
-  const { isAuthenticated, userId, username, loading, login, signup, logout } = useAuth();
+function AppContent() {
+  const { username, loading, logout, openAuth } = useAuth();
 
   if (loading) {
-    return <LoadingSpinner message="Signing in..." />;
-  }
-
-  if (!isAuthenticated) {
-    return <AuthScreen onLogin={login} onSignup={signup} />;
+    return <LoadingSpinner message="Loading..." />;
   }
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage username={username} onLogout={logout} />} />
+        <Route path="/" element={<LandingPage username={username} onLogout={logout} onSignIn={openAuth} />} />
         <Route
           path="/course-notes"
           element={
@@ -63,6 +58,14 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
