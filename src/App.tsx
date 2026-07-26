@@ -31,6 +31,7 @@ function AppContent() {
             <StudyDashboard
               data={ccnaData}
               storageKey="ccna_mastery_progress"
+              recordType="course_notes_progress"
               basePath="/data/LinkHTML/"
               title="Review & Course Notes"
               showCourseCredits={true}
@@ -43,6 +44,7 @@ function AppContent() {
             <StudyDashboard
               data={labData}
               storageKey="ccna_lab_progress"
+              recordType="lab_notes_progress"
               basePath="/data/LabHTML/"
               title="Interactive Lab Notes"
             />

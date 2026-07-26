@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { CcnaTopic } from "../data/data";
 import { useProgress } from "../hooks/useProgress";
+import { useAuth } from "../contexts/AuthContext";
+import { LoadingSpinner } from "./LoadingSpinner";
 import { Header } from "./Header";
 import { Dashboard } from "./Dashboard";
 import { IframeViewer } from "./IframeViewer";
@@ -8,6 +10,7 @@ import { IframeViewer } from "./IframeViewer";
 interface StudyDashboardProps {
   data: CcnaTopic[];
   storageKey: string;
+  recordType: string;
   basePath: string;
   title: string;
   showCourseCredits?: boolean;
@@ -16,13 +19,15 @@ interface StudyDashboardProps {
 export const StudyDashboard: React.FC<StudyDashboardProps> = ({
   data,
   storageKey,
+  recordType,
   basePath,
   title,
   showCourseCredits = false,
 }) => {
+  const { userId } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTopic, setSelectedTopic] = useState<CcnaTopic | null>(null);
-  const { toggleComplete, isCompleted, completedIds } = useProgress(storageKey);
+  const { toggleComplete, isCompleted, completedIds, loading } = useProgress(storageKey, recordType, userId);
 
   const filteredTopics = useMemo(() => {
     return data.filter(
@@ -31,6 +36,8 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
         topic.dayNumber.toString().includes(searchQuery),
     );
   }, [data, searchQuery]);
+
+  if (loading) return <LoadingSpinner message="Loading your progress..." />;
 
   const completedCount = completedIds.length;
   const totalCount = data.length;
