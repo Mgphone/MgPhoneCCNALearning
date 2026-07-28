@@ -461,7 +461,7 @@ export const ipv4AddressingQuestions: QuizQuestion[] = [
     ],
     // Let's redefine options properly
     // options: ["256", "512", "1024", "65536"],
-    correctAnswer: 0,
+    correctAnswer: 1,
     difficulty: "hard",
     explanation:
       "You started with /8 and moved to /16. You borrowed 8 bits. 2^8 = 256 subnets.",
@@ -870,33 +870,17 @@ export const ipv4AddressingQuestions: QuizQuestion[] = [
   {
     id: 77,
     question:
-      "Which of the following IPs is a network address and cannot be assigned to a host?",
+      "Which of the following IP addresses is a network address and cannot be assigned to a host?",
     options: [
-      "192.168.1.15",
-      "10.1.1.63",
-      "172.16.0.48/28",
-      "192.168.10.128/26",
-    ],
-    correctAnswer: 3,
-    difficulty: "medium",
-    explanation:
-      "A /26 has block size 64. Multiples: 0, 64, 128, 192. So 128 is a network address. (172.16.0.48/28 is also a network address. Wait! Let me re-evaluate options. 48 is a multiple of 16. Yes, 172.16.0.48/28 is a network. I need to change option 3 to a host). Changing option 3 to 172.16.0.50/28.",
-  },
-  // Overwriting Q77 internally
-  {
-    id: 77,
-    question:
-      "Which of the following IPs is a network address and cannot be assigned to a host?",
-    options: [
-      "192.168.1.15/28",
-      "10.1.1.63/26",
+      "192.168.1.15/24",
+      "10.1.1.63/24",
       "172.16.0.50/28",
       "192.168.10.128/26",
     ],
     correctAnswer: 3,
     difficulty: "medium",
     explanation:
-      "A /26 has a block size of 64 (0, 64, 128, 192). 192.168.10.128 is the network ID for that subnet. Option 1 is a broadcast, Option 2 is a broadcast, Option 3 is a host.",
+      "A /26 subnet has a block size of 64, so the network addresses are 192.168.10.0, 192.168.10.64, 192.168.10.128, and 192.168.10.192. Therefore, 192.168.10.128/26 is a network address and cannot be assigned to a host. The other addresses are valid host addresses within their respective subnets.",
   },
   {
     id: 78,
