@@ -13,6 +13,7 @@ import NotFound from "./components/NotFound";
 import Spin_Wheel_Ccna from "./pages/Hands-On/Spin_Wheel_Ccna";
 import QuizHistory from "./pages/QuizHistory";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { BuyMeACoffee } from "./components/BuyMeACoffee";
 
 function AppContent() {
   const { username, loading, logout, openAuth } = useAuth();
@@ -23,6 +24,7 @@ function AppContent() {
 
   return (
     <Router>
+      <BuyMeACoffee />
       <Routes>
         <Route path="/" element={<LandingPage username={username} onLogout={logout} onSignIn={openAuth} />} />
         <Route
