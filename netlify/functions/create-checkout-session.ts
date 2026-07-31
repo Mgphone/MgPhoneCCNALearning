@@ -1,7 +1,5 @@
 import type { Handler } from '@netlify/functions'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '')
+import { getStripe } from './_lib/stripe'
 
 const MIN_AMOUNT = 100
 const MAX_AMOUNT = 50000
@@ -46,7 +44,7 @@ export const handler: Handler = async (event) => {
   const origin = event.headers.origin ?? 'https://myccna.netlify.app'
 
   try {
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: 'payment',
       currency,
       customer_email: payload.email || undefined,

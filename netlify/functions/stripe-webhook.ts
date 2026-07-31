@@ -2,8 +2,7 @@ import type { Handler } from '@netlify/functions'
 import Stripe from 'stripe'
 import { getAdmin } from './_lib/supabase'
 import { sendThankYouEmail } from './_lib/email'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '')
+import { getStripe } from './_lib/stripe'
 
 export const handler: Handler = async (event) => {
   const signature = event.headers['stripe-signature']
@@ -16,7 +15,7 @@ export const handler: Handler = async (event) => {
 
   let stripeEvent: Stripe.Event
   try {
-    stripeEvent = stripe.webhooks.constructEvent(event.body ?? '', signature, webhookSecret)
+    stripeEvent = getStripe().webhooks.constructEvent(event.body ?? '', signature, webhookSecret)
   } catch (error) {
     console.error('stripe-webhook: signature verification failed', error)
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid signature' }) }
