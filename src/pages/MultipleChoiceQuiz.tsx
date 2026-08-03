@@ -1,8 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, Target, BarChart3, LogIn } from "lucide-react";
+import { ArrowLeft, Target, BarChart3, LogIn, AlertTriangle, LogOut } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useQuizEngine } from "./useQuizEngine";
+import { useQuizLeaveGuard } from "@/hooks/useQuizLeaveGuard";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { QuizQuestion } from "@/data/quiz/types";
@@ -45,6 +54,7 @@ export default function MultipleChoiceQuiz() {
   const engine = useQuizEngine(seedQuestions, seedTopic);
   const { userId, isAuthenticated, openAuth } = useAuth();
   const savedRef = useRef(false);
+  const blocker = useQuizLeaveGuard(engine.phase === "playing");
 
   useEffect(() => {
     if (engine.phase !== "results" || !userId || savedRef.current) return;
@@ -150,6 +160,45 @@ export default function MultipleChoiceQuiz() {
           )}
         </div>
       </main>
+
+      <Dialog
+        open={blocker.state === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && blocker.state === "blocked") blocker.reset();
+        }}
+      >
+        <DialogContent className="bg-slate-900 border-slate-700 text-slate-200 max-w-sm sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-slate-100">
+              <AlertTriangle size={18} className="text-amber-400" />
+              Leave quiz?
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 leading-relaxed">
+              You have a quiz in progress. If you leave now, your current
+              progress and answers will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-3">
+            <button
+              onClick={() => {
+                if (blocker.state === "blocked") blocker.reset();
+              }}
+              className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800 px-6 py-3 text-sm font-semibold text-slate-200 transition-all hover:bg-slate-700"
+            >
+              Keep Playing
+            </button>
+            <button
+              onClick={() => {
+                if (blocker.state === "blocked") blocker.proceed();
+              }}
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-red-500"
+            >
+              <LogOut size={16} />
+              Leave Quiz
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

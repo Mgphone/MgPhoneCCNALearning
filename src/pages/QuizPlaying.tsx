@@ -29,12 +29,12 @@ export default function QuizPlaying({ engine }: { engine: QuizEngine }) {
   return (
     <div className="relative z-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <div className="flex items-center justify-between text-sm font-medium text-slate-400 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm font-medium text-slate-400 mb-4">
           <span className="flex items-center gap-2">
-            <BookOpen size={16} className="text-cyan-500" />
+            <BookOpen size={16} className="text-cyan-500 shrink-0" />
             Question {currentIndex + 1} of {sessionQuestions.length}
           </span>
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
             {(() => {
               const d = sessionQuestions[currentIndex]?.difficulty;
               if (!d) return null;
