@@ -40,9 +40,7 @@ export function BuyMeACoffee() {
 
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState<StoredPosition | null>(() => loadPosition())
-  const [amount, setAmount] = useState(500)
-  const [isCustom, setIsCustom] = useState(false)
-  const [customAmount, setCustomAmount] = useState('')
+  const [inputValue, setInputValue] = useState("5")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -136,21 +134,17 @@ export function BuyMeACoffee() {
   }
 
   const selectPreset = (preset: number) => {
-    setIsCustom(false)
-    setAmount(preset)
+    setInputValue(String(preset / 100))
     setError('')
   }
 
   const selectCustom = (value: string) => {
-    setCustomAmount(value)
-    setIsCustom(true)
+    setInputValue(value)
     setError('')
   }
 
   const handleContinue = async () => {
-    const finalAmount = isCustom
-      ? Math.round(parseFloat(customAmount || '0') * 100)
-      : amount
+    const finalAmount = Math.round(parseFloat(inputValue || '0') * 100)
     if (!Number.isInteger(finalAmount) || finalAmount < 100) {
       setError('Enter an amount of £1 or more')
       return
@@ -220,7 +214,7 @@ export function BuyMeACoffee() {
                   onClick={() => selectPreset(preset)}
                   className={cn(
                     'h-12 rounded-xl border font-bold text-sm transition-all',
-                    !isCustom && amount === preset
+                    inputValue.trim() === String(preset / 100)
                       ? 'border-amber-500 bg-amber-500/15 text-amber-400'
                       : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500'
                   )}
@@ -237,7 +231,7 @@ export function BuyMeACoffee() {
                 min={1}
                 step={1}
                 placeholder="Custom amount"
-                value={customAmount}
+                value={inputValue}
                 onChange={(e) => selectCustom(e.target.value)}
                 className="h-12"
               />
@@ -257,7 +251,7 @@ export function BuyMeACoffee() {
                   Redirecting to Stripe...
                 </>
               ) : (
-                'Continue with Stripe'
+                `Donate £${inputValue || '0'}`
               )}
             </Button>
           </div>
