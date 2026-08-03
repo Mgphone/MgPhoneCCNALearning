@@ -7,9 +7,9 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question: "What is the primary benefit of EtherChannel?",
     options: [
       "It provides redundancy and increased bandwidth by aggregating multiple physical links.",
-      "It enables VLAN trunking between switches.",
-      "It replaces STP by eliminating loops.",
-      "It allows switches to be managed from a single console.",
+      "It enables VLAN trunking between switches and simplifies inter-VLAN routing.",
+      "It replaces STP by eliminating loops and provides faster convergence times.",
+      "It allows switches to be managed from a single console, reducing administrative overhead.",
     ],
     correctAnswer: 0,
     difficulty: "easy",
@@ -66,10 +66,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Which statement about EtherChannel and physical link failure is true?",
     options: [
-      "The entire EtherChannel goes down if one link fails.",
+      "The entire EtherChannel goes down if one link fails, requiring a full reconvergence of the bundle.",
       "Traffic is dynamically redistributed across the remaining active links without bringing down the logical interface.",
-      "STP must recalculate before traffic can use the remaining links.",
-      "The logical interface IP address must be reassigned.",
+      "STP must recalculate and reconverge before traffic can use the remaining physical links in the bundle.",
+      "The logical interface IP address must be reassigned and the routing table rebuilt manually.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -325,10 +325,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "What does the 'non-silent' keyword do when configuring PAgP mode desirable?",
     options: [
-      "It encrypts PAgP messages.",
+      "It encrypts PAgP messages to secure the negotiation against eavesdropping.",
       "It requires the port to receive PAgP packets before it will add the port to the channel.",
-      "It stops sending syslogs for channel changes.",
-      "It disables STP on the channel.",
+      "It stops sending syslogs for channel changes and suppresses all link state notifications.",
+      "It disables STP on the channel to speed up convergence after a link failure.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -431,10 +431,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "If Switch A is set to 'mode on' and Switch B is set to 'mode desirable', will the EtherChannel form?",
     options: [
-      "Yes, 'on' overrides all protocols.",
+      "Yes, 'on' overrides all protocols and forces the channel to form regardless of the neighbor.",
       "No, 'on' mode does not send negotiation packets, so Switch B will not form the channel.",
-      "Yes, Switch B will fall back to 'on' mode.",
-      "Only if they are connected with a crossover cable.",
+      "Yes, Switch B will fall back to 'on' mode and the channel will form immediately.",
+      "Only if they are connected with a crossover cable and the same VLAN is used on both ends.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -456,10 +456,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "What is a major risk of using 'mode on' instead of LACP or PAgP?",
     options: [
-      "It reduces the aggregated bandwidth by half.",
-      "It increases CPU load on the switch.",
+      "It reduces the aggregated bandwidth by half and requires manual load rebalancing.",
+      "It significantly increases CPU load on the switch because the CPU must process every frame.",
       "If a link has a unidirectional failure, it can cause severe routing and spanning-tree loops.",
-      "It only supports access ports, not trunks.",
+      "It only supports access ports, not trunks, and cannot carry tagged traffic.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -503,10 +503,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "If forming a Layer 2 EtherChannel, what VLAN parameter must match across all physical ports?",
     options: [
-      "The management VLAN only",
+      "The management VLAN only, since data and voice VLANs are handled automatically by the switch.",
       "They must belong to the exact same access VLAN, or have the exact same allowed VLANs if trunking.",
-      "Only the native VLAN needs to match.",
-      "VLANs do not matter for EtherChannel.",
+      "Only the native VLAN needs to match, all other VLANs can differ freely.",
+      "VLANs do not matter for EtherChannel because the channel carries untagged frames.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -548,10 +548,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Can you bundle a FastEthernet port and a GigabitEthernet port into the same EtherChannel?",
     options: [
-      "Yes, if they are in the same VLAN.",
-      "Yes, but the channel will operate at FastEthernet speeds.",
+      "Yes, if they are in the same VLAN and configured with the same trunk settings.",
+      "Yes, but the channel will operate at FastEthernet speeds across all bundled links.",
       "No, all ports must have the identical speed capability and current operational speed.",
-      "Yes, if using LACP instead of PAgP.",
+      "Yes, if using LACP instead of PAgP, the speed restriction no longer applies.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -588,10 +588,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "If Port A has Dynamic Auto mode and Port B has Dynamic Desirable mode, can they be bundled together in an EtherChannel?",
     options: [
-      "Yes, DTP will negotiate them both to trunk.",
+      "Yes, DTP will negotiate them both to trunk and they will bundle successfully.",
       "No, all ports must have the exact same DTP operational and administrative mode.",
-      "Yes, but only using PAgP.",
-      "Yes, as long as they negotiate to the same operational state.",
+      "Yes, but only using PAgP, since DTP differences only block LACP.",
+      "Yes, as long as they negotiate to the same operational state before bundling.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -679,10 +679,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "If a server with a single MAC address is sending backups to 50 different clients over an EtherChannel using 'src-mac' load balancing, what will happen?",
     options: [
-      "Traffic will be perfectly balanced across all links.",
+      "Traffic will be perfectly balanced across all links because the flows are unique.",
       "All traffic will traverse a single physical link, providing no bandwidth aggregation.",
-      "The switch will dynamically switch to dst-mac.",
-      "The EtherChannel will fail and fall back to STP.",
+      "The switch will dynamically switch to dst-mac load balancing automatically.",
+      "The EtherChannel will fail and fall back to STP, causing a loop in the network.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -714,10 +714,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Which load-balancing method provides the most granular distribution of traffic, assuming the switch supports it?",
     options: [
-      "src-mac",
-      "src-dst-ip",
+      "src-mac (source MAC address)",
+      "src-dst-ip (IP addresses)",
       "src-dst-port (Layer 4 ports)",
-      "dst-mac",
+      "dst-mac (destination MAC)",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -744,10 +744,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "If an EtherChannel has 3 physical links, how will the load be distributed?",
     options: [
-      "Equally: 33.3% on each.",
+      "Equally: 33.3% on each, because the hashing algorithm evenly divides flows across the three links.",
       "Unequally: The hashing algorithm uses 8 mathematical buckets. Some links will get more buckets than others.",
-      "Only 2 links will be active, 1 will be standby.",
-      "Traffic will be round-robined.",
+      "Only 2 links will be active, 1 will be placed in hot standby and used only on failure.",
+      "Traffic will be round-robined across all three links in equal-sized packet chunks.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -759,10 +759,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Can you configure different load balancing methods for different Port-Channels on the same Cisco IOS switch?",
     options: [
-      "Yes, using interface configuration mode.",
-      "Yes, using the channel-group command.",
+      "Yes, using interface configuration mode on each Port-Channel interface to set a unique hash.",
+      "Yes, using the channel-group command with a different load-balancing method per bundle.",
       "No, the load-balancing algorithm is a global configuration applied to all Port-Channels on the switch.",
-      "Yes, but only on Layer 3 switches.",
+      "Yes, but only on Layer 3 switches, and only when routing protocols are active on the channel.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -775,10 +775,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     id: 56,
     question: "What is a Layer 3 EtherChannel?",
     options: [
-      "An EtherChannel that routes based on MAC addresses.",
+      "An EtherChannel that routes based on MAC addresses rather than IP addresses.",
       "A bundled link that acts as a routed port with its own IP address, rather than a switchport.",
-      "An EtherChannel that requires BGP to function.",
-      "An EtherChannel created between two routers using serial links.",
+      "An EtherChannel that requires BGP to function and carry routing protocol updates.",
+      "An EtherChannel created between two routers using serial links and PPP framing.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -790,10 +790,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "What is the very FIRST step required on the physical interfaces before creating a Layer 3 EtherChannel?",
     options: [
-      "Assign an IP address to them.",
+      "Assign an IP address to each physical interface before bundling them.",
       "Issue the 'no switchport' command to convert them to routed ports.",
-      "Issue the 'channel-group' command.",
-      "Configure 'mode active'.",
+      "Issue the 'channel-group' command to place them into the bundle.",
+      "Configure 'mode active' on the interfaces to negotiate with LACP.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -845,10 +845,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "If a Layer 3 EtherChannel drops one physical link, what happens to the OSPF neighbor relationship running over it?",
     options: [
-      "The OSPF neighbor drops and must re-establish.",
+      "The OSPF neighbor drops immediately and must re-establish the full adjacency before traffic resumes.",
       "Nothing, OSPF is unaware of the physical link failure because the logical Port-Channel interface remains 'Up'.",
-      "The OSPF cost instantly doubles.",
-      "OSPF triggers an SPF recalculation.",
+      "The OSPF cost instantly doubles and triggers a full recalculation of all learned routes on the router.",
+      "OSPF triggers an immediate SPF recalculation and temporarily halts all forwarding on the link.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -860,10 +860,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "How does the OSPF metric (cost) change when a physical link drops from a Layer 3 EtherChannel?",
     options: [
-      "It remains exactly the same.",
+      "It remains exactly the same because the IP address on the logical interface is unchanged.",
       "The bandwidth of the logical interface drops, which causes OSPF to dynamically increase the cost.",
-      "It drops to 0.",
-      "OSPF goes into a Hold state.",
+      "It drops to 0, making the link appear as the fastest possible path in the network.",
+      "OSPF goes into a Hold state and refuses to send or receive any routing updates.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -905,10 +905,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "In an enterprise core network, why is a Layer 3 EtherChannel generally preferred over a Layer 2 EtherChannel between core switches?",
     options: [
-      "Layer 3 EtherChannels support PAgP.",
+      "Layer 3 EtherChannels support PAgP, which is the only protocol allowed for routed bundles.",
       "Layer 3 EtherChannels eliminate Spanning Tree loops and allow routing protocols to manage failover.",
-      "Layer 2 EtherChannels cannot load balance.",
-      "Layer 3 EtherChannels have a higher maximum port limit.",
+      "Layer 2 EtherChannels cannot load balance, so they waste bandwidth on redundancy.",
+      "Layer 3 EtherChannels have a higher maximum port limit than Layer 2 channels do.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -981,10 +981,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "What does an 'I' flag mean next to a physical port in 'show etherchannel summary'?",
     options: [
-      "In use",
+      "In use by the Port-Channel",
       "Independent (Stand-alone, not bundled)",
-      "Initiating negotiation",
-      "Inter-VLAN",
+      "Initiating negotiation with the peer",
+      "Inter-VLAN routing enabled",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1057,9 +1057,9 @@ export const etherchannelQuestions: QuizQuestion[] = [
       "How can you simulate a load balancing hash to see which physical link a specific source/destination MAC pair will take?",
     options: [
       "test etherchannel load-balance interface port-channel 1 mac [src] [dst]",
-      "show etherchannel hash test",
-      "ping [dst] source [src] etherchannel",
-      "debug etherchannel load-balance",
+      "show etherchannel load-balance interface port-channel 1 mac [src] [dst]",
+      "ping [dst] source [src] etherchannel load-balance interface",
+      "debug etherchannel load-balance interface port-channel 1 mac [src]",
     ],
     correctAnswer: 0,
     difficulty: "hard",
@@ -1074,9 +1074,9 @@ export const etherchannelQuestions: QuizQuestion[] = [
       "What is a common result if one side of a link is configured as 'mode on' and the other side is 'mode desirable'?",
     options: [
       "The 'desirable' side becomes 'I' (Independent) and STP may block it to prevent loops.",
-      "Both sides successfully form the channel.",
-      "The 'on' side falls back to 'desirable'.",
-      "The switches reboot.",
+      "Both sides successfully form the channel and forward traffic normally.",
+      "The 'on' side falls back to 'desirable' and negotiates the channel correctly.",
+      "The switches reboot, then the channel forms after a full reload completes.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -1088,10 +1088,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "If physical port Gi0/1 is placed into 'err-disable' state due to an EtherChannel misconfiguration, how do you recover it?",
     options: [
-      "Clear the counters.",
-      "Remove it from the channel group.",
+      "Clear the counters and wait for the err-disable timer to expire.",
+      "Remove it from the channel group and add it back with the correct settings.",
       "Shut down the physical interface, fix the configuration, and issue 'no shutdown'.",
-      "Reboot the switch.",
+      "Reboot the switch to clear the err-disable state and reapply the config.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -1103,10 +1103,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Which feature can detect a unidirectional link caused by a broken fiber strand and prevent an EtherChannel from causing a STP loop?",
     options: [
-      "BPDU Filter",
+      "BPDU Filter (blocks BPDUs)",
       "UDLD (UniDirectional Link Detection)",
-      "Storm Control",
-      "DHCP Snooping",
+      "Storm Control (limits broadcasts)",
+      "DHCP Snooping (validates DHCP)",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1158,10 +1158,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "If you see a syslog message: 'PM-4-ERR_DISABLE: channel-misconfig error detected', what is the most likely cause?",
     options: [
-      "A duplex mismatch on a single link.",
-      "One side of the EtherChannel has more ports bundled than the other.",
+      "A duplex mismatch on a single link, causing CRC errors and frame drops on that interface.",
+      "One side of the EtherChannel has more ports bundled than the other side of the channel.",
       "STP detected a loop because negotiation failed, or the two ends of a link connect to different switches.",
-      "LACP and PAgP were configured on the same port.",
+      "LACP and PAgP were configured on the same port, creating a protocol conflict on it.",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -1174,9 +1174,9 @@ export const etherchannelQuestions: QuizQuestion[] = [
       "How do you disable EtherChannel Guard (the feature that err-disables misconfigured channels)?",
     options: [
       "no spanning-tree etherchannel guard misconfig",
-      "no etherchannel guard",
-      "etherchannel guard disable",
-      "spanning-tree portfast",
+      "no spanning-tree etherchannel guard",
+      "no etherchannel guard misconfig",
+      "spanning-tree etherchannel guard disable",
     ],
     correctAnswer: 0,
     difficulty: "hard",
@@ -1188,10 +1188,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "What happens if a physical port configured with 'switchport port-security' is added to an EtherChannel?",
     options: [
-      "Port security applies to the whole channel.",
+      "Port security applies to the whole channel and protects all member ports.",
       "The command is rejected; port-security is not supported on EtherChannel members.",
-      "The port err-disables immediately.",
-      "Port security is automatically disabled.",
+      "The port err-disables immediately and must be manually recovered.",
+      "Port security is automatically disabled on the Port-Channel interface.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1203,9 +1203,9 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "You want to remove an EtherChannel completely. What is the safest order of operations?",
     options: [
-      "Delete the physical ports.",
-      "Type 'no channel-group 1' on physical ports, then 'no interface port-channel 1'.",
-      "Reload the switch.",
+      "Delete the physical ports using 'no interface Gi0/x' commands before removing the channel.",
+      "Type 'no channel-group 1' on each physical port first, then 'no interface port-channel 1'.",
+      "Reload the switch, which permanently clears all channel-group configurations on the box.",
       "Type 'no interface port-channel 1', which automatically removes the channel-group from physical ports.",
     ],
     correctAnswer: 3,
@@ -1220,10 +1220,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Why is an EtherChannel with 3 physical links considered suboptimal for load balancing?",
     options: [
-      "LACP only supports even numbers.",
+      "LACP only supports even numbers of links, so an EtherChannel must always contain an even count of physical links.",
       "Traffic hashing relies on a binary bit-mask (power of 2), meaning 3 links cannot be divided perfectly into 8 hash buckets.",
-      "STP cannot calculate the cost of an odd number of links.",
-      "It violates IEEE standards.",
+      "STP cannot calculate the STP cost for an odd number of links, so the entire bundle would be blocked by STP.",
+      "It violates IEEE standards, which mandate a maximum of eight active physical links within any channel bundle at once.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1246,9 +1246,9 @@ export const etherchannelQuestions: QuizQuestion[] = [
       "In a 'vPC' (Virtual Port Channel) on Cisco Nexus switches, or 'VSS' (Virtual Switching System) on Catalyst switches, what unique capability is provided?",
     options: [
       "An EtherChannel can span across two different physical switches, creating a multi-chassis EtherChannel (MEC).",
-      "EtherChannel can bundle wireless links.",
-      "EtherChannels can exceed 100 Gbps.",
-      "LACP and PAgP can be run simultaneously.",
+      "EtherChannel can bundle wireless links together with wired Ethernet links in a single channel.",
+      "EtherChannels can exceed 100 Gbps, giving them effectively unlimited bandwidth capacity.",
+      "LACP and PAgP can be run simultaneously on the same EtherChannel bundle at the same time.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -1259,10 +1259,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     id: 89,
     question: "Can an EtherChannel provide per-packet load balancing?",
     options: [
-      "Yes, it is the default.",
+      "Yes, it is the default mode on all modern Cisco switches and routers, so no config is needed.",
       "Yes, but it is rarely used because it causes out-of-order packet delivery, severely degrading TCP performance.",
-      "No, hardware ASICs do not support it.",
-      "Yes, but only for UDP traffic.",
+      "No, hardware ASICs do not support it, so the switch always uses flow-based hashing instead.",
+      "Yes, but only for UDP traffic, since TCP requires strict in-order delivery of packets on a flow.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -1274,9 +1274,9 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question: "What does the 'channel-protocol' command do?",
     options: [
       "It restricts the interface to ONLY use the specified protocol (LACP or PAgP), preventing accidental misconfiguration.",
-      "It activates the Port-Channel interface.",
-      "It tells the switch to use IPv4 or IPv6.",
-      "It enables DTP.",
+      "It activates the Port-Channel interface and assigns it a Layer 3 IP address so that routing functions properly.",
+      "It tells the switch to use IPv4 or IPv6 addressing on the Port-Channel interface for all of its routing.",
+      "It enables DTP, allowing the Port-Channel to automatically negotiate trunking mode across its member links.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -1288,10 +1288,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "A PC is connected to Gi0/1 and a server to Gi0/2. Can you bundle these two ports into an EtherChannel?",
     options: [
-      "Yes, to increase their speed.",
+      "Yes, to increase their speed, because the two ports can simply be bundled together into one channel group.",
       "No, an EtherChannel must terminate on a single device (or logically single device like a stack) on the other end.",
-      "Yes, if they are in the same VLAN.",
-      "Only if they use mode 'on'.",
+      "Yes, if they are in the same VLAN and both are configured as access ports on the exact same switch device.",
+      "Only if they use mode 'on', which forces the two ports into a static channel bundle together regardless of config.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1302,10 +1302,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     id: 92,
     question: "Which of the following describes LACP 'Fast Rate'?",
     options: [
-      "It increases the speed of the physical links.",
+      "It increases the speed of the physical links by negotiating a higher link rate with the peer device over them.",
       "It sends LACP control packets every 1 second instead of the default 30 seconds, allowing for sub-3-second failover.",
-      "It disables the hash algorithm.",
-      "It forces STP to skip the Listening state.",
+      "It disables the hash algorithm entirely, sending all of the traffic over the very first active link.",
+      "It forces STP to skip the Listening state entirely and converge much more quickly after any link change.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1367,10 +1367,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Which hash algorithm is generally recommended for an EtherChannel carrying traffic from multiple internal clients to the Internet via a single default gateway router?",
     options: [
-      "Destination MAC (dst-mac)",
+      "Destination MAC and IP (dst-mac)",
       "Source IP and Destination IP (src-dst-ip)",
-      "Source MAC (src-mac)",
-      "Round robin",
+      "Source MAC and IP (src-mac)",
+      "Round robin across the links",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -1382,10 +1382,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Which of the following best describes the 'Independent' state ('I') in an LACP configuration?",
     options: [
-      "The port is actively load balancing.",
+      "The port is actively load balancing traffic across the channel links.",
       "The port is operating as a stand-alone link because LACP negotiation timed out or failed.",
-      "The port is waiting for STP convergence.",
-      "The port is routing Layer 3 traffic.",
+      "The port is waiting for STP convergence to complete before it joins the bundle.",
+      "The port is routing Layer 3 traffic and cannot take part in the channel.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1397,10 +1397,10 @@ export const etherchannelQuestions: QuizQuestion[] = [
     question:
       "Can you configure OSPF directly on a physical interface that is bundled into a Layer 3 EtherChannel?",
     options: [
-      "Yes, OSPF treats it as a backup path.",
+      "Yes, OSPF treats it as a backup path and keeps a floating route ready for failover whenever it is needed here.",
       "No, Layer 3 configurations (like routing protocols and IP addresses) must be applied to the logical Port-Channel interface.",
-      "Yes, but only if it's the primary active port.",
-      "Yes, but it will cause an MTU mismatch.",
+      "Yes, but only if it's the primary active port in the EtherChannel bundle that is currently forwarding all traffic on it.",
+      "Yes, but it will cause an MTU mismatch with the neighbor device on the other end of the physical link and it will then fail entirely.",
     ],
     correctAnswer: 1,
     difficulty: "easy",

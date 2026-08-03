@@ -90,10 +90,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "A PC in VLAN 10 cannot ping a PC in VLAN 20. Both are connected to the same Layer 2 switch. What is missing?",
     options: [
-      "A trunk link between the PCs.",
+      "A trunk link connecting the two PCs directly together.",
       "A Layer 3 routing device (Router or Layer 3 Switch).",
-      "Spanning Tree Protocol.",
-      "An IP helper-address.",
+      "Spanning Tree Protocol to prevent loops in the network.",
+      "An IP helper-address on the switch for DHCP forwarding.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -150,10 +150,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "You configure 'switchport port-security violation restrict'. What happens when an unauthorized PC connects?",
     options: [
-      "The port shuts down.",
+      "The port shuts down and is placed into the err-disabled state immediately.",
       "The traffic is dropped, and a syslog message/SNMP trap is generated.",
-      "The traffic is dropped silently.",
-      "The MAC address is learned dynamically.",
+      "The traffic is dropped silently without any notification to the network admin.",
+      "The MAC address is learned dynamically and added to the secure MAC table.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -181,9 +181,9 @@ export const troubleshootingQuestions: QuizQuestion[] = [
       "Legitimate PCs are being blocked by DHCP Snooping. The switch port connected to the legitimate DHCP server is set to default. How do you fix this?",
     options: [
       "Configure 'ip dhcp snooping trust' on the port connected to the DHCP server.",
-      "Disable DHCP snooping globally.",
-      "Configure 'ip helper-address' on the switch.",
-      "Set the DHCP server port to untrusted.",
+      "Disable DHCP snooping globally to stop it from blocking legitimate clients.",
+      "Configure 'ip helper-address' on the switch to relay the DHCP broadcasts.",
+      "Set the DHCP server port to untrusted so it stops forwarding DHCP offers.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -195,10 +195,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "Dynamic ARP Inspection (DAI) is dropping all ARP packets from statically IP-addressed hosts on a VLAN. Why?",
     options: [
-      "DAI only works with IPv6.",
+      "DAI only works with IPv6, so it cannot validate IPv4 ARP packets at all.",
       "Statically addressed hosts do not have entries in the DHCP Snooping binding database.",
-      "The hosts are sending gratuitous ARPs.",
-      "DAI requires Port Security to function.",
+      "The hosts are sending gratuitous ARPs, which DAI always drops by default on all interfaces.",
+      "DAI requires Port Security to be configured on the switch port before it will function.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -280,10 +280,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "Two OSPF routers are stuck in the 'INIT' state. What is the most likely cause?",
     options: [
-      "MTU mismatch.",
+      "MTU mismatch between the two connected interfaces.",
       "One router is not receiving Hello packets from the other.",
-      "Router ID conflict.",
-      "Authentication mismatch.",
+      "Router ID conflict causing an unstable OSPF process.",
+      "Authentication mismatch between the two OSPF routers.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -295,10 +295,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "Two OSPF routers transition to 'EXSTART' and then get stuck in 'EXSTART/EXCHANGE'. What is the cause?",
     options: [
-      "Hello timer mismatch.",
-      "Area ID mismatch.",
+      "Hello timer mismatch between the two routers.",
+      "Area ID mismatch on the shared network segment.",
       "MTU mismatch on the connecting interfaces.",
-      "Subnet mask mismatch.",
+      "Subnet mask mismatch on the connecting link.",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -325,10 +325,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "You apply 'passive-interface GigabitEthernet0/0' under 'router ospf 1'. What is the result on G0/0?",
     options: [
-      "It stops advertising its subnet into OSPF.",
+      "It stops advertising its subnet into OSPF, so the network is hidden from neighbors.",
       "It stops sending and receiving OSPF Hello packets, preventing adjacencies on that interface.",
-      "It becomes a stub area.",
-      "It lowers the OSPF cost of the interface.",
+      "It becomes a stub area, blocking external routes from being injected into the OSPF domain.",
+      "It lowers the OSPF cost of the interface, making the link more preferred for traffic.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -340,10 +340,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "An IPv6 host has the address 2001:DB8:ACAD:1::10/64. It cannot ping its default gateway at 2001:DB8:ACAD:2::1. Why?",
     options: [
-      "IPv6 routing is disabled.",
+      "IPv6 routing is disabled on the gateway router.",
       "The host and gateway are in different subnets.",
-      "ICMPv6 is blocked by default.",
-      "EUI-64 must be used.",
+      "ICMPv6 is blocked by default on the switch.",
+      "EUI-64 must be used for the host address.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -441,9 +441,9 @@ export const troubleshootingQuestions: QuizQuestion[] = [
       "You want to SSH into a router, but the connection is refused. You can ping the router. What configuration is missing?",
     options: [
       "Crypto key generation (crypto key generate rsa).",
-      "ip default-gateway.",
-      "Line console 0 login local.",
-      "Enable secret.",
+      "ip default-gateway for the management subnet.",
+      "Line console 0 login local authentication setup.",
+      "Enable secret for privileged exec access.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -526,9 +526,9 @@ export const troubleshootingQuestions: QuizQuestion[] = [
       "You replace a router. The new router has the same IP, but local PCs cannot ping it. PCs can ping each other. What is the cause?",
     options: [
       "The PCs have the old router's MAC address cached in their ARP tables.",
-      "The switch MAC address table is full.",
-      "The new router needs a default route.",
-      "DHCP is disabled.",
+      "The switch's MAC address table is full and cannot store any new entries.",
+      "The new router needs a default route to reach the local PCs.",
+      "DHCP is disabled on the new router, so the PCs cannot get an IP.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -605,10 +605,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "A MAC address is 48 bits long. How is an IPv6 MAC-based EUI-64 address generated?",
     options: [
-      "By inverting the first bit.",
-      "By appending FFFF to the end of the MAC.",
+      "By inverting the first bit of the MAC address to mark it local.",
+      "By appending FFFF to the end of the MAC and using the result directly.",
       "By inserting FFFE in the middle and inverting the 7th bit.",
-      "By hashing the MAC address with MD5.",
+      "By hashing the MAC address with MD5 to produce a fixed 64-bit output.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -650,10 +650,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "A default route is configured as 'ip route 0.0.0.0 0.0.0.0 GigabitEthernet0/1'. Why is this dangerous on an Ethernet network?",
     options: [
-      "It disables CEF switching.",
+      "It disables CEF switching, forcing the router to use the much slower process-switching path for all traffic.",
       "It causes an ARP request for every unknown destination IP on the internet, exhausting router memory.",
-      "It creates a routing loop.",
-      "It only works for IPv6.",
+      "It creates a permanent routing loop between the router and all of the directly connected devices on that interface.",
+      "It only works for IPv6 traffic and is completely ignored for IPv4 packets under any circumstance.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -680,10 +680,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "A switch has PoE enabled, but an IP phone is not powering on. The command 'show power inline' reveals the port is in 'fault' state. What is likely wrong?",
     options: [
-      "CDP is disabled on the port.",
+      "CDP is disabled on the port so the phone cannot be discovered.",
       "The switch power supply budget is exceeded or there is a cable short.",
-      "The phone is not configured with a voice VLAN.",
-      "Port security blocked the phone.",
+      "The phone is not configured with a voice VLAN, so it gets no data tags.",
+      "Port security blocked the phone's MAC address from accessing the port.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -694,7 +694,7 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     id: 49,
     question:
       "You want to capture traffic from Fa0/1 and analyze it on Fa0/2 using Wireshark. Which feature must be configured?",
-    options: ["NetFlow", "SNMPv3", "SPAN (Switched Port Analyzer)", "Syslog"],
+    options: ["NetFlow (traffic flow export)", "SNMPv3 (secure monitoring)", "SPAN (Switched Port Analyzer)", "Syslog (log message capture)"],
     correctAnswer: 2,
     difficulty: "easy",
     explanation:
@@ -705,10 +705,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "What is the primary difference between a traditional WAN and SD-WAN?",
     options: [
-      "SD-WAN uses physical dedicated leased lines only.",
+      "SD-WAN uses physical dedicated leased lines only and cannot take advantage of broadband or LTE transports.",
       "SD-WAN decouples the control plane from the data plane, centralizing management across multiple WAN transport links.",
-      "Traditional WANs use OSPF; SD-WAN uses RIP.",
-      "SD-WAN cannot use broadband internet.",
+      "Traditional WANs use OSPF as their primary routing protocol, while SD-WAN implementations use the RIP protocol in its place.",
+      "SD-WAN cannot use broadband internet at all, so it must rely on private MPLS circuits for all of its traffic.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -736,9 +736,9 @@ export const troubleshootingQuestions: QuizQuestion[] = [
       "You configure HSRP between two routers. Router A is Active, Router B is Standby. Router A goes down, but PC traffic drops. What could be the issue?",
     options: [
       "The PCs are configured with Router A's physical IP instead of the HSRP Virtual IP.",
-      "HSRP preempt is missing on Router B.",
-      "Router B has a higher priority.",
-      "Spanning Tree is blocking.",
+      "HSRP preempt is missing on Router B, so it cannot take over the active role quickly.",
+      "Router B has a higher priority, so it would win the election incorrectly.",
+      "Spanning Tree is blocking traffic on the link between the two routers.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -776,9 +776,9 @@ export const troubleshootingQuestions: QuizQuestion[] = [
       "A dynamic NAT pool has 5 public IPs. 6 inside users try to access the internet simultaneously. What happens to the 6th user if PAT is NOT configured?",
     options: [
       "The user's traffic is dropped until a public IP becomes available.",
-      "The router dynamically borrows an IP from the ISP.",
-      "The router shares the 5th IP automatically.",
-      "The connection works but is very slow.",
+      "The router dynamically borrows an additional IP address from the ISP.",
+      "The router shares the 5th public IP automatically among all the users.",
+      "The connection works but is very slow due to heavy network congestion.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -815,10 +815,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "What is the purpose of the 'logging synchronous' command on a console line?",
     options: [
-      "It synchronizes router logs with an NTP server.",
+      "It synchronizes router logs with an NTP server for accurate timestamps.",
       "It prevents console syslog messages from interrupting your active CLI typing.",
-      "It encrypts syslog messages.",
-      "It limits the number of logs sent per second.",
+      "It encrypts syslog messages so that attackers cannot read the sensitive log data.",
+      "It limits the number of logs sent per second to the syslog server.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -830,10 +830,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "A switch receives a frame with a destination MAC of FFFF.FFFF.FFFF. What does the switch do?",
     options: [
-      "Drops the frame.",
-      "Routes the frame.",
+      "Drops the frame silently because broadcast frames are never forwarded.",
+      "Routes the frame to the destination based on the routing table.",
       "Floods the frame out all ports in the VLAN except the receiving port.",
-      "Sends it to the controller.",
+      "Sends it to the controller for further policy decision making.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -924,10 +924,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "What is the primary function of a Wireless LAN Controller (WLC) in a split-mac architecture?",
     options: [
-      "To handle real-time RF framing.",
+      "To handle the real-time RF framing and radio transmissions on the air interface.",
       "To centralize management, authentication, and roaming for Lightweight Access Points (LAPs).",
-      "To act as a firewall for wireless traffic.",
-      "To replace Layer 3 routing.",
+      "To act as a firewall that filters all incoming wireless traffic before it is forwarded.",
+      "To replace Layer 3 routing functions on the access layer of the wireless network.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1132,10 +1132,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "What does the 'ip routing' command do on a Layer 3 Catalyst switch?",
     options: [
-      "Enables an IP routing protocol like OSPF.",
-      "Enables IPv6 routing globally.",
+      "Enables an IP routing protocol like OSPF on the switch automatically.",
+      "Enables IPv6 routing globally on the switch hardware.",
       "Enables the switch to forward packets between VLANs at Layer 3.",
-      "Configures a default route.",
+      "Configures a default route for outbound internet traffic.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -1171,10 +1171,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     id: 86,
     question: "What is the primary role of a Cisco DNA Center in a network?",
     options: [
-      "To act as a core routing engine.",
+      "To act as a core routing engine that forwards all of the data traffic in the enterprise network.",
       "To provide an SDN controller for design, policy provisioning, and assurance in enterprise networks.",
-      "To serve solely as a syslog server.",
-      "To replace perimeter firewalls.",
+      "To serve solely as a syslog server that collects device logs from all network devices for compliance.",
+      "To replace the perimeter firewalls with its built-in security inspection and filtering features.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1186,10 +1186,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "A switch port is configured with 'switchport mode access' and 'switchport access vlan 99'. If you connect another switch to this port, what happens?",
     options: [
-      "They negotiate a trunk link.",
+      "They negotiate a trunk link carrying all allowed VLANs between them.",
       "The link operates as an access link passing only VLAN 99 traffic.",
-      "The port err-disables immediately.",
-      "Spanning tree blocks the port.",
+      "The port err-disables immediately due to the security violation.",
+      "Spanning tree blocks the port to prevent a Layer 2 loop from forming.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1244,10 +1244,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "What is the function of the 'ip domain-lookup' command (which is enabled by default)?",
     options: [
-      "It enables the router to act as a DNS server.",
+      "It enables the router to act as a DNS server for all of the connected local clients.",
       "It forces the router to resolve mistyped CLI commands to DNS, often causing a long freeze.",
-      "It encrypts DNS queries.",
-      "It dynamically assigns hostnames.",
+      "It encrypts DNS queries so that the lookup traffic cannot be read by network attackers.",
+      "It dynamically assigns hostnames to devices based on their MAC addresses and IPs.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1332,10 +1332,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     question:
       "When automating network configurations, what is a key advantage of JSON over XML?",
     options: [
-      "JSON requires a strict schema definition.",
-      "JSON uses tags, making it highly verbose and explicit.",
+      "JSON requires a strict schema definition to be declared for every document that it produces.",
+      "JSON uses tags, making it highly verbose and explicit for every single data element in the file.",
       "JSON is generally lighter, easier for humans to read, and maps directly to Python dictionaries.",
-      "JSON is proprietary to Cisco.",
+      "JSON is proprietary to Cisco, so it cannot be used with network equipment from other vendors.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -1405,10 +1405,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     id: 444,
     question: "What does the 'show ip interface brief' command output do?",
     options: [
-      "Shows detailed interface configuration",
+      "Shows detailed interface configuration including all running parameters",
       "Shows a summary of interface IP addresses, status, and protocol status",
-      "Shows the routing table for each interface",
-      "Shows the MAC address table for each interface",
+      "Shows the routing table entries for each interface on the device",
+      "Shows the MAC address table entries for each interface on the switch",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1419,10 +1419,10 @@ export const troubleshootingQuestions: QuizQuestion[] = [
     id: 555,
     question: "What usually causes a duplex mismatch on a switch link?",
     options: [
-      "Both devices are set to full-duplex",
-      "Both devices are set to half-duplex",
+      "Both devices are set to full-duplex, matching speed and duplex settings",
+      "Both devices are set to half-duplex, matching speed and duplex settings",
       "One side is hard-coded to full-duplex while the other is set to auto-negotiation",
-      "The cable length exceeds 100 meters",
+      "The cable length exceeds 100 meters, which is the maximum Ethernet segment limit",
     ],
     correctAnswer: 2,
     difficulty: "hard",

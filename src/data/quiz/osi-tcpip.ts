@@ -227,10 +227,10 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     id: 19,
     question: "What is the purpose of port numbers at the Transport Layer?",
     options: [
-      "To identify specific hosts on a local network",
-      "To identify the physical interface on a switch",
+      "To identify specific hosts on a local network by their unique address",
+      "To identify the physical interface on a switch that received the data",
       "To differentiate multiple unique applications running on a single host",
-      "To determine the best path through a WAN",
+      "To determine the best path through a WAN for the transmitted data",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -241,10 +241,10 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     id: 20,
     question: "What are the two sublayers of the OSI Data Link Layer?",
     options: [
-      "TCP and UDP sublayers",
+      "TCP and UDP sublayers for transport handling",
       "Logical Link Control (LLC) and Media Access Control (MAC)",
-      "IP and ARP sublayers",
-      "Physical and Logical sublayers",
+      "IP and ARP sublayers for addressing functions",
+      "Physical and Logical sublayers for media access",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -366,10 +366,10 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     question:
       "What mechanism allows a TCP receiver to throttle the sender's transmission rate to prevent buffer overflow?",
     options: [
-      "Sequence numbers",
+      "Sequence numbers tracking packet order",
       "Flow control via Window Size adjustments",
-      "Three-way handshake",
-      "Checksums",
+      "Three-way handshake establishment",
+      "Checksums verifying data integrity",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -402,9 +402,9 @@ export const osiTcpipQuestions: QuizQuestion[] = [
       "What happens during the encapsulation process when data transitions from the Transport Layer down to the Network Layer?",
     options: [
       "The Layer 4 segment is placed inside a Layer 3 packet with source/destination IP addresses added.",
-      "The Layer 3 frame is converted into bits.",
-      "Port numbers are stripped away.",
-      "MAC addresses are appended to the segment.",
+      "The Layer 3 frame is converted into bits and sent out onto the physical media immediately.",
+      "Port numbers are stripped away and replaced with the destination IP address instead.",
+      "MAC addresses are appended to the segment to form a complete Layer 2 frame.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -556,10 +556,10 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     question:
       "What does the 'Type' field in an Ethernet II frame header identify?",
     options: [
-      "The physical speed of the link",
+      "The physical speed of the link at which it is currently operating",
       "The upper-layer Network protocol inside the payload (e.g., IPv4 or IPv6)",
-      "The length of the data field",
-      "The type of switch port active",
+      "The length of the data field carried inside the Ethernet frame",
+      "The type of switch port that is currently active on the interface",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -651,10 +651,10 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     question:
       "What happens when an upper-layer application transmits a block of data larger than the path Maximum Transmission Unit (MTU)?",
     options: [
-      "The Physical layer slows down link speed.",
+      "The Physical layer slows down link speed to accommodate the larger packet size.",
       "The Network layer splits the packet into smaller fragments (unless DF bit is set).",
-      "The Data Link layer drops it without processing.",
-      "The Session layer marks checkpoints.",
+      "The Data Link layer drops it without processing and logs the event as an error.",
+      "The Session layer marks checkpoints to allow the transfer to be resumed later.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -770,10 +770,10 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     question:
       "What does an unexpected incoming TCP segment containing an active ACK flag along with an active RST flag typically mean?",
     options: [
-      "The connection is executing normal window scaling adjustments.",
+      "The connection is executing normal window scaling adjustments for the data flow.",
       "The target system rejected a previous synchronization request or no application is listening on that port.",
-      "The link layer requires immediate frame size re-negotiation.",
-      "The session layer is dropping a checkpoint mark.",
+      "The link layer requires immediate frame size re-negotiation to continue forwarding the traffic.",
+      "The session layer is dropping a checkpoint mark so the data transfer cannot be resumed.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -799,7 +799,12 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     id: 61,
     question:
       "Which of the following is an example of a protocol running at the Data Link Layer?",
-    options: ["IP", "TCP", "PPP (Point-to-Point Protocol)", "TFTP"],
+    options: [
+      "IP (Internet Protocol)",
+      "TCP (Transmission Control Protocol)",
+      "PPP (Point-to-Point Protocol)",
+      "TFTP (Trivial File Transfer Protocol)",
+    ],
     correctAnswer: 2,
     difficulty: "medium",
     explanation:
@@ -884,10 +889,10 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     question:
       "What is a major difference between TCP and UDP at the transport layer?",
     options: [
-      "TCP works at Layer 3, while UDP functions at Layer 4.",
+      "TCP works at Layer 3 of the model, while UDP functions at Layer 4 of the OSI reference model.",
       "TCP provides connection-oriented, ordered delivery, whereas UDP offers best-effort connectionless delivery.",
-      "UDP includes advanced window sliding algorithms.",
-      "TCP features lower structural header byte overhead than UDP.",
+      "UDP includes advanced window sliding algorithms for managing data flow more efficiently than TCP.",
+      "TCP features lower structural header byte overhead than UDP, so it uses much less bandwidth overall.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -969,10 +974,10 @@ export const osiTcpipQuestions: QuizQuestion[] = [
     question:
       "What does the 'Sliding Window' system prevent in TCP connections?",
     options: [
-      "Routing path loops",
-      "Intermediary Layer 2 physical conflicts",
+      "Routing path loops within the network topology",
+      "Intermediary Layer 2 physical conflicts on the segment",
       "A fast sender overwhelming the receiver's processing buffers",
-      "Duplicate IP configuration bugs",
+      "Duplicate IP configuration bugs on the destination host",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -1113,9 +1118,9 @@ export const osiTcpipQuestions: QuizQuestion[] = [
       "What is the primary difference between the OSI model and the TCP/IP model's Application layer?",
     options: [
       "The TCP/IP Application layer also handles Session and Presentation layer functions.",
-      "The OSI Application layer handles routing protocols.",
-      "The TCP/IP model has separate layers for data formatting.",
-      "There is no difference; they have identical boundaries.",
+      "The OSI Application layer handles routing protocols directly at Layer 7.",
+      "The TCP/IP model has separate layers for data formatting and encryption.",
+      "There is no difference between them; they have identical boundaries in the models.",
     ],
     correctAnswer: 0,
     difficulty: "medium",

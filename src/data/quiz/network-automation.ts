@@ -6,10 +6,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What is a key characteristic of a controller-based (SDN) network architecture?",
     options: [
-      "Each network device makes independent forwarding decisions",
+      "Each network device makes independent local forwarding decisions for packets",
       "A central controller provides a global view and programs forwarding tables on devices",
-      "Routing protocols are replaced by static routes only",
-      "All network devices must be from the same vendor",
+      "Routing protocols are entirely replaced by static routes only on devices",
+      "All network devices in the network must come from the same single vendor",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -37,9 +37,9 @@ export const networkAutomationQuestions: QuizQuestion[] = [
       "What is the primary function of a Northbound API in a software-defined architecture?",
     options: [
       "To connect the SDN controller to external management applications and orchestration systems",
-      "To push configuration directly to legacy switches",
-      "To establish OSPF neighbor adjacencies",
-      "To encrypt data plane traffic",
+      "To push configuration changes directly to the legacy network switches and routers",
+      "To establish OSPF neighbor adjacencies between the directly connected routers",
+      "To encrypt all of the data plane traffic flowing through the network devices",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -124,10 +124,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "In Port Security, what happens when a port is configured with the violation mode 'restrict' and a violation occurs?",
     options: [
-      "The port shuts down and goes into an err-disabled state",
+      "The port shuts down immediately and goes into the err-disabled state permanently",
       "The switch drops the traffic, generates a syslog message, and increments the violation counter",
-      "The switch drops the traffic silently without incrementing any counters",
-      "The switch forwards the traffic but logs a warning message",
+      "The switch drops the traffic silently without logging or incrementing any violation counters",
+      "The switch forwards the traffic anyway but logs a warning message for later review",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -262,10 +262,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     id: 20,
     question: "What is the primary benefit of VTP Pruning?",
     options: [
-      "It prevents loops in the Layer 2 topology",
+      "It prevents loops from forming in the Layer 2 switching topology of the network",
       "It limits unnecessary broadcast, multicast, and unknown unicast traffic across trunk links",
-      "It automatically assigns IP addresses to VLAN interfaces",
-      "It encrypts VLAN traffic between switches",
+      "It automatically assigns IP addresses to the VLAN interfaces on the switches",
+      "It encrypts all VLAN traffic passing between the connected switches on the network",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -277,10 +277,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "When troubleshooting an IPv4 static route, you notice the route is not in the routing table. The command used was 'ip route 192.168.1.0 255.255.255.0 10.0.0.2'. What is the most likely reason?",
     options: [
-      "The administrative distance of static routes is too high",
+      "The administrative distance assigned to static routes is too high",
       "The next-hop IP address (10.0.0.2) is not reachable or the interface is down",
-      "Static routes require a routing protocol to be active",
-      "The command syntax is incorrect",
+      "Static routes require a routing protocol to be active and running",
+      "The command syntax used to configure the static route is incorrect",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -367,10 +367,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What is the purpose of the 'spanning-tree vlan 10 root primary' command?",
     options: [
-      "It disables STP on VLAN 10",
+      "It disables the Spanning Tree Protocol operation on the VLAN 10 switching domain",
       "It sets the switch's priority to a low value to ensure it becomes the root bridge for VLAN 10",
-      "It statically hardcodes the bridge priority to 0",
-      "It forces VLAN 10 to use RSTP instead of PVST+",
+      "It statically hardcodes the switch bridge priority to the minimum value of exactly 0",
+      "It forces the VLAN 10 switching domain to use RSTP instead of the PVST+ protocol",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -461,10 +461,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What occurs if you apply an access control list to an interface but the ACL contains no 'permit' statements?",
     options: [
-      "All traffic is permitted by default",
-      "Only management traffic is permitted",
+      "All traffic passing the interface is permitted by default",
+      "Only the management traffic is permitted through the interface",
       "All traffic is denied due to the implicit deny at the end of the ACL",
-      "The router ignores the ACL",
+      "The router completely ignores the ACL and forwards all traffic",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -557,10 +557,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     id: 42,
     question: "Which of the following describes an 'Anycast' IPv6 address?",
     options: [
-      "An address that sends traffic to a single specific host",
-      "An address that sends traffic to all hosts on the local subnet",
+      "An address that sends traffic to a single specific host on the network",
+      "An address that sends traffic to all hosts on the local subnet segment",
       "An address assigned to multiple devices; traffic is routed to the nearest device",
-      "An address used exclusively for loopback testing",
+      "An address used exclusively for loopback testing on the local device",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -632,10 +632,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "In wireless networking, what is the role of a WLC (Wireless LAN Controller)?",
     options: [
-      "To act as a standalone access point",
+      "To act as a standalone access point with full local configuration settings",
       "To centralize the management and configuration of Lightweight Access Points (LAPs)",
-      "To encrypt data traversing the wired network",
-      "To provide PoE (Power over Ethernet) to access points",
+      "To encrypt all of the data traversing the wired network backbone links",
+      "To provide PoE (Power over Ethernet) inline power to the access points",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -722,10 +722,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What is the primary difference between a standard Access Control List (ACL) and an extended ACL?",
     options: [
-      "Standard ACLs can only block traffic, while extended ACLs can permit or block",
+      "Standard ACLs can only block traffic, while extended ACLs can both permit or block traffic based on the fields of each packet",
       "Standard ACLs filter based on destination IP, while extended ACLs filter based on source IP",
-      "Standard ACLs filter based only on source IP, while extended ACLs can filter based on source, destination, protocol, and port numbers",
-      "Standard ACLs are numbered 100-199, while extended ACLs are numbered 1-99",
+      "Standard ACLs filter based only on the destination IP address, while extended ACLs filter based on the source IP address fields",
+      "Standard ACLs are numbered 100-199, while extended ACLs are numbered 1-99 and 1300-1999 with far less specific matching",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -787,10 +787,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "When an IP Phone is connected to a Cisco switch port alongside a PC, how does the switch handle the traffic from both devices?",
     options: [
-      "The switch combines both into a single untagged VLAN",
+      "The switch combines both devices into a single untagged VLAN on the access port",
       "The switch uses an access VLAN for the PC (untagged) and a voice VLAN for the phone (tagged)",
-      "The switch requires an EtherChannel to separate the traffic",
-      "The port must be configured as a standard 802.1Q trunk allowing all VLANs",
+      "The switch requires an EtherChannel bundle to separate the two traffic flows on the port",
+      "The port must be configured as a standard 802.1Q trunk allowing all VLANs across it",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -817,9 +817,9 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question: "How is a floating static route configured in Cisco IOS?",
     options: [
       "By configuring a static route with an administrative distance higher than the primary routing protocol",
-      "By configuring a static route with an administrative distance of 1",
-      "By using the 'floating' keyword at the end of the ip route command",
-      "By lowering the metric of the static route to 0",
+      "By configuring a static route with a very low administrative distance value of exactly 1",
+      "By using the special 'floating' keyword at the end of the ip route command on the router",
+      "By manually lowering the configured metric value of the static route all the way down to zero",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -846,10 +846,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "For two EIGRP routers to form a neighbor adjacency, which of the following parameters MUST match?",
     options: [
-      "Hello and Dead timers",
+      "The Hello and Dead timer values",
       "Autonomous System (AS) Number and K-Values",
-      "Router IDs",
-      "Interface MAC addresses",
+      "The OSPF Router IDs of the routers",
+      "The interface MAC addresses of the routers",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -861,10 +861,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What is the effect of configuring an interface as a 'passive-interface' in OSPF?",
     options: [
-      "It prevents the interface from being advertised into OSPF",
+      "It prevents the interface and its connected subnet from being advertised into the OSPF routing domain or the link-state database",
       "It stops sending and receiving OSPF Hello packets on that interface, preventing adjacencies, but still advertises the subnet",
-      "It completely disables IP routing on that interface",
-      "It turns the interface into an OSPF stub network",
+      "It completely disables all of the IP routing functionality on that particular interface and stops forwarding packets",
+      "It turns the interface into an OSPF stub network type that advertises only a default route to its directly connected neighbors",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -876,10 +876,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "In EIGRP, what condition must be met for a route to become a Feasible Successor?",
     options: [
-      "The Feasible Distance must be equal to the Advertised Distance",
+      "The Feasible Distance value must be exactly equal to the Advertised Distance value reported by the backup route",
       "The Advertised Distance (AD) of the backup route must be strictly less than the Feasible Distance (FD) of the Successor route",
-      "The Advertised Distance must be greater than the Feasible Distance",
-      "The metric must be manually configured using the variance command",
+      "The Advertised Distance must be strictly greater than the Feasible Distance of the primary successor route in use",
+      "The metric must be manually configured by the network engineer using the EIGRP variance command on the local router",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -986,10 +986,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What is the function of the 'switchport port-security mac-address sticky' command?",
     options: [
-      "It requires manual entry of all allowed MAC addresses",
+      "It requires the manual entry of all of the allowed MAC addresses by the admin",
       "It dynamically learns MAC addresses and writes them to the running configuration",
-      "It blocks any MAC address that has been learned dynamically",
-      "It ages out MAC addresses after a specific timer expires",
+      "It blocks any MAC address that has been learned dynamically on the port",
+      "It ages out all learned MAC addresses after a specific timer expires",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1001,10 +1001,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What information is stored in the DHCP Snooping Binding Database?",
     options: [
-      "Routing tables and next-hop IPs",
+      "Routing tables and their associated next-hop IP addresses for all routes",
       "VLAN IDs, MAC addresses, assigned IP addresses, lease times, and interface bindings",
-      "A list of trusted DHCP servers and their IP addresses",
-      "Spanning tree bridge IDs and port states",
+      "A list of the trusted DHCP servers and all of their configured IP addresses",
+      "Spanning tree bridge IDs and the current port states of the switch device",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1056,10 +1056,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "In Network Address Translation (NAT), which term describes the process of mapping multiple private IP addresses to a single public IP address using different port numbers?",
     options: [
-      "Static NAT",
-      "Dynamic NAT",
+      "Static 1-to-1 NAT address mapping",
+      "Dynamic NAT pool address mapping",
       "Port Address Translation (PAT) / NAT Overload",
-      "Destination NAT",
+      "Destination NAT port translation",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -1097,9 +1097,9 @@ export const networkAutomationQuestions: QuizQuestion[] = [
       "What is the primary difference between Stateful and Stateless DHCPv6?",
     options: [
       "Stateful provides the IP address, while Stateless only provides DNS and domain name information to hosts using SLAAC",
-      "Stateless tracks IP address leases, while Stateful does not",
-      "Stateful is used for IPv4, Stateless is used for IPv6",
-      "Stateful does not require a DHCP server",
+      "Stateless tracks IP address leases carefully, while the Stateful DHCPv6 server does not track the leases at all",
+      "Stateful DHCP is used for IPv4 networks, while Stateless DHCPv6 is used only for the IPv6 network hosts",
+      "Stateful DHCPv6 does not require a DHCP server at all in order to assign addresses to the network host devices",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -1111,10 +1111,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "In NTP (Network Time Protocol), what does a Stratum value of 1 indicate?",
     options: [
-      "The device is an unsynchronized client",
+      "The device is an unsynchronized NTP client that has not yet synced its clock to any source",
       "The device is directly attached to a highly accurate time source, such as a GPS or atomic clock",
-      "The device is 1 network hop away from the client",
-      "The device is the lowest priority time server in the network",
+      "The device is located only one network hop away from the requesting client device on the path",
+      "The device is the lowest priority time server that exists in the entire network domain",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1135,10 +1135,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What significant security enhancements does SNMPv3 introduce over SNMPv2c?",
     options: [
-      "It uses community strings instead of passwords",
+      "It uses clear-text community strings instead of secure passwords",
       "It introduces message integrity, authentication, and payload encryption",
-      "It replaces UDP with TCP for guaranteed delivery",
-      "It disables trap messages to prevent flooding",
+      "It replaces the UDP transport with TCP for guaranteed message delivery",
+      "It disables all trap messages entirely to prevent network flooding",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1170,10 +1170,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What is the primary function of a Cisco DNA Center in a modern network?",
     options: [
-      "It acts as a standalone firewall for perimeter defense",
+      "It acts as a standalone hardware firewall appliance that is used only for the perimeter defense of the enterprise network",
       "It is an SDN controller that provides centralized management, automation, and assurance for campus and branch networks",
-      "It is a routing protocol that replaces BGP",
-      "It translates private IPv4 addresses to global IPv6 addresses",
+      "It is a completely new routing protocol that has been specifically designed to replace the existing BGP routing protocol",
+      "It translates the private IPv4 addresses into global routable IPv6 addresses for all of the network host devices on the LAN",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1221,9 +1221,9 @@ export const networkAutomationQuestions: QuizQuestion[] = [
       "What is the purpose of a 'Southbound API' in an SDN architecture?",
     options: [
       "To allow the controller to communicate with the physical network hardware",
-      "To allow external applications to program the controller",
-      "To connect two different SDN controllers together",
-      "To authenticate users logging into the network",
+      "To allow external applications to program the SDN controller directly",
+      "To connect two different SDN controllers together into a single domain",
+      "To authenticate the users who are logging into the corporate network",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -1255,10 +1255,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "What is the purpose of the 'git commit' command in version control?",
     options: [
-      "To upload code to a remote repository like GitHub",
+      "To upload the local code changes to a remote repository like GitHub",
       "To save changes to the local repository, creating a snapshot of the current state",
-      "To merge two branches together",
-      "To initialize a brand new repository",
+      "To merge two different branches together into a single working branch",
+      "To initialize a brand new empty repository for a brand new project",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1310,10 +1310,10 @@ export const networkAutomationQuestions: QuizQuestion[] = [
     question:
       "When configuring Dynamic ARP Inspection (DAI), which ports should be configured as 'trusted'?",
     options: [
-      "Ports connected to end-user PCs",
+      "Ports connected directly to the end-user PCs on the network",
       "Ports connected to other switches or trusted routers",
-      "Ports configured for PortFast",
-      "All ports by default",
+      "Ports that are configured for the PortFast feature",
+      "All switch ports on the device by default",
     ],
     correctAnswer: 1,
     difficulty: "medium",

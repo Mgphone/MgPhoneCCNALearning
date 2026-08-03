@@ -302,10 +302,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 27,
     question: "Are Link-Local addresses routable?",
     options: [
-      "Yes, across the entire internet.",
-      "Yes, but only within an autonomous system.",
+      "Yes, they are routed across the internet just like Global Unicast addresses.",
+      "Yes, but only within a single autonomous system and its downstream networks.",
       "No, routers will not forward packets with a link-local source or destination address.",
-      "No, they are only used for loopback testing.",
+      "No, they are only used to test the local device and never carry real traffic.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -332,10 +332,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "How are Link-Local addresses typically created if not manually configured?",
     options: [
-      "They are assigned by a DHCPv6 server.",
+      "They are assigned by a DHCPv6 server, which the host must contact before it can use the local link at all.",
       "The router automatically generates them using the FE80::/10 prefix and the EUI-64 process (or a random interface ID).",
-      "They are inherited from the nearest DNS server.",
-      "They are broadcasted by the default gateway.",
+      "They are inherited from the nearest DNS server after the host has registered its hostname with that same server.",
+      "They are broadcasted by the default gateway to every host the moment that it joins the local subnet.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -347,10 +347,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "Why might a network administrator choose to manually configure Link-Local addresses on routers?",
     options: [
-      "To allow them to be routed over the internet.",
-      "To prevent duplicate MAC addresses.",
+      "To allow them to be routed over the internet to remote sites for redundancy.",
+      "To prevent duplicate MAC addresses on the same broadcast domain.",
       "To make them shorter, recognizable, and easier to manage (e.g., fe80::1).",
-      "To increase the bandwidth of the link.",
+      "To increase the bandwidth of the link between neighboring routers.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -378,9 +378,9 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
       "If a router has multiple interfaces, can you use the exact same Link-Local address (e.g., fe80::1) on all of them?",
     options: [
       "Yes, because Link-Local addresses only need to be unique on their specific local link.",
-      "No, IP addresses must be unique across the entire router.",
-      "Yes, but only if they are in the same VLAN.",
-      "No, this will cause a duplicate address detection (DAD) failure.",
+      "No, every IP address on the router must be unique across all of its interfaces.",
+      "Yes, but only if all the interfaces belong to the exact same VLAN.",
+      "No, this will trigger a duplicate address detection (DAD) failure on every interface.",
     ],
     correctAnswer: 0,
     difficulty: "hard",
@@ -392,10 +392,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "When pinging a Link-Local address from a PC or router, what extra piece of information is often required?",
     options: [
-      "The MAC address of the destination",
+      "The MAC address of the destination device that resides on the local network segment",
       "The Zone ID (the specific outgoing interface, e.g., %eth0 or %GigabitEthernet0/0)",
-      "The subnet mask",
-      "The default gateway",
+      "The subnet mask of the local network segment that contains the target device",
+      "The default gateway that the device should use to reach the remote target",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -407,10 +407,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "Does an interface require a Global Unicast Address to function in an IPv6 local network?",
     options: [
-      "Yes, otherwise it cannot communicate at all.",
+      "Yes, otherwise it cannot communicate with any device on the local network.",
       "No, the Link-Local address alone is sufficient for local subnet communication.",
-      "Yes, but only for DHCPv6.",
-      "No, but it requires a Unique Local Address.",
+      "Yes, but only when the device needs to use DHCPv6 for addressing.",
+      "No, but it requires a Unique Local Address to join the local subnet.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -438,10 +438,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 36,
     question: "What is the purpose of the EUI-64 process?",
     options: [
-      "To compress IPv6 addresses.",
+      "To compress IPv6 addresses so they can be typed in a shortened form",
       "To automatically generate a 64-bit IPv6 Interface ID from a 48-bit MAC address.",
-      "To translate IPv4 addresses to IPv6.",
-      "To encrypt the IPv6 header.",
+      "To translate IPv4 addresses into equivalent IPv6 addresses for migration.",
+      "To encrypt the IPv6 header to protect the address information.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -463,10 +463,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "Which bit of the MAC address is flipped (inverted) during the EUI-64 process?",
     options: [
-      "The 1st bit",
+      "The 1st bit (the individual/group bit)",
       "The 7th bit (the Universal/Local bit)",
-      "The 8th bit",
-      "The 64th bit",
+      "The 8th bit (the last bit of the first octet)",
+      "The 64th bit (the last bit of the full address)",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -523,10 +523,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "Why do modern operating systems (like Windows, macOS, and iOS) often avoid using EUI-64 for Global Unicast Addresses by default?",
     options: [
-      "It is too slow to calculate.",
-      "It creates duplicate IP addresses.",
+      "It is too slow to calculate for modern devices that need to generate addresses rapidly on the network.",
+      "It creates duplicate IP addresses because the same vendor MAC address is used by multiple devices on the network.",
       "Privacy concerns; because the MAC address is embedded in the IP, a device can be tracked as it moves between networks.",
-      "It requires a DHCPv6 server.",
+      "It requires a DHCPv6 server to be present on the local network before any address can be used at all.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -563,10 +563,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "What is the consequence of subnetting an IPv6 LAN smaller than a /64 (e.g., using a /80)?",
     options: [
-      "It breaks OSPFv3.",
+      "It breaks OSPFv3 because the routing protocol is unable to exchange routes on that particular subnet.",
       "It breaks Stateless Address Autoconfiguration (SLAAC) and EUI-64, which strictly require a 64-bit interface ID.",
-      "It prevents Link-Local addresses from forming.",
-      "It causes broadcast storms.",
+      "It prevents Link-Local addresses from forming on any of the affected interfaces of the network.",
+      "It causes broadcast storms that quickly flood the entire local network with repeated, duplicated frames.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -627,10 +627,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 51,
     question: "What is a Solicited-Node Multicast Address used for?",
     options: [
-      "Routing updates between OSPF neighbors",
+      "Routing updates that are exchanged between OSPF neighboring routers",
       "Address resolution (finding a MAC address) and Duplicate Address Detection (DAD)",
-      "Requesting an IP address from a DHCPv6 server",
-      "Pinging all routers on a link",
+      "Requesting an IPv6 address and other options from a DHCPv6 server",
+      "Pinging all of the routers that are present on the local link",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -671,10 +671,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "How does the Solicited-Node Multicast process map to an Ethernet MAC address?",
     options: [
-      "It uses an ARP broadcast.",
+      "It uses an ARP broadcast to resolve the address on the local network segment.",
       "It maps to 33:33:xx:xx:xx:xx, where the x's are the last 32 bits of the multicast IP address.",
-      "It uses 01:00:5E:xx:xx:xx.",
-      "It uses the physical MAC address directly.",
+      "It uses the IPv4 multicast MAC prefix 01:00:5E:xx:xx:xx instead.",
+      "It uses the physical MAC address of the target device directly as the destination.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -686,10 +686,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "Why is the Solicited-Node Multicast approach more efficient than IPv4 ARP?",
     options: [
-      "It is faster because it uses UDP.",
-      "It relies on the router to answer all requests.",
+      "It is faster because it uses UDP instead of TCP, eliminating the connection setup latency for each resolution request sent on the link.",
+      "It relies on the router to answer all resolution requests, which means that the hosts themselves never need to process or respond to any query.",
       "It targets a specific multicast group that usually contains only one host, avoiding interrupting every host on the subnet like a broadcast does.",
-      "It is purely stateless.",
+      "It is purely stateless, meaning it requires no neighbor cache, no state tracking, and no additional protocol overhead of any kind.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -702,7 +702,7 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 56,
     question:
       "Which protocol forms the core of IPv6 local link operations, replacing IPv4 ARP and providing router discovery?",
-    options: ["DHCPv6", "ICMPv4", "NDP (Neighbor Discovery Protocol)", "SLAAC"],
+    options: ["DHCPv6 (Dynamic Host Configuration Protocol)", "ICMPv4 (Internet Control Message Protocol version 4)", "NDP (Neighbor Discovery Protocol)", "SLAAC (Stateless Address Autoconfiguration)"],
     correctAnswer: 2,
     difficulty: "easy",
     explanation:
@@ -772,10 +772,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 61,
     question: "What is Duplicate Address Detection (DAD)?",
     options: [
-      "A feature that allows a device to use two IP addresses simultaneously.",
+      "A feature that allows a device to use two IP addresses simultaneously for load balancing and redundancy.",
       "A process where an interface checks if its intended IPv6 address is already in use on the local link before assigning it.",
-      "A routing protocol mechanism to prevent loops.",
-      "A security feature that blocks MAC spoofing.",
+      "A routing protocol mechanism that is used to prevent routing loops from forming in the network topology.",
+      "A security feature that blocks MAC address spoofing by validating the source address on each and every incoming frame.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -852,10 +852,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "In an IPv6 Router Advertisement (RA), what does the 'A' flag (Autonomous Address Autoconfiguration flag) tell the host?",
     options: [
-      "To use DHCPv6 for addressing.",
+      "To use DHCPv6 to obtain the IPv6 address for the interface.",
       "To use SLAAC to create its own IPv6 address from the provided prefix.",
-      "To ignore the prefix entirely.",
-      "To request DNS information.",
+      "To ignore the advertised prefix and request a new one.",
+      "To request DNS information from the local DNS server.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -868,9 +868,9 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
       "What does the 'O' flag (Other Configuration flag) indicate in a Router Advertisement?",
     options: [
       "To use SLAAC for the IP address, but contact a stateless DHCPv6 server for 'other' information like DNS servers.",
-      "To use Stateful DHCPv6 for the IP address.",
-      "That the router is offline.",
-      "To use an Other routing protocol.",
+      "To use Stateful DHCPv6 to obtain both the IP address and all of the other configuration options.",
+      "That the router is offline and unavailable, so the hosts should not expect any further configuration from it.",
+      "To use an Other routing protocol, which the router will begin advertising shortly after this flag is seen.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -882,10 +882,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "What does the 'M' flag (Managed Address Configuration flag) indicate in a Router Advertisement?",
     options: [
-      "To use the router's MAC address.",
-      "To use SLAAC for everything.",
+      "To use the router's MAC address as the network portion of the interface address rather than a prefix.",
+      "To use SLAAC for the address and for all of the other configuration settings as well.",
       "To ignore SLAAC entirely and contact a Stateful DHCPv6 server to receive an assigned IP address and options.",
-      "To manually configure the IP address.",
+      "To manually configure the IP address on the interface before any traffic is ever sent over it.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -897,10 +897,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "What is the primary difference between Stateless DHCPv6 and Stateful DHCPv6?",
     options: [
-      "Stateless is faster but less secure.",
+      "Stateless is faster but less secure, so most production networks avoid using it entirely and instead prefer the stateful DHCPv6 server model for all clients.",
       "Stateful DHCPv6 tracks which IP addresses are assigned to which clients (maintains state); Stateless DHCPv6 only provides options like DNS and does not assign IPs.",
-      "Stateful uses TCP, Stateless uses UDP.",
-      "There is no difference.",
+      "Stateful uses TCP while Stateless uses UDP, which makes the stateless method much faster, but also far less reliable and more prone to packet loss overall.",
+      "There is no difference between the two methods; they are simply two different names for the exact same process and configuration outcome on the server.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -951,10 +951,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "By default, what is the default gateway for an IPv6 host using SLAAC?",
     options: [
-      "The Global Unicast Address of the router.",
+      "The Global Unicast Address of the router that is configured as the gateway.",
       "The Link-Local Address of the router that sent the Router Advertisement.",
-      "The Unspecified Address.",
-      "SLAAC does not provide a default gateway.",
+      "The Unspecified Address that the router uses for all advertisements.",
+      "SLAAC does not provide a default gateway to the hosts by itself.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -965,7 +965,7 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 75,
     question:
       "Which recent IPv6 standard allows SLAAC to provide DNS server information directly in the Router Advertisement, completely removing the need for DHCPv6?",
-    options: ["RDNSS (Recursive DNS Server)", "EUI-64", "IPsec", "DAD"],
+    options: ["RDNSS (Recursive DNS Server)", "EUI-64 (Extended Unique Identifier)", "IPsec (IP Security protocol suite)", "DAD (Duplicate Address Detection)"],
     correctAnswer: 0,
     difficulty: "hard",
     explanation:
@@ -998,9 +998,9 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "Given the prefix 2001:DB8:ACAD::/48, what is the network address of the 5th subnet (assuming you start counting at 0)?",
     options: [
-      "2001:DB8:ACAD:4::/64",
-      "2001:DB8:ACAD:5::/64",
-      "2001:DB8:ACAD:0004::/64",
+      "2001:DB8:ACAD:0004:0000:0000:0000:0000",
+      "2001:DB8:ACAD:0005:0000:0000:0000:0000",
+      "2001:DB8:ACAD:0004:0:0:0:0",
       "Both A and C are correct representations",
     ],
     correctAnswer: 3,
@@ -1068,10 +1068,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "In the output of 'show ipv6 route', what does the 'L' code represent?",
     options: [
-      "Link-Local",
+      "Link-Local (the FE80::/10 route used on the local link)",
       "Local route (a /128 route for the exact IP address configured on the interface)",
-      "Learned route",
-      "Logical interface",
+      "Learned route (a route received from a dynamic routing protocol)",
+      "Logical interface (a virtual interface without physical hardware)",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1082,10 +1082,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 84,
     question: "What is Dual-Stack routing?",
     options: [
-      "Running two routing protocols (like OSPF and EIGRP) simultaneously.",
+      "Running two routing protocols (like OSPF and EIGRP) on the same router at the same time.",
       "Configuring a device to run both IPv4 and IPv6 protocol stacks simultaneously on the same interfaces.",
-      "Tunneling IPv6 inside IPv4.",
-      "Translating IPv4 to IPv6 via NAT.",
+      "Tunneling IPv6 packets inside an IPv4 header so they can traverse an IPv4-only network.",
+      "Translating IPv4 addresses to IPv6 using a Network Address Translation device.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1096,7 +1096,7 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 85,
     question:
       "Which transition mechanism encapsulates an IPv6 packet inside an IPv4 packet to traverse an IPv4-only network?",
-    options: ["NAT64", "Dual-Stack", "Tunneling (e.g., 6to4, ISATAP)", "SLAAC"],
+    options: ["NAT64 (Network Address Translation IPv6 to IPv4)", "Dual-Stack (running IPv4 and IPv6 together)", "Tunneling (e.g., 6to4, ISATAP)", "SLAAC (Stateless Address Autoconfiguration)"],
     correctAnswer: 2,
     difficulty: "medium",
     explanation:
@@ -1149,10 +1149,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "You issue 'show ipv6 interface brief' and an interface shows 'up / up', but only has an FE80:: address. Why does it lack a global address?",
     options: [
-      "IPv6 routing is disabled.",
-      "The interface is administratively down.",
+      "IPv6 routing is disabled on the router, so no global addresses can ever be created.",
+      "The interface is administratively down, which prevents any address from being assigned to it.",
       "A global address has not been statically configured and no RA/DHCPv6 was received to auto-configure one.",
-      "The cable is unplugged.",
+      "The cable is unplugged from the interface, so it cannot receive any advertisements at all.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -1179,10 +1179,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "In the 'show ipv6 neighbors' output, what does the state 'REACH' indicate?",
     options: [
-      "The router is currently attempting to resolve the MAC address.",
+      "The router is currently attempting to resolve the MAC address of the neighbor.",
       "The mapping is valid and reachability to the neighbor has been confirmed recently.",
-      "The mapping has expired and is being deleted.",
-      "The neighbor is a router.",
+      "The mapping has expired and the entry is being removed from the table.",
+      "The neighbor is a router that advertises itself on the link.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1194,10 +1194,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "In the 'show ipv6 neighbors' output, what does the state 'STALE' indicate?",
     options: [
-      "The MAC address is incorrect.",
-      "The interface is down.",
+      "The MAC address is incorrect, so the entry must be deleted and re-learned before any traffic can be forwarded.",
+      "The interface is down, so the router cannot send or receive any packets on that link until it has been restored to service.",
       "The timer for reachability has expired; the router will still use the MAC, but will send a new NS to verify it upon the next use.",
-      "The entry has been permanently deleted.",
+      "The entry has been permanently deleted from the neighbor table and will never be automatically rebuilt again on the router.",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -1210,9 +1210,9 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
       "In the 'show ipv6 neighbors' output, what does the state 'INCMP' (Incomplete) indicate?",
     options: [
       "The router sent a Neighbor Solicitation but has not yet received a Neighbor Advertisement.",
-      "The address is a duplicate.",
-      "The interface lacks an IPv6 address.",
-      "The neighbor is blocking ICMP.",
+      "The address is a duplicate of another address and cannot be used on the local network.",
+      "The interface lacks an IPv6 address, so no neighbor entry can ever be resolved.",
+      "The neighbor is blocking ICMP, so the solicitation messages never arrive at all.",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -1253,10 +1253,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "What does the command 'ipv6 enable' do on a Cisco router interface?",
     options: [
-      "It enables IPv6 routing globally.",
+      "It enables IPv6 routing globally on all of the interfaces of the entire router at once.",
       "It automatically generates an IPv6 Link-Local address, even if no Global Unicast address is configured.",
-      "It configures SLAAC on the interface.",
-      "It disables IPv4 on the interface.",
+      "It configures SLAAC on the interface so that addresses are automatically assigned to hosts.",
+      "It disables all IPv4 processing on the interface so that only IPv6 traffic is allowed on it.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1268,10 +1268,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     question:
       "How does a Cisco router behave if 'ipv6 unicast-routing' is NOT configured, but an interface is configured with an IPv6 address?",
     options: [
-      "The IPv6 address is rejected.",
-      "The interface stays administratively down.",
+      "The IPv6 address is rejected by the router, and the interface will not come up until the 'ipv6 unicast-routing' command has been issued in global configuration mode.",
+      "The interface stays administratively down until the 'ipv6 unicast-routing' command has been enabled globally on the router, even if a valid IPv6 address has been configured on it.",
       "The router acts as an IPv6 host. It can ping local and remote networks (if it has a gateway), but it will not forward IPv6 packets between its own interfaces or send RAs.",
-      "The router sends Router Advertisements, but drops incoming packets.",
+      "The router sends Router Advertisements on all of its interfaces, but it will drop any incoming packets that need to be forwarded across the network to other devices.",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -1312,10 +1312,10 @@ export const ipv6AddressingQuestions: QuizQuestion[] = [
     id: 100,
     question: "Which characteristic is TRUE regarding IPv6 fragmentation?",
     options: [
-      "IPv6 routers fragment packets if they exceed the MTU.",
+      "IPv6 routers fragment packets that exceed the MTU of the outgoing link, just like IPv4 routers do when forwarding them.",
       "Fragmentation is handled entirely by the sending host; routers drop oversized packets and send an 'ICMPv6 Packet Too Big' message.",
-      "IPv6 headers are fragmented, but the payload is not.",
-      "IPv6 does not support fragmentation at all.",
+      "IPv6 headers are fragmented at each router hop, but the payload itself is left intact and is never divided up at all.",
+      "IPv6 does not support fragmentation at all, so any large packets are simply discarded silently by the routers on the path.",
     ],
     correctAnswer: 1,
     difficulty: "hard",

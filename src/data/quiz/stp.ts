@@ -162,10 +162,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What happens when a switch port configured with PortFast receives a BPDU?",
     options: [
-      "It forwards the BPDU to the Root Bridge.",
+      "It forwards the BPDU to the Root Bridge, treating the connected switch like a normal upstream neighbor.",
       "It immediately enters the err-disable state if BPDU Guard is enabled, or loses PortFast status otherwise.",
-      "It ignores the BPDU and continues forwarding.",
-      "It triggers a Topology Change Notification (TCN).",
+      "It ignores the BPDU and continues forwarding user traffic as if it were connected to an end host.",
+      "It triggers a Topology Change Notification (TCN) and recalculates the entire spanning-tree topology.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -187,10 +187,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "How does RSTP (802.1w) differ from STP (802.1D) regarding port states?",
     options: [
-      "RSTP adds a 'Synchronizing' state.",
+      "RSTP adds a new 'Synchronizing' state that does not exist in the original 802.1D.",
       "RSTP combines Blocking, Listening, and Disabled into a single 'Discarding' state.",
-      "RSTP eliminates the Learning state.",
-      "RSTP uses only two states: Blocking and Forwarding.",
+      "RSTP eliminates the Learning state, moving ports directly from Listening to Forwarding.",
+      "RSTP uses only two states: Blocking and Forwarding, dropping the others entirely.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -215,10 +215,10 @@ export const stpQuestions: QuizQuestion[] = [
     id: 123,
     question: "In RSTP, what is the role of a Backup Port?",
     options: [
-      "It backs up the Root Port.",
+      "It backs up the Root Port, providing redundancy toward the Root Bridge on the same switch.",
       "It backs up a Designated Port on the same switch connected to the same shared segment.",
-      "It replaces a failed edge port.",
-      "It connects to an Alternate Root Bridge.",
+      "It replaces a failed edge port by immediately transitioning the segment to the Forwarding state.",
+      "It connects to an Alternate Root Bridge located in a different spanning-tree region.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -255,10 +255,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What happens when you configure 'spanning-tree portfast' on an interface?",
     options: [
-      "The port is permanently disabled from sending BPDUs.",
+      "The port is permanently disabled from sending BPDUs out toward the connected end-user device.",
       "The port bypasses the Listening and Learning states and transitions immediately to Forwarding.",
-      "The port speed is locked to the maximum available bandwidth.",
-      "The port will drop any BPDU it receives.",
+      "The port speed is locked to the maximum available bandwidth negotiated on the physical link.",
+      "The port will drop any BPDU it receives so it can never participate in the spanning-tree topology.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -319,10 +319,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What does BPDU Filter do when configured globally via 'spanning-tree portfast bpdufilter default'?",
     options: [
-      "It drops all incoming and outgoing BPDUs unconditionally on all ports.",
+      "It drops all incoming and outgoing BPDUs unconditionally on all ports, removing them from spanning-tree processing entirely.",
       "It stops sending BPDUs on PortFast-enabled ports, but if a BPDU is received, the port loses PortFast status and participates in STP.",
-      "It err-disables the port upon receiving a BPDU.",
-      "It changes the port to an Alternate Port.",
+      "It err-disables the port immediately upon receiving any BPDU, preventing an unauthorized switch from joining the network.",
+      "It changes the port to an Alternate Port, providing a backup path toward the Root Bridge that remains in the Discarding state.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -392,10 +392,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What is the primary advantage of MSTP (Multiple Spanning Tree Protocol) over PVST+?",
     options: [
-      "MSTP elects a Root Bridge much faster.",
+      "MSTP elects a Root Bridge much faster than the traditional 802.1D timer-based election.",
       "MSTP maps multiple VLANs to a single spanning-tree instance, reducing CPU overhead.",
-      "MSTP eliminates the need for BPDUs.",
-      "MSTP is Cisco proprietary, integrating better with Cisco hardware.",
+      "MSTP eliminates the need for BPDUs by relying entirely on the control plane for updates.",
+      "MSTP is Cisco proprietary, integrating better with Cisco hardware than IEEE standardized options.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -432,10 +432,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "In 802.1D, what triggers a Topology Change Notification (TCN) BPDU?",
     options: [
-      "When a root bridge fails.",
+      "When a root bridge fails and a new root election must be performed.",
       "When any port transitions to the Forwarding or Disabled state.",
-      "Only when a port enters the Blocking state.",
-      "When a BPDU is dropped.",
+      "Only when a port enters the Blocking state and stops forwarding user data.",
+      "When a BPDU is dropped due to a faulty cable or interface errors.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -447,10 +447,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "How does the Root Bridge respond to receiving a TCN BPDU in 802.1D?",
     options: [
-      "It ignores the TCN and waits for the Max Age timer.",
+      "It ignores the TCN entirely and waits for the Max Age timer to expire before it recalculates the topology and flushes the stale MAC table entries.",
       "It sends a Configuration BPDU with the Topology Change Acknowledgment (TCA) bit set, followed by setting the Topology Change (TC) bit to flush MAC tables.",
-      "It immediately changes the root election process.",
-      "It shuts down the port that sent the TCN.",
+      "It immediately changes the root election process by forcing a new comparison of all Bridge IDs to select a different Root Bridge.",
+      "It shuts down the port that sent the TCN, blocking all user traffic on it and placing the interface into an err-disabled state.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -516,10 +516,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "You issue 'show spanning-tree' and see a port status of 'BKN'. What does this indicate?",
     options: [
-      "The port is a Backup port.",
+      "The port is a Backup port providing redundancy on a shared segment with another switch.",
       "The port is in a Broken/Err-disabled state due to a violation like BPDU Guard.",
-      "The port is currently Blocking loops.",
-      "The port is a Backbone port.",
+      "The port is currently Blocking loops by discarding all BPDUs and user data frames.",
+      "The port is a Backbone port connecting two core switches in the network core layer.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -580,10 +580,10 @@ export const stpQuestions: QuizQuestion[] = [
     id: 151,
     question: "What does the 'Proposal/Agreement' handshake achieve in RSTP?",
     options: [
-      "It establishes the EtherChannel protocol parameters.",
+      "It establishes the EtherChannel protocol parameters and configures the port-channel load-balancing hash method.",
       "It allows point-to-point links to rapidly transition to the Forwarding state without relying on timers.",
-      "It elects the Root Bridge securely without spoofing.",
-      "It negotiates VLAN trunking protocols.",
+      "It elects the Root Bridge securely without spoofing by using encrypted authentication of all BPDUs.",
+      "It negotiates VLAN trunking protocols between switches to determine which VLANs are carried on the link.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -620,9 +620,9 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "If an RSTP switch receives an inferior BPDU on a Root Port, what does it do immediately?",
     options: [
-      "It drops the BPDU and err-disables the port.",
-      "It accepts the inferior BPDU and recalculates the topology.",
-      "It ignores the BPDU entirely.",
+      "It drops the BPDU and err-disables the port, treating it as a serious configuration violation.",
+      "It accepts the inferior BPDU and recalculates the topology, adopting the worse path advertised by the neighbor.",
+      "It ignores the BPDU entirely and continues forwarding data on the Root Port without any change.",
       "It immediately replies with its superior BPDU to correct the downstream switch.",
     ],
     correctAnswer: 3,
@@ -650,10 +650,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "Why does PVST+ send BPDUs to both the standard IEEE multicast MAC and the Cisco Shared Spanning Tree MAC on trunk ports?",
     options: [
-      "To double the chances of packet delivery.",
+      "To double the chances of packet delivery in case one of the multicast MAC addresses is filtered by the hardware.",
       "To interoperate with standard 802.1D switches on the native VLAN while maintaining per-VLAN trees for other VLANs.",
-      "To trigger UDLD mechanisms.",
-      "To load balance BPDUs across EtherChannels.",
+      "To trigger UDLD mechanisms so that unidirectional link failures are detected on the trunk link quickly.",
+      "To load balance BPDUs across EtherChannels so each physical link carries an equal share of the traffic.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -674,10 +674,10 @@ export const stpQuestions: QuizQuestion[] = [
     id: 158,
     question: "What is the function of the Spanning Tree Port ID?",
     options: [
-      "It acts as the primary criteria for electing a Root Bridge.",
+      "It acts as the primary criteria for electing the Root Bridge across all switches in the spanning-tree domain.",
       "It is a tie-breaker for electing the Root Port when multiple links connect to the same upstream switch.",
-      "It identifies the VLAN ID traversing the port.",
-      "It determines the port speed and duplex.",
+      "It identifies the VLAN ID traversing the port so per-VLAN spanning-tree instances can be maintained correctly.",
+      "It determines the port speed and duplex settings used for STP path cost and link type calculations.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -700,9 +700,9 @@ export const stpQuestions: QuizQuestion[] = [
       "Which mechanism allows RSTP to bypass the Proposal/Agreement handshake and immediately begin forwarding on edge ports?",
     options: [
       "PortFast / Edge Port configuration",
-      "BPDU Filter",
-      "Loop Guard",
-      "Root Guard",
+      "BPDU Filter (dropping all BPDUs on the port)",
+      "Loop Guard (preventing BPDU-loss loops)",
+      "Root Guard (protecting the root election)",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -763,9 +763,9 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "How does changing the 'spanning-tree vlan X root primary' macro alter the STP timers?",
     options: [
-      "It automatically decreases the hello timer to 1 second.",
-      "It binds the timers to the VTP synchronization process.",
-      "It does not alter the timers, only the bridge priority.",
+      "It automatically decreases the hello timer to 1 second and doubles the forward delay accordingly.",
+      "It binds the timers to the VTP synchronization process so they update across the whole domain.",
+      "It does not alter the timers, only the bridge priority, leaving hello and max age untouched.",
       "It can optionally adjust the timers if the 'diameter' keyword is appended.",
     ],
     correctAnswer: 3,
@@ -838,10 +838,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "How does Unidirectional Link Detection (UDLD) fundamentally differ from Loop Guard?",
     options: [
-      "UDLD operates at Layer 3, while Loop Guard operates at Layer 2.",
-      "UDLD uses STP BPDUs, while Loop Guard uses proprietary Cisco frames.",
+      "UDLD operates at Layer 3 using IP addresses, while Loop Guard operates at Layer 2 using MAC addresses.",
+      "UDLD uses STP BPDUs to detect failures, while Loop Guard uses proprietary Cisco frames for the same purpose.",
       "UDLD relies on echoing dedicated Layer 2 UDLD frames to verify bi-directional health, independent of STP.",
-      "UDLD only works on copper links, while Loop Guard only works on fiber.",
+      "UDLD only works on copper links, while Loop Guard only works on fiber-optic media types available.",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -853,10 +853,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What is the behavior of UDLD in 'Aggressive Mode' when it stops receiving UDLD packets from a neighbor?",
     options: [
-      "It instantly err-disables the port.",
+      "It instantly err-disables the port on the very first missed packet from the neighboring device.",
       "It sends 8 UDLD messages at 1-second intervals; if unacknowledged, it err-disables the port.",
-      "It generates a syslog message but leaves the port operational.",
-      "It forces the switch to renegotiate speed and duplex.",
+      "It generates a syslog message but leaves the port operational and continues forwarding user traffic.",
+      "It forces the switch to renegotiate speed and duplex with the neighbor before trying again.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -883,10 +883,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What does the command 'show spanning-tree summary' uniquely display?",
     options: [
-      "The MAC address of the Root Bridge for every VLAN.",
-      "The real-time BPDU packet count received per interface.",
+      "The MAC address of the Root Bridge for every VLAN along with the local port cost, designated bridge, and the forward-delay timers in use.",
+      "The real-time BPDU packet count received per interface, plus the total number of topology change notifications processed.",
       "A count of ports in blocking, listening, learning, and forwarding states per VLAN, plus the status of global features like PortFast and BPDU Guard.",
-      "The physical topology map of connected switches.",
+      "The physical topology map of connected switches, showing exactly how every switch, port, and trunk is interconnected across the LAN.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -918,10 +918,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "In Rapid-PVST+, how does a switch handle receiving standard 802.1D BPDUs on a port?",
     options: [
-      "It err-disables the port due to protocol mismatch.",
-      "It ignores them entirely.",
+      "It err-disables the port due to the protocol mismatch detected in the received BPDUs.",
+      "It ignores them entirely and continues to run Rapid-PVST+ without any kind of adjustment.",
       "It falls back to standard 802.1D STP operations on that specific port only.",
-      "It converts the entire switch down to 802.1D mode.",
+      "It converts the entire switch down to 802.1D mode, affecting every single port on the device.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -948,10 +948,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "How does MAC address table flushing differ in RSTP compared to 802.1D when a Topology Change occurs?",
     options: [
-      "RSTP flushes MAC addresses across the entire network simultaneously using broadcast frames.",
+      "RSTP flushes MAC addresses across the entire network simultaneously using broadcast frames that are sent out to every switch participating in the spanning-tree topology.",
       "RSTP switches flush their own MAC tables for all non-edge ports (except the one that received the TC) immediately, rather than waiting for short aging timers.",
-      "RSTP does not flush MAC tables; it relies on ARP inspection.",
-      "RSTP flushes only the MAC addresses associated with the Root Bridge.",
+      "RSTP does not flush MAC tables at all during a topology change; instead it relies entirely on ARP inspection to relearn the correct addresses and paths.",
+      "RSTP flushes only the MAC addresses that are associated with the Root Bridge itself, leaving all other learned addresses completely untouched and intact in the table.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -963,10 +963,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "You want to bundle four 1 Gbps links into an EtherChannel. How does this affect the STP cost of the resulting logical interface using the standard (short) cost method?",
     options: [
-      "The cost remains 4, as STP only calculates the speed of the primary physical link.",
-      "The cost increases to 16.",
+      "The cost remains 4, as STP only calculates the speed of the primary physical link in the bundle and ignores the additional bandwidth entirely.",
+      "The cost increases to 16, reflecting the added risk and complexity of running redundant physical links within a single bundle.",
       "The cost decreases based on the aggregated bandwidth (often yielding a cost of 3 or 1 depending on specific IOS implementations).",
-      "EtherChannel disables STP cost calculations.",
+      "EtherChannel disables STP cost calculations entirely, so the resulting logical interface always retains a fixed and unchanging default cost value.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -978,10 +978,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What is the purpose of the 'EtherChannel Misconfiguration Guard' feature?",
     options: [
-      "To prevent Layer 3 routing loops over Port-Channels.",
+      "To prevent Layer 3 routing loops from occurring over Port-Channel interfaces, since a misconfiguration there can cause persistent routing loops.",
       "To detect if one side of a link is bundled into an EtherChannel while the other side is not, which can cause STP loops, and err-disable the ports.",
-      "To ensure LACP is used instead of PAgP.",
-      "To load balance BPDUs evenly across all physical links.",
+      "To ensure that the standardized LACP protocol is always used instead of the older, proprietary Cisco PAgP negotiation protocol on the entire bundle.",
+      "To load balance BPDUs evenly across all of the physical links in the bundle so that no single physical link ever becomes overwhelmed with the BPDU traffic.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1033,10 +1033,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "Which STP feature ensures that a switch does not accidentally become a transit path for traffic if it lacks the necessary processing power to handle the root bridge role?",
     options: [
-      "BPDU Guard",
+      "Enabling BPDU Guard on the interfaces",
       "Setting a high Bridge Priority (e.g., 61440)",
-      "Root Guard",
-      "Loop Guard",
+      "Enabling Root Guard on the uplinks",
+      "Enabling Loop Guard on the ports",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1062,10 +1062,10 @@ export const stpQuestions: QuizQuestion[] = [
     id: 186,
     question: "In standard 802.1D, what is the 'Forward Delay' timer used for?",
     options: [
-      "The time between sending Hello BPDUs.",
-      "The time a BPDU can exist in the network before being discarded.",
+      "The time between sending Hello BPDUs on the root port toward the neighboring switches.",
+      "The time a BPDU can exist in the network before being discarded by the receiving switches.",
       "The duration of the Listening state and the duration of the Learning state individually.",
-      "The time it takes for an err-disabled port to recover.",
+      "The time it takes for an err-disabled port to recover automatically after the timer expires.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -1088,9 +1088,9 @@ export const stpQuestions: QuizQuestion[] = [
       "Under which condition will the 'spanning-tree vlan X root primary' macro fail to make the switch the root?",
     options: [
       "If the current root bridge has a priority of 0 and a lower MAC address.",
-      "If PortFast is enabled on the switch.",
-      "If VTP is in client mode.",
-      "If the switch is running RSTP.",
+      "If PortFast is enabled on the switch and overrides the priority value.",
+      "If VTP is in client mode, so the switch cannot modify its configuration.",
+      "If the switch is running RSTP instead of the older PVST+ spanning-tree mode.",
     ],
     correctAnswer: 0,
     difficulty: "hard",
@@ -1102,10 +1102,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "How does STP behave on an interface configured as a Layer 3 routed port (using 'no switchport')?",
     options: [
-      "It continues to send BPDUs but ignores received ones.",
+      "It continues to send BPDUs but ignores received ones, breaking the spanning-tree loop prevention.",
       "STP is completely disabled on routed ports; no BPDUs are sent or processed.",
-      "It automatically runs RSTP regardless of global settings.",
-      "It acts as a Root Guard.",
+      "It automatically runs RSTP regardless of the global spanning-tree mode configured on the switch.",
+      "It acts as a Root Guard, blocking any switch that tries to become the Root Bridge.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1117,10 +1117,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "You observe an interface transitioning through 'Discarding' -> 'Learning' -> 'Forwarding' in under 3 seconds. What is the most likely reason?",
     options: [
-      "The switch is running standard 802.1D.",
-      "The port is configured with PortFast.",
+      "The switch is running standard 802.1D with default forward-delay and max-age timers.",
+      "The port is configured with PortFast, skipping all the standard state transitions.",
       "The link is full-duplex and running RSTP, utilizing the Proposal/Agreement sync process.",
-      "BPDU Filter is enabled.",
+      "BPDU Filter is enabled, which removes the port from spanning-tree processing.",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -1131,10 +1131,10 @@ export const stpQuestions: QuizQuestion[] = [
     id: 191,
     question: "What is an RSTP 'Dispute' mechanism?",
     options: [
-      "A syslog message generated when a loop occurs.",
+      "A syslog message that is generated on the switch console whenever a bridging loop is detected somewhere in the network topology by the spanning-tree protocol process itself.",
       "A mechanism where a Designated Port receives an inferior BPDU with the Designated bit set, indicating a unidirectional link problem, and moves to Discarding.",
-      "A VTP conflict between switches.",
-      "The election tie-breaker based on MAC address.",
+      "A VTP conflict between switches that prevents VLAN information from being correctly propagated and synchronized across the entire management domain of the switched network.",
+      "The election tie-breaker based on the lowest MAC address, which is used when the bridge priorities of two switches are exactly equal during the root election process.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -1176,10 +1176,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What is the primary difference in how MSTP (802.1s) and PVST+ handle BPDU transmission?",
     options: [
-      "MSTP sends one BPDU per VLAN, while PVST+ sends one BPDU for the entire network.",
+      "MSTP sends one BPDU per VLAN, while PVST+ sends one BPDU for the entire network as a single shared spanning-tree instance for all traffic.",
       "MSTP sends a single BPDU per region that carries information for all instances, whereas PVST+ sends a separate BPDU for every single VLAN.",
-      "MSTP does not use BPDUs.",
-      "PVST+ encrypts BPDUs.",
+      "MSTP does not use BPDUs at all, instead relying on a separate out-of-band control channel that is established between the connected switches.",
+      "PVST+ encrypts BPDUs using the switch's configured crypto keys so that attackers cannot read the spanning-tree topology information.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1221,10 +1221,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "In a topology with 3 switches forming a triangle loop, Switch A is Root. Switch B and Switch C connect to Switch A and to each other. On the link between B and C, which port becomes the Designated Port?",
     options: [
-      "The port on the switch with the highest MAC address.",
+      "The port on the switch with the highest MAC address becomes the Designated Port on the segment.",
       "The port on the switch with the lowest Root Path Cost. If tied, the lowest Sender Bridge ID.",
-      "The port on the switch with the highest Root Path Cost.",
-      "Both ports become designated.",
+      "The port on the switch with the highest Root Path Cost, which is farthest from the Root Bridge.",
+      "Both ports become designated, allowing the link to be used for forwarding traffic in both directions.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -1266,10 +1266,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What is the primary risk of disabling Spanning Tree Protocol globally on a switch in a redundant network?",
     options: [
-      "VLANs will fail to route.",
+      "VLANs will fail to route between subnets, breaking all inter-VLAN communication.",
       "Broadcast storms and MAC database instability will instantly crash the network.",
-      "Port channels will fail to bundle.",
-      "DHCP will hand out duplicate IP addresses.",
+      "Port channels will fail to bundle their physical links into a single logical interface.",
+      "DHCP will hand out duplicate IP addresses to hosts on different VLANs in the network.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1296,10 +1296,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "How does the 'spanning-tree vlan X priority' command differ from 'spanning-tree vlan X root primary'?",
     options: [
-      "It requires a reboot to take effect.",
+      "It requires a reboot to take effect, since the priority is stored in the switch's hardware registers.",
       "It allows you to manually specify the exact priority value, rather than relying on an automated script.",
-      "It only applies to RSTP, not PVST+.",
-      "It sets the priority based on MAC address.",
+      "It only applies to RSTP, not PVST+, and is silently ignored in the older 802.1D spanning-tree mode.",
+      "It sets the priority value based on the switch's MAC address, overriding any manually configured value.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1371,10 +1371,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "What is the primary function of the 'Extended System ID' in the Bridge ID field?",
     options: [
-      "To allow the switch to support IPv6.",
-      "To identify the manufacturer of the switch.",
+      "To allow the switch to support IPv6 addressing and routing on the management interface.",
+      "To identify the manufacturer of the switch using the organizationally unique identifier (OUI).",
       "To borrow 12 bits from the original priority field to carry the VLAN ID, enabling PVST+.",
-      "To increase the security of the Root Bridge election.",
+      "To increase the security of the Root Bridge election by requiring authentication of all BPDUs.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -1386,10 +1386,10 @@ export const stpQuestions: QuizQuestion[] = [
     question:
       "If an RSTP switch port is acting as an Alternate Port, what is its primary function?",
     options: [
-      "It forwards traffic for a secondary VLAN.",
+      "It forwards traffic for a secondary VLAN while the Root Port simultaneously handles the primary VLAN traffic on the same link.",
       "It receives BPDUs from another switch and provides a backup path to the Root Bridge if the current Root Port fails.",
-      "It balances traffic with the Root Port.",
-      "It acts as a backup for a Designated Port on the same switch.",
+      "It balances traffic with the Root Port by load-sharing across the two available paths toward the Root Bridge.",
+      "It acts as a backup for a Designated Port on the same switch that is connected to the same shared segment as it is.",
     ],
     correctAnswer: 1,
     difficulty: "medium",

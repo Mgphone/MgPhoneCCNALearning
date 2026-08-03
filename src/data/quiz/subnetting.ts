@@ -638,7 +638,12 @@ export const subnettingQuestions: QuizQuestion[] = [
     id: 61,
     question:
       "If an interface has the IPv6 address 2001:DB8:ACAD:1::10/64, what is the subnet ID?",
-    options: ["2001:DB8:ACAD:1", "1", "10", "ACAD"],
+    options: [
+      "2001:DB8:ACAD:1",
+      "2001:DB8:ACAD:2",
+      "2001:DB8:ACAD:10",
+      "2001:DB8:ACAD:ACAD",
+    ],
     correctAnswer: 0,
     difficulty: "medium",
     explanation:

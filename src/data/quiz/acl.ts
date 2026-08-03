@@ -5,9 +5,9 @@ export const aclQuestions: QuizQuestion[] = [
     question: "What is the difference between a standard and an extended ACL?",
     options: [
       "Standard ACLs filter by source IP only; extended ACLs filter by source, destination, protocol, and port",
-      "Standard ACLs are applied to interfaces; extended ACLs are applied globally",
-      "Standard ACLs filter Layer 4; extended ACLs filter Layer 3",
-      "There is no difference; they are interchangeable",
+      "Standard ACLs are applied to interfaces; extended ACLs are applied globally to the router",
+      "Standard ACLs evaluate Layer 4 port numbers; extended ACLs evaluate only Layer 3 source addresses",
+      "There is no practical difference between them; they are fully interchangeable in any scenario",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -221,10 +221,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "If an ACL has the statement 'deny ip any any', what will be the hit count for the implicit deny?",
     options: [
-      "The implicit deny hit count will increment",
+      "The implicit deny hit count will increment instead of the explicit deny",
       "The explicit deny will increment, and the implicit deny will never be reached",
-      "Both will increment equally",
-      "The router will crash",
+      "Both the explicit and implicit deny counters will increment by the same amount",
+      "The router will crash and reload due to the conflicting deny statements",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -280,10 +280,10 @@ export const aclQuestions: QuizQuestion[] = [
     id: 23,
     question: "What is the result of using the 'remark' keyword in an ACL?",
     options: [
-      "It creates an exception to the implicit deny",
+      "It creates an exception to the implicit deny at the end of the ACL",
       "It adds a descriptive comment to the ACL for administration purposes",
-      "It logs all traffic matching the next rule",
-      "It marks packets for QoS prioritization",
+      "It logs all traffic that matches the next rule to the syslog server",
+      "It marks matching packets for QoS prioritization in the IP header",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -355,9 +355,9 @@ export const aclQuestions: QuizQuestion[] = [
       "Which command reorganizes the sequence numbers of an ACL to start at 10 and increment by 10?",
     options: [
       "ip access-list resequence [acl-name] 10 10",
-      "rebuild access-list [acl-name]",
-      "sequence-reset [acl-name]",
-      "ip acl reset [acl-name]",
+      "rebuild access-list [acl-name] 10 10",
+      "sequence-reset [acl-name] 10 10",
+      "ip acl reset [acl-name] 10 10",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -569,9 +569,9 @@ export const aclQuestions: QuizQuestion[] = [
       "Which is a valid reason for an ACL not blocking traffic as expected?",
     options: [
       "The ACL was applied in the wrong direction on the interface",
-      "The ACL has no implicit deny",
-      "The ACL uses sequence numbers",
-      "The router has too much RAM",
+      "The ACL has no implicit deny statement at the end of the list",
+      "The ACL uses sequence numbers to order its rules",
+      "The router has too much RAM to process the ACL efficiently",
     ],
     correctAnswer: 0,
     difficulty: "medium",
@@ -583,9 +583,9 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "What keyword can be used to describe the source port in an extended ACL?",
     options: [
-      "src-port",
-      "source-eq",
-      "sport",
+      "src-port (placed after the destination IP address and wildcard mask)",
+      "source-eq (placed before the protocol keyword at the start of the rule)",
+      "sport (placed after the destination port at the very end of the ACL rule)",
       "eq (placed after the source IP and before the destination IP)",
     ],
     correctAnswer: 3,
@@ -627,10 +627,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "How many ACLs can be applied to a single router interface for a specific protocol?",
     options: [
-      "One per interface",
+      "One per interface for a specific protocol and direction",
       "Two per interface (one inbound, one outbound)",
-      "Four per interface",
-      "Unlimited",
+      "Four per interface (two inbound, two outbound)",
+      "Unlimited, as many as the interface can support",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -642,10 +642,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "If you edit a numbered standard ACL in global configuration mode by typing 'access-list 1 permit host 1.1.1.1', where does the rule go?",
     options: [
-      "At the very top (sequence 1)",
+      "At the very top of the ACL, before all existing rules",
       "At the very bottom, before the implicit deny",
-      "It overwrites the entire ACL",
-      "It is placed alphabetically",
+      "It overwrites the entire ACL with only the new rule",
+      "It is placed alphabetically among the existing rules",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -695,10 +695,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "Which statement is true about ACLs and router-generated traffic?",
     options: [
-      "Outbound ACLs filter router-generated traffic",
-      "Inbound ACLs filter router-generated traffic",
+      "Outbound ACLs on the exit interface filter router-generated traffic",
+      "Inbound ACLs on the ingress interface filter router-generated traffic",
       "ACLs applied to an interface do not filter traffic generated by the router itself",
-      "Router-generated traffic must explicitly be permitted by an ACL",
+      "Router-generated traffic must be explicitly permitted by an inbound ACL to forward",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -735,10 +735,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "Why should you generally configure more specific rules before general rules in an ACL?",
     options: [
-      "To save router memory",
+      "To save router memory by keeping the ACL as short as possible",
       "Because ACLs process top-down and stop at the first match",
-      "Because specific rules use lower CPU cycles",
-      "To bypass the implicit deny",
+      "Because specific rules use fewer CPU cycles to process",
+      "To bypass the implicit deny at the bottom of the ACL",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -843,7 +843,12 @@ export const aclQuestions: QuizQuestion[] = [
     id: 65,
     question:
       "In IPv6, what is the equivalent of the IPv4 '0.0.0.0 255.255.255.255' (any) statement?",
-    options: ["any", "all", "::/0", "both 'any' and '::/0' can be used"],
+    options: [
+      "only 'any' is accepted, never '::/0'",
+      "only 'all' is accepted, never 'any'",
+      "'::/0' is used only by routing protocols",
+      "both 'any' and '::/0' can be used",
+    ],
     correctAnswer: 3,
     difficulty: "medium",
     explanation:
@@ -932,10 +937,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "What happens to the remaining ACL rules if a 'resequence' command is issued?",
     options: [
-      "They are deleted",
-      "They are reordered alphabetically",
+      "They are permanently deleted from the configuration of the router",
+      "They are reordered alphabetically by the description text of each rule",
       "Their sequence numbers change, but their physical order and logic remain identical",
-      "The rules are sorted by most specific to least specific",
+      "The rules are sorted from most specific to least specific by matching criteria",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -962,10 +967,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "If a router has no ACLs configured, what happens to traffic crossing its interfaces?",
     options: [
-      "All traffic is dropped",
-      "Only routing updates are allowed",
+      "All traffic is dropped at every interface by default",
+      "Only routing updates are allowed to cross interfaces",
       "All traffic is permitted and routed normally",
-      "It requires a default permit rule",
+      "It requires a default permit rule to be configured first",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -1005,10 +1010,10 @@ export const aclQuestions: QuizQuestion[] = [
     id: 77,
     question: "Can wildcard masks be non-contiguous (e.g., 0.255.0.255)?",
     options: [
-      "No, they must follow the same rules as subnet masks",
+      "No, they must follow the same contiguous rules as subnet masks",
       "Yes, they can be non-contiguous to match specific bit patterns across subnets",
-      "Only in IPv6",
-      "Only on Layer 2 switches",
+      "Only in IPv6, which uses 128-bit addresses instead of 32-bit IPv4",
+      "Only on Layer 2 switches, which handle frames rather than routed packets",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -1020,10 +1025,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "Which keyword matches traffic originating from any port but going to a specific destination port?",
     options: [
-      "source-port any",
+      "source-port any, which explicitly matches every source port",
       "There is no keyword; you simply omit the source port parameter",
-      "eq any",
-      "permit-any-port",
+      "eq any, which is valid syntax for matching any source port",
+      "permit-any-port, which matches traffic from all source ports",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1050,9 +1055,9 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "When troubleshooting, which command shows the number of matches for the implicit deny?",
     options: [
-      "show access-lists",
-      "show ip interface",
-      "show log",
+      "show access-lists, which displays the match count of the implicit deny rule",
+      "show ip interface, which reports the implicit deny match counters directly",
+      "show log, which increments a counter for every implicit deny hit received",
       "The implicit deny does not increment counters in 'show access-lists' by default",
     ],
     correctAnswer: 3,
@@ -1093,10 +1098,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "Which statement accurately describes IPv6 ACL implicit rules compared to IPv4?",
     options: [
-      "They are exactly the same: just an implicit deny",
-      "IPv6 has no implicit rules",
+      "They are exactly the same as IPv4: only an implicit deny at the end",
+      "IPv6 has no implicit rules of any kind at the end of the ACL",
       "IPv6 implicitly permits Neighbor Discovery before the implicit deny",
-      "IPv6 implicitly permits all ICMP traffic",
+      "IPv6 implicitly permits all ICMPv6 traffic before the implicit deny",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -1188,10 +1193,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "Why might a network engineer use named ACLs instead of numbered ACLs?",
     options: [
-      "Named ACLs process traffic faster",
+      "Named ACLs are processed faster than numbered ACLs on the same hardware",
       "Named ACLs allow alphanumeric descriptive names for easier identification",
-      "Numbered ACLs do not support sequence numbers",
-      "Named ACLs bypass the implicit deny",
+      "Numbered ACLs do not support sequence numbers for rule insertion",
+      "Named ACLs bypass the implicit deny at the end of the list",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1203,9 +1208,9 @@ export const aclQuestions: QuizQuestion[] = [
     question: "What is an Object Group in relation to ACLs (advanced CCNA)?",
     options: [
       "A way to group multiple IP addresses or ports to simplify ACL creation",
-      "A physical grouping of router interfaces",
-      "A method to bypass the implicit deny",
-      "A layer 2 security feature",
+      "A physical grouping of router interfaces used for traffic engineering",
+      "A method to bypass the implicit deny and permit all traffic",
+      "A Layer 2 security feature used to secure switch ports against attacks",
     ],
     correctAnswer: 0,
     difficulty: "hard",
@@ -1328,10 +1333,10 @@ export const aclQuestions: QuizQuestion[] = [
     question:
       "Which practice is recommended when editing a long, complex ACL on a production router?",
     options: [
-      "Edit it live using sequence numbers during peak hours",
-      "Delete the ACL and retype it quickly",
+      "Edit it live using sequence numbers while the network is busy with traffic flows",
+      "Delete the entire ACL and retype all of its rules in as short a time as possible",
       "Copy the ACL to a text editor, make changes, remove the old ACL, and paste the new one",
-      "Apply an empty ACL to the interface first",
+      "Apply an empty ACL to the interface before starting to edit the real one on it",
     ],
     correctAnswer: 2,
     difficulty: "medium",

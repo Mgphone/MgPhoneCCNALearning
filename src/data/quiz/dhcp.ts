@@ -93,10 +93,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "What happens if a DHCP client fails to receive a DHCPOFFER after sending a DHCPDISCOVER?",
     options: [
-      "It randomly generates a public IP address.",
-      "It permanently disables its network interface.",
+      "It randomly generates a public IP address for itself.",
+      "It permanently disables its entire network interface.",
       "It typically assigns itself an APIPA address (169.254.x.x).",
-      "It sends a DHCPNAK to the network.",
+      "It sends a DHCPNAK message out to the entire network.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -139,10 +139,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 12,
     question: "What is the purpose of the DHCPINFORM message?",
     options: [
-      "To request a new IP address.",
+      "To request a brand new IP address and the complete configuration from the DHCP server.",
       "To request local configuration parameters (like DNS) when the client already has an IP address.",
-      "To inform the server that the client is shutting down.",
-      "To inform the server of an IP conflict.",
+      "To inform the DHCP server that the client is shutting down gracefully.",
+      "To inform the DHCP server that an IP address conflict was detected on the network.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -208,10 +208,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "How does a DHCP client check for IP conflicts after receiving an IP address?",
     options: [
-      "It pings the DHCP server.",
-      "It sends an ICMP Echo Request to the offered IP.",
+      "It pings the DHCP server to verify connectivity first.",
+      "It sends an ICMP Echo Request to the offered IP to test the address.",
       "It sends a Gratuitous ARP (Address Resolution Protocol) request.",
-      "It queries the switch CAM table.",
+      "It queries the switch CAM table for duplicate MAC entries.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -232,10 +232,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 19,
     question: "What is the purpose of the 'yiaddr' field in a DHCP packet?",
     options: [
-      "It contains the IP address of the DHCP relay agent.",
+      "It contains the IP address of the DHCP relay agent in the packet.",
       "It contains the 'Your' (client) IP address offered by the server.",
-      "It holds the DHCP server's IP address.",
-      "It is used for the subnet mask.",
+      "It holds the IP address of the DHCP server in the exchange.",
+      "It is used for storing the subnet mask value in the packet.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -455,10 +455,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 35,
     question: "What information does the 'show ip dhcp pool' command provide?",
     options: [
-      "The client MAC addresses",
+      "The client MAC addresses that are currently assigned leases on the DHCP server's pools",
       "Pool utilization statistics, such as total addresses, leased addresses, and excluded addresses",
-      "The exact IP conflicts found on the network",
-      "The DNS server's operational status",
+      "The exact IP address conflicts that were found and reported on the network by clients",
+      "The DNS server's current operational status and the addresses it resolves for clients",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -470,10 +470,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "When a Cisco router interface is configured with 'ip address dhcp', what happens to its default route?",
     options: [
-      "You must configure a static default route manually.",
-      "The router ignores the default gateway provided by DHCP.",
+      "You must configure a static default route manually before DHCP can operate properly on it.",
+      "The router ignores the default gateway value that is provided by the DHCP server.",
       "The router automatically installs a static default route based on the DHCP default-router option.",
-      "The router runs OSPF to find the default gateway.",
+      "The router runs OSPF to dynamically discover the default gateway that is on the link.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -531,9 +531,9 @@ export const dhcpQuestions: QuizQuestion[] = [
       "Which command assigns a specific IP address permanently to a specific MAC address in Cisco IOS?",
     options: [
       "hardware-address [mac-address] inside the pool",
-      "static-bind [ip] [mac]",
-      "ip dhcp static [mac] [ip]",
-      "mac-address [mac] inside the pool",
+      "static-bind [ip] [mac] in the global config",
+      "ip dhcp static [mac] [ip] in the pool mode",
+      "mac-address [mac] inside the pool globally",
     ],
     correctAnswer: 0,
     difficulty: "hard",
@@ -546,10 +546,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 41,
     question: "Why is a DHCP Relay Agent necessary?",
     options: [
-      "To encrypt DHCP traffic",
-      "To translate IPv4 DHCP to IPv6",
+      "To encrypt all DHCP traffic between clients and servers",
+      "To translate IPv4 DHCP messages into IPv6 equivalents",
       "Because routers do not forward Layer 2 broadcasts by default",
-      "To increase the speed of IP assignment",
+      "To increase the speed of the IP address assignment process",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -576,10 +576,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "On which interface must the 'ip helper-address' command be applied?",
     options: [
-      "The interface closest to the DHCP Server",
+      "The interface closest to the DHCP Server in the topology",
       "The interface receiving the broadcast from the DHCP clients",
-      "The serial WAN interface",
-      "The loopback interface",
+      "The serial WAN interface facing the service provider",
+      "The loopback interface that is configured on the router",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -591,10 +591,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "When a DHCP Relay Agent converts a broadcast to a unicast packet, what IP address does it place in the 'giaddr' (Gateway IP Address) field of the DHCP payload?",
     options: [
-      "The client's MAC address",
-      "The DHCP server's IP address",
+      "The hardware MAC address of the DHCP client being served",
+      "The IP address of the DHCP server that will respond",
       "The IP address of the receiving interface on the relay agent",
-      "255.255.255.255",
+      "The broadcast address 255.255.255.255 of the network",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -621,10 +621,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "How does the centralized DHCP server know where to send the DHCPOFFER reply when a relay agent is used?",
     options: [
-      "It broadcasts the reply.",
+      "It broadcasts the reply to all clients on the network.",
       "It unicasts it back to the IP address found in the giaddr field.",
-      "It multicasts it to all routers.",
-      "It sends it directly to the client's MAC address.",
+      "It multicasts it to all routers on the local segment.",
+      "It sends it directly to the client's MAC address in the reply.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -722,10 +722,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "Which switch ports should be configured as DHCP Snooping 'Trusted' ports?",
     options: [
-      "Ports connected to end-user PCs",
-      "Ports connected to unauthorized access points",
+      "Ports connected directly to end-user PC workstations on the local LAN",
+      "Ports connected to unauthorized wireless access points or unknown devices",
       "Uplink ports to other switches and ports connected to the legitimate DHCP server",
-      "Only the management VLAN port",
+      "Only the management VLAN port that is used for switch administration",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -781,10 +781,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "What information is stored in the DHCP Snooping Binding Database?",
     options: [
-      "The switch's management IPs",
+      "The switch's management IP addresses used for remote administration",
       "MAC address, leased IP, lease time, VLAN, and port of untrusted clients",
-      "The routing table of the core router",
-      "A list of blocked MAC addresses",
+      "The full routing table of the core router including its prefix lengths",
+      "A list of MAC addresses that are currently blocked by the switch",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -796,10 +796,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "What happens if an attacker on an Untrusted port sends a DHCPOFFER message?",
     options: [
-      "The switch forwards the message normally.",
+      "The switch forwards the DHCPOFFER message to the client without any issues on the port.",
       "The switch drops the packet and optionally logs the violation or err-disables the port.",
-      "The switch changes the port to Trusted automatically.",
-      "The switch floods the message to all VLANs.",
+      "The switch automatically changes the port to Trusted designation on the network.",
+      "The switch floods the DHCPOFFER message out to all of the VLANs on the switch.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -811,10 +811,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "Which security feature inherently relies on the DHCP Snooping Binding Database to function?",
     options: [
-      "Port Security",
-      "BPDU Guard",
+      "Port Security (MAC locking)",
+      "BPDU Guard on access ports",
       "Dynamic ARP Inspection (DAI)",
-      "Storm Control",
+      "Storm Control for broadcasts",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -826,10 +826,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "What mitigates a DHCP Starvation attack, where an attacker rapidly requests all available IPs using spoofed MAC addresses?",
     options: [
-      "Setting ports to Trusted",
+      "Setting all switch ports to Trusted mode",
       "DHCP Snooping rate limiting and Port Security",
-      "BPDU Filter",
-      "VLAN Access Control Lists (VACLs)",
+      "BPDU Filter applied to all trunk ports",
+      "VLAN Access Control Lists (VACLs) configured",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -872,10 +872,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "If a router acts as a DHCP server and receives a packet with Option 82 but isn't configured to support it, what happens?",
     options: [
-      "It accepts it normally.",
+      "It accepts the DHCP packet and processes the request normally without any problems.",
       "By default, Cisco IOS DHCP servers drop packets containing Option 82 if 'giaddr' is 0.0.0.0.",
-      "It returns a DHCPDECLINE.",
-      "It crashes the DHCP process.",
+      "It returns a DHCPDECLINE message back to the DHCP client that sent it the packet.",
+      "It crashes the entire DHCP server process running on the router device immediately.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -917,10 +917,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "How do you recover a port that was err-disabled due to a DHCP Snooping rate limit violation?",
     options: [
-      "Reboot the switch.",
-      "Issue 'clear port-security'.",
+      "Reboot the entire switch to bring the error-disabled port back up again.",
+      "Issue the 'clear port-security' command on the affected interface port on the switch.",
       "Issue 'shutdown' then 'no shutdown' on the interface, or configure errdisable recovery.",
-      "It recovers automatically after 30 seconds.",
+      "The port recovers automatically on its own after a fixed 30 second delay.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -931,10 +931,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 67,
     question: "What is IP Source Guard (IPSG)?",
     options: [
-      "It blocks ping sweeps.",
+      "It blocks ping sweeps by dropping ICMP echo request packets before they can propagate any further on the network segment.",
       "It uses the DHCP Snooping database to block traffic from IP addresses not assigned by DHCP on that specific port.",
-      "It encrypts the source IP in headers.",
-      "It provides redundant DHCP servers.",
+      "It encrypts the source IP addresses inside the packet headers to provide security for the traffic in transit.",
+      "It provides redundant DHCP servers by automatically failing over the address pools to a backup server.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -946,10 +946,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "If you have a statically assigned server on a VLAN with DHCP Snooping enabled, how do you prevent DAI and IPSG from blocking it?",
     options: [
-      "Set the server's port to Trusted.",
-      "Disable DHCP snooping on that specific port.",
+      "Set the server's switch port to Trusted in DHCP snooping.",
+      "Disable DHCP snooping on that specific port on the switch.",
       "Create a static IP-to-MAC binding in the DHCP Snooping database.",
-      "Use an access-list to bypass the switch.",
+      "Use an access-list to bypass the switch's filtering entirely.",
     ],
     correctAnswer: 2,
     difficulty: "hard",
@@ -1007,10 +1007,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "You configured 'ip helper-address 10.1.1.100' on G0/0. The DHCP server at 10.1.1.100 has a pool for 192.168.1.0/24. What IP address must be on G0/0 for this to work?",
     options: [
-      "10.1.1.1",
-      "Any IP address will work.",
+      "Any address from the 10.0.0.0/8 range",
+      "Any IP address at all will work fine",
       "An IP address in the 192.168.1.0/24 subnet.",
-      "0.0.0.0",
+      "The wildcard address 0.0.0.0 for the pool",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -1037,10 +1037,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "When pinging from a router to test connectivity to a DHCP server, why might the ping succeed but DHCP still fails for clients?",
     options: [
-      "Ping uses UDP, DHCP uses TCP.",
+      "Ping uses UDP while DHCP uses TCP, so they are completely unrelated protocols.",
       "Ping proves Layer 3 connectivity, but an ACL or firewall might be blocking UDP port 67/68.",
-      "The router has a static IP.",
-      "The DHCP server is out of APIPA addresses.",
+      "The router has a static IP address configured, which causes a conflict with DHCP.",
+      "The DHCP server is out of APIPA addresses and cannot assign one to the client.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1097,10 +1097,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "What happens if a DHCP client is moved from VLAN 10 to VLAN 20 without rebooting or releasing its IP?",
     options: [
-      "It immediately gets a new IP from VLAN 20.",
+      "It immediately gets a brand new IP address from the DHCP server assigned to VLAN 20 right away on boot.",
       "It retains the VLAN 10 IP, cannot communicate on VLAN 20, and will eventually lose the IP when the lease expires.",
-      "The switch automatically changes its IP address.",
-      "It uses proxy ARP to maintain connectivity.",
+      "The switch automatically changes the client's IP address to match the new VLAN assignment on the port.",
+      "It uses proxy ARP to maintain connectivity across both of the VLAN boundaries that it spans in the network.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1127,10 +1127,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "If a switch has DHCP Snooping enabled and an authorized DHCP server is connected to Fa0/1, what is the consequence of forgetting to issue 'ip dhcp snooping trust' on Fa0/1?",
     options: [
-      "Clients will receive IPs, but they won't be logged in the database.",
+      "Clients will receive IPs, but they won't be logged in the binding database.",
       "All DHCPOFFER and DHCPACK messages from the server will be dropped by the switch.",
-      "The server will be err-disabled.",
-      "Option 82 will not be inserted.",
+      "The server port will be placed into the err-disabled state by the switch.",
+      "The Option 82 information will not be inserted into the messages.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1143,7 +1143,12 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 81,
     question:
       "Which protocol does IPv6 use natively to discover routers and network prefixes instead of DHCP?",
-    options: ["ARP", "NDP (Neighbor Discovery Protocol)", "IGMP", "OSPFv3"],
+    options: [
+      "IPv4 ARP request mechanism",
+      "NDP (Neighbor Discovery Protocol)",
+      "IGMP group report mechanism",
+      "OSPFv3 neighbor hello mechanism",
+    ],
     correctAnswer: 1,
     difficulty: "easy",
     explanation:
@@ -1205,10 +1210,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 86,
     question: "What is Stateless DHCPv6?",
     options: [
-      "The server hands out IPs but doesn't track leases.",
+      "The server hands out IPs but doesn't track any of the leases it assigns to clients.",
       "The client gets its IP via SLAAC, and uses DHCPv6 only to get DNS and domain names.",
-      "The client randomly generates an IP and DNS server.",
-      "A rogue DHCPv6 server.",
+      "The client randomly generates an IP and DNS server address for itself each time.",
+      "A rogue DHCPv6 server is answering the requests that arrive on the network.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1219,10 +1224,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 87,
     question: "What is Stateful DHCPv6?",
     options: [
-      "The server uses TCP instead of UDP.",
-      "The client relies entirely on the router for IP, DNS, and Gateway.",
+      "The DHCPv6 server uses TCP instead of UDP for all of its message exchanges with the clients on the network.",
+      "The client relies entirely on the router for its IP, DNS, and Gateway configuration values on the link.",
       "The DHCPv6 server assigns the IPv6 address, tracks the lease, and provides DNS, functioning similarly to DHCPv4.",
-      "The server only tracks MAC addresses, not IPs.",
+      "The DHCPv6 server only tracks the MAC addresses of its clients, not their IP addresses at all in its database.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -1248,7 +1253,12 @@ export const dhcpQuestions: QuizQuestion[] = [
     id: 89,
     question:
       "In an IPv6 Router Advertisement (RA), which flag tells the client to use SLAAC for its IP, but contact DHCPv6 for DNS (Stateless DHCPv6)?",
-    options: ["A flag", "O flag (Other Configuration)", "M flag", "D flag"],
+    options: [
+      "A generic flag bit value",
+      "O flag (Other Configuration)",
+      "M flag for managed config",
+      "D flag for dynamic delegation",
+    ],
     correctAnswer: 1,
     difficulty: "hard",
     explanation:
@@ -1301,10 +1311,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "What is the primary difference between a DHCP Client and a BOOTP Client?",
     options: [
-      "BOOTP uses TCP, DHCP uses UDP.",
+      "BOOTP uses TCP while DHCP uses UDP for its transport protocol.",
       "BOOTP does not support dynamic leases; addresses are permanently mapped.",
-      "DHCP cannot provide a default gateway.",
-      "BOOTP is exclusively for IPv6.",
+      "DHCP cannot provide a default gateway address to the clients.",
+      "BOOTP is used exclusively for IPv6 address assignment to clients.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1316,10 +1326,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "A router has an SVI for VLAN 50 with IP 192.168.50.1/24. It is configured as a DHCP server with pool 'VLAN50'. Does it need an 'ip helper-address' for clients in VLAN 50 to get IPs?",
     options: [
-      "Yes, because VLAN 50 is on a switch.",
+      "Yes, because VLAN 50 is on a switch so broadcast traffic is blocked from the router.",
       "No, because the router interface itself is in the same broadcast domain as the clients.",
-      "Yes, helper-address is mandatory for all DHCP.",
-      "No, but Option 82 is required.",
+      "Yes, helper-address is mandatory for all DHCP to function correctly on the router.",
+      "No, but Option 82 is required in every DHCP packet that gets relayed on the network.",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1361,10 +1371,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "If a Windows PC is currently holding a DHCP lease of 192.168.1.50, what happens if the network cable is unplugged and plugged back in?",
     options: [
-      "The PC immediately sends a DHCPDISCOVER.",
-      "The PC drops its IP and falls back to APIPA.",
+      "The PC immediately sends a DHCPDISCOVER message to find a new DHCP server.",
+      "The PC drops its IP and falls back to an APIPA address instead.",
       "The PC sends a DHCPREQUEST to confirm if the IP is still valid on this network.",
-      "The PC keeps the IP and sends nothing until T1 expires.",
+      "The PC keeps the IP and sends nothing at all until the T1 timer expires.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -1376,10 +1386,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "What is the purpose of the 'ip dhcp ping packets 0' command in Cisco IOS?",
     options: [
-      "It makes the router ping infinitely before assigning an IP.",
+      "It makes the router ping infinitely before assigning an IP address.",
       "It disables the DHCP conflict ping check feature to speed up IP assignment.",
-      "It blocks ping traffic from DHCP clients.",
-      "It configures ping to run over TCP.",
+      "It blocks all ping traffic from the DHCP clients entirely.",
+      "It configures the ping command to run over TCP instead of ICMP.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -1391,10 +1401,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "Which IPv6 command configures a router interface to act as a DHCPv6 Relay Agent?",
     options: [
-      "ipv6 helper-address [ip]",
+      "ipv6 helper-address [ipv6-address]",
       "ipv6 dhcp relay destination [ipv6-address]",
-      "ip forward-protocol dhcpv6",
-      "ipv6 relay [ip]",
+      "ip forward-protocol dhcpv6 in global mode",
+      "ipv6 relay destination [ipv6-address]",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1406,10 +1416,10 @@ export const dhcpQuestions: QuizQuestion[] = [
     question:
       "Which of the following scenarios absolutely requires a DHCP Relay Agent?",
     options: [
-      "The DHCP Server and clients are in the same VLAN.",
-      "The DHCP Server is a Windows Server, not a Cisco Router.",
+      "The DHCP Server and clients are in the same VLAN and in the same subnet as each other.",
+      "The DHCP Server is a Windows Server device, not a Cisco Router device.",
       "The DHCP Server and clients are separated by a Layer 3 boundary (different subnets).",
-      "The network is using IPv6 instead of IPv4.",
+      "The network is using IPv6 addressing instead of IPv4 addressing on it.",
     ],
     correctAnswer: 2,
     difficulty: "easy",

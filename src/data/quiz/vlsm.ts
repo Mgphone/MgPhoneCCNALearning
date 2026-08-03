@@ -170,10 +170,10 @@ export const vlsmQuestions: QuizQuestion[] = [
     question:
       "What is the primary benefit of Route Summarization (Supernetting)?",
     options: [
-      "It encrypts routing updates.",
-      "It allows for faster physical layer convergence.",
+      "It encrypts routing updates to protect them from interception on the wire.",
+      "It allows for faster physical layer convergence and reduced switching latency.",
       "It reduces the size of routing tables, saving memory and CPU cycles on routers.",
-      "It provides automatic failover for default gateways.",
+      "It provides automatic failover for default gateways when a primary router fails.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -334,10 +334,10 @@ export const vlsmQuestions: QuizQuestion[] = [
     question:
       "Which of the following is true regarding Classful routing protocols (like RIPv1)?",
     options: [
-      "They send subnet mask information in routing updates.",
-      "They allow different subnet masks within the same major network.",
+      "They send subnet mask information in their routing updates to all neighbors.",
+      "They allow different subnet masks to be used within the same major network boundaries.",
       "They assume the default classful mask based on the first octet of the IP address.",
-      "They inherently support VLSM.",
+      "They inherently support VLSM and classless addressing without any configuration.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -478,10 +478,10 @@ export const vlsmQuestions: QuizQuestion[] = [
     question:
       "Why can't you assign the IP address 10.1.1.255 to a host if the subnet mask is 255.255.255.0?",
     options: [
-      "It is a Class A address.",
-      "It is the network address.",
+      "It is a Class A address within the 10.0.0.0 range.",
+      "It is the network address that identifies the subnet itself.",
       "It is the directed broadcast address for that subnet.",
-      "It is the local loopback address.",
+      "It is the local loopback address used by the host itself.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -574,10 +574,10 @@ export const vlsmQuestions: QuizQuestion[] = [
     question:
       "Which of the following is true regarding zero subnets (ip subnet-zero)?",
     options: [
-      "It is disabled by default on modern Cisco routers.",
-      "It prevents the use of the first and last subnets in a classful block.",
+      "It is disabled by default on modern Cisco routers, requiring the command to be manually enabled.",
+      "It prevents the use of the first and last subnets in a classful block, wasting address space.",
       "It allows the use of the first subnet (all 0s in the subnet field) created when subnetting a network.",
-      "It allows a subnet mask of 0.0.0.0.",
+      "It allows a subnet mask of 0.0.0.0 to be configured on any router interface without an error.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -589,10 +589,10 @@ export const vlsmQuestions: QuizQuestion[] = [
     question:
       "You have overlapping subnets configured on a router: 192.168.1.0/24 on G0/0 and 192.168.1.64/26 on G0/1. Will the router accept this configuration?",
     options: [
-      "Yes, but traffic will load balance.",
-      "Yes, the longest prefix match will route traffic correctly.",
+      "Yes, but traffic will load balance evenly across the two overlapping interfaces.",
+      "Yes, the longest prefix match will route traffic correctly to the proper interface.",
       "No, Cisco IOS prevents assigning overlapping IP subnets to different interfaces.",
-      "No, unless OSPF is configured.",
+      "No, unless OSPF is configured to advertise the overlapping routes to neighbors.",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -881,9 +881,9 @@ export const vlsmQuestions: QuizQuestion[] = [
       "You are trying to configure the IP 192.168.1.100/28 on an interface, but the router rejects it, citing an overlap with another interface configured with 192.168.1.64/26. Why?",
     options: [
       "The /26 subnet ranges from .64 to .127, completely encompassing the .100 IP address.",
-      "The /28 subnet is too small to function on a router.",
-      "The IPs are in the same VLAN.",
-      "They do not overlap; it is a router bug.",
+      "The /28 subnet is too small to function correctly on a router interface without errors.",
+      "The IPs are in the same VLAN, so the router rejects the duplicate configuration.",
+      "They do not overlap at all, so the rejection must be a router software bug.",
     ],
     correctAnswer: 0,
     difficulty: "hard",
@@ -1227,10 +1227,10 @@ export const vlsmQuestions: QuizQuestion[] = [
     question:
       "In CIDR notation (e.g., /28), what does the number specifically represent?",
     options: [
-      "The number of usable hosts.",
+      "The number of usable host addresses that can be assigned in the subnet.",
       "The number of contiguous '1' bits in the subnet mask starting from the left.",
-      "The block size of the subnet.",
-      "The Administrative Distance of the route.",
+      "The block size, or magic number, used to calculate the subnet ranges.",
+      "The Administrative Distance value used for the routing protocol that is running.",
     ],
     correctAnswer: 1,
     difficulty: "easy",

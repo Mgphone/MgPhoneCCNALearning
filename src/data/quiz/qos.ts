@@ -6,10 +6,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What is the primary goal of Quality of Service (QoS) in a network?",
     options: [
-      "To increase the total bandwidth available to all traffic",
+      "To increase the total amount of bandwidth available equally to all network traffic",
       "To manage packet loss, delay, and jitter by prioritizing certain types of traffic",
-      "To encrypt all traffic passing through the network",
-      "To reduce the number of routing hops between devices",
+      "To encrypt all data traffic passing through the network for added security",
+      "To reduce the number of routing hops traveled between the source and destination devices",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -66,10 +66,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "Where is the Class of Service (CoS) marking field physically located?",
     options: [
-      "In the IPv4 ToS header byte",
-      "In the IPv6 Traffic Class field",
+      "In the Type of Service (ToS) byte of the IPv4 packet header field",
+      "In the Traffic Class field located inside the IPv6 packet header",
       "In the 3-bit Priority Code Point (PCP) field within an IEEE 802.1Q VLAN tag",
-      "In the Layer 4 TCP header flags",
+      "In the flag bits that are located inside the Layer 4 TCP packet header",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -91,10 +91,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What primary action separates traffic policing from traffic shaping when packet rates exceed a configured limit?",
     options: [
-      "Policing marks traffic, while shaping encrypts traffic.",
-      "Policing buffers excess packets in memory, while shaping immediately drops them.",
+      "Policing marks the out-of-profile traffic, while shaping encrypts all of the excess traffic instead",
+      "Policing buffers the excess packets in memory queues, while shaping immediately drops them out instead",
       "Policing immediately drops or remarks traffic, while shaping buffers excess packets to smooth out bursts.",
-      "Shaping works only at Layer 2, while policing works strictly at Layer 3.",
+      "Shaping works only at Layer 2 of the stack, while policing works strictly at Layer 3 boundaries",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -201,10 +201,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What does the term 'Trust Boundary' refer to in enterprise QoS deployments?",
     options: [
-      "The perimeter firewall interface blocking internet connections",
+      "The perimeter firewall interface that inspects the network traffic and blocks all unauthorized internet connections",
       "The exact point in the network topology where device data fields are analyzed and classifications are accepted or overwritten",
-      "The RADIUS server authorization group",
-      "The physical boundary of the data center cage",
+      "The RADIUS server authorization group that is used to manage network access privileges for all authenticated users",
+      "The physical boundary of the data center cage that separates the network equipment from the rest of the office facility",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -376,10 +376,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What is the primary target of using Link Fragmentation and Interleaving (LFI) on slow WAN circuits?",
     options: [
-      "To encrypt data payloads",
+      "To encrypt the data payloads of all of the voice and video traffic that traverses the slow WAN link",
       "To chop up large data frames so small voice packets aren't delayed waiting for big frames to transmit",
-      "To compress RTP video paths",
-      "To automate dynamic backup routing paths",
+      "To compress the RTP video paths in order to reduce the bandwidth that is used on the link",
+      "To automate the dynamic backup routing paths that are used for failover when a link drops",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -466,10 +466,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What field inside a Layer 2 frame header contains the CoS indicator?",
     options: [
-      "Preamble",
-      "Type field",
+      "The Ethernet preamble at the start of the frame",
+      "The EtherType type field in the frame header",
       "Priority Code Point (PCP) inside the 802.1Q tag",
-      "FCS trailer space",
+      "The FCS trailer space at the end of the frame",
     ],
     correctAnswer: 2,
     difficulty: "medium",
@@ -481,10 +481,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What happens if a network engineer marks an interface with the `bandwidth` command rather than configuring actual QoS policies?",
     options: [
-      "The physical port speed is limited to that value.",
+      "The physical port speed is hard-limited to the configured value and cannot be exceeded under any circumstances.",
       "It only alters routing protocol metrics (like OSPF or EIGRP) and has no direct impact on packet queuing priority.",
-      "The port automatically applies LLQ scheduling.",
-      "The interface activates compressed payload delivery modes.",
+      "The port automatically applies LLQ scheduling to all of the traffic that passes through the physical interface port.",
+      "The interface activates compressed payload delivery modes for all of the data that is being sent out of the physical port.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -521,10 +521,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "Which compression mechanism shrinks voice headers from 40 bytes to 2 or 4 bytes to conserve bandwidth on slow links?",
     options: [
-      "G.711 conversion",
+      "The G.711 codec conversion process",
       "Compressed Real-Time Transport Protocol (cRTP)",
-      "Deflate algorithm",
-      "VLAN stripping",
+      "The Deflate compression algorithm",
+      "The IEEE 802.1Q VLAN stripping process",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -606,10 +606,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What mechanism is used to communicate congestion status directly back to endpoints without discarding packets?",
     options: [
-      "Tail Drop",
+      "The classic Tail Drop discard mechanism",
       "WRED with Explicit Congestion Notification (ECN)",
-      "RSVP path signaling",
-      "Policing filters",
+      "The RSVP end-to-end path signaling mechanism",
+      "The applied traffic policing filter rules",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -621,10 +621,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What is the default behavior of an entry-level unmanaged network switch regarding QoS tags?",
     options: [
-      "It drops all tagged frames.",
-      "It strips the 802.1Q tags and drops the frames.",
+      "It drops all frames that carry an 802.1Q VLAN tag header on the switch port.",
+      "It strips the 802.1Q VLAN tags from the frames and drops them before forwarding.",
       "It passes the tags through transparently but treats all frames with basic FIFO priority.",
-      "It automatically enforces LLQ rules.",
+      "It automatically enforces strict LLQ queuing and scheduling rules on every ingress port.",
     ],
     correctAnswer: 2,
     difficulty: "easy",
@@ -666,10 +666,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What happens to priority queue traffic in an LLQ setup if it exceeds its configured maximum bandwidth allocation during times of network congestion?",
     options: [
-      "It borrows bandwidth from lower-priority queues.",
+      "It borrows unused bandwidth from the lower-priority queues to compensate.",
       "It is policed and excess packets are dropped to prevent starving other traffic queues.",
-      "The router shuts down the interface.",
-      "The queue depth is automatically doubled.",
+      "The router shuts down the entire interface immediately to prevent further congestion.",
+      "The queue depth is automatically doubled to accommodate the extra traffic.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -701,10 +701,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What are the three core models defined for network QoS implementation architectures?",
     options: [
-      "LAN, WAN, and Cloud",
+      "LAN, WAN, and Cloud-based service delivery models",
       "Best-Effort, Integrated Services, and Differentiated Services",
-      "FIFO, Priority, and Fair Queuing",
-      "Static, Dynamic, and Adaptive",
+      "FIFO, Priority, and Fair Queuing scheduling mechanisms",
+      "Static, Dynamic, and Adaptive configuration modes",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -746,10 +746,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "Which parameters are typically evaluated by a legacy Weighted Fair Queuing (WFQ) engine to dynamically sort traffic?",
     options: [
-      "Source MAC address and VLAN ID",
+      "The source MAC address and the associated VLAN ID number of the frame",
       "Source and destination IP addresses, protocol type, and Layer 4 port numbers",
-      "The packet length and arrival interface speed",
-      "The destination autonomous system path number",
+      "The packet length and the arrival interface link speed values",
+      "The destination autonomous system path number in the BGP table",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -761,10 +761,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What is the primary benefit of deploying Class-Based Weighted Fair Queuing (CBWFQ)?",
     options: [
-      "It encrypts payload data per class.",
+      "It encrypts the payload data of each individual traffic class to secure the network from eavesdropping and data theft attacks.",
       "It allows network administrators to define specific traffic classes and assign guaranteed minimum bandwidth to each class.",
-      "It dynamically compresses video frames.",
-      "It routes traffic along alternative physical paths.",
+      "It dynamically compresses the video frames to reduce the total bandwidth that is consumed by multimedia traffic streams.",
+      "It routes the traffic along alternative physical paths in order to completely bypass the congested network segments and links.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -811,10 +811,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "Where should classification and marking be performed to optimize network performance?",
     options: [
-      "As close to the destination host as possible",
+      "As close to the destination host as possible in the network to minimize the overhead",
       "As close to the traffic source as possible, typically at the access layer switch boundary",
-      "Exclusively on external core internet routers",
-      "On the central management server only",
+      "Exclusively on the external core internet routers that belong to the service provider",
+      "On the central management server that controls the entire corporate network infrastructure",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -826,10 +826,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "Which layer 2 field is modified to apply Class of Service (CoS) values across Inter-Switch Link (ISL) paths?",
     options: [
-      "The Frame Check Sequence space",
+      "The Frame Check Sequence (FCS) trailer space at the frame end",
       "The custom 1-byte user field inside the proprietary ISL frame header",
-      "The source MAC address low bit configuration",
-      "The inner IP protocol flag space",
+      "The source MAC address low bit configuration in the frame header",
+      "The inner IP protocol flag space inside the encapsulated packet",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -856,10 +856,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What does an administrative action of 'remarking' a packet mean?",
     options: [
-      "Adding a text note inside log files",
+      "Adding a descriptive text note inside the device log files for the record keeping",
       "Changing the packet's existing QoS marking to a different value at a network boundary",
-      "Re-encrypting the data payload",
-      "Modifying the destination IP address",
+      "Re-encrypting the data payload with a stronger cryptographic algorithm key",
+      "Modifying the destination IP address that is carried inside the packet's IP header",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -871,10 +871,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "Which statement describes an operational difference between policing and shaping?",
     options: [
-      "Policing relies on hardware clocks, while shaping uses software loops.",
+      "Policing relies on hardware clocks, while shaping uses software loops to time its bursts.",
       "Policing drops or remarks traffic immediately, whereas shaping buffers excess traffic to flatten spikes.",
-      "Shaping works exclusively on inbound paths.",
-      "Policing increases serialization delay significantly.",
+      "Shaping works exclusively on inbound traffic paths and never on the outbound direction of a link.",
+      "Policing increases the serialization delay significantly on high-speed network links and interfaces.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -886,10 +886,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What is the primary function of the Explicit Congestion Notification (ECN) field bits?",
     options: [
-      "To identify the application type",
+      "To identify the application type of the packet payload",
       "To notify endpoints of network congestion without dropping packets",
-      "To perform cryptographic verification",
-      "To calculate the metric value of a route",
+      "To perform cryptographic verification of the packet contents",
+      "To calculate the metric value of the route in the table",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -916,10 +916,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What happens if an incoming packet matches multiple class-map rules in a complex policy-map design?",
     options: [
-      "The router applies all actions simultaneously.",
+      "The router applies all of the matching class-map actions simultaneously to the incoming packet in parallel.",
       "The router applies the actions from the first matching class-map sequence and skips subsequent classes.",
-      "The packet is discarded due to ambiguity.",
-      "The policy map execution fails.",
+      "The packet is discarded immediately by the router due to the ambiguity of the multiple class matches that were found.",
+      "The policy map execution fails and the router logs a configuration error for the administrator to review.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1000,10 +1000,10 @@ export const qosQuestions: QuizQuestion[] = [
     id: 75,
     question: "What is the primary purpose of Cisco AutoQoS tools?",
     options: [
-      "To automatically encrypt all network traffic",
+      "To automatically encrypt all of the network traffic that passes between the remote sites and branches",
       "To generate macro templates that simplify and automate the deployment of standard Cisco QoS configurations",
-      "To dynamically adjust physical link speeds",
-      "To route traffic around congested paths",
+      "To dynamically adjust the physical link speeds of the interfaces to match the current bandwidth demand",
+      "To route the network traffic around the congested paths by using the alternate links that are available",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1045,10 +1045,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What occurs if an enterprise network relies completely on a single strict priority queue for all data traffic types?",
     options: [
-      "The network automatically activates payload compression.",
+      "The network automatically activates payload compression for all of the traffic.",
       "It behaves exactly like a basic FIFO queue because all traffic has the same priority.",
-      "The router switches to a stateful IntServ model.",
-      "Routing loops occur automatically.",
+      "The router switches to a stateful IntServ model with explicit reservations.",
+      "Routing loops occur automatically across the entire network as a result of the change.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1095,9 +1095,9 @@ export const qosQuestions: QuizQuestion[] = [
       "Which feature prevents a traffic shaper from causing buffer bloat and excessive delays on an interface?",
     options: [
       "Configuring a reasonable queue-limit on the shaper's internal buffers",
-      "Disabling WRED",
-      "Enabling payload compression",
-      "Using a single strict priority queue",
+      "Disabling WRED on all of the egress interfaces of the router",
+      "Enabling payload compression on the outgoing interface links",
+      "Using a single strict priority queue for all traffic classes",
     ],
     correctAnswer: 0,
     difficulty: "hard",
@@ -1124,10 +1124,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What is the primary benefit of prioritizing interactive video traffic over general web data?",
     options: [
-      "It encrypts the video stream.",
+      "It encrypts the video stream to protect the privacy of the conference call",
       "It ensures smooth playback and reduces artifacts caused by packet delay or jitter.",
-      "It reduces the video file size.",
-      "It changes the video resolution dynamically.",
+      "It reduces the compressed video file size in order to save storage capacity",
+      "It changes the video resolution dynamically based on the available bandwidth",
     ],
     correctAnswer: 1,
     difficulty: "easy",
@@ -1139,10 +1139,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What is the typical drop probability behavior of WRED as the average queue size approaches the maximum threshold?",
     options: [
-      "The drop probability remains at zero.",
+      "The drop probability remains at zero for all of the traffic classes until the average queue depth completely fills up to the top.",
       "The drop probability increases linearly until it hits the maximum drop threshold, then drops everything (tail drop).",
-      "The drop probability decreases to zero.",
-      "The drop probability changes randomly regardless of queue depth.",
+      "The drop probability decreases gradually to zero as the average queue size grows larger and the congestion level increases.",
+      "The drop probability changes randomly regardless of the current average queue depth or the fill level of the buffer space.",
     ],
     correctAnswer: 1,
     difficulty: "hard",
@@ -1169,10 +1169,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What happens if a network packet arrives at a router with an unrecognized DSCP value?",
     options: [
-      "The packet is dropped immediately.",
+      "The packet is dropped immediately by the router without any notification",
       "The packet is processed using standard default (best-effort) PHB rules.",
-      "The router triggers an ICMP error message.",
-      "The packet is routed to a quarantine network.",
+      "The router triggers an ICMP error message back to the source",
+      "The packet is routed to a quarantine network for further inspection",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1224,10 +1224,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What feature should be enabled at the access layer to protect QoS trust settings from being exploited by unauthorized end devices?",
     options: [
-      "Disabling all VLANs",
+      "Disabling all of the VLANs on the access switch to prevent any unauthorized network access at all",
       "Configuring conditional trust boundaries that reset markings unless the device is a recognized IP Phone",
-      "Enabling strict priority queuing on all ports",
-      "Using static routing only",
+      "Enabling strict priority queuing on all of the switch ports to always favor the high-priority traffic classes",
+      "Using static routing only for all of the network traffic paths and destination networks in the enterprise",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1254,10 +1254,10 @@ export const qosQuestions: QuizQuestion[] = [
     question:
       "What is the primary operational difference between the `bandwidth` and `priority` commands inside a Cisco MQC policy-map?",
     options: [
-      "There is no difference; they perform identical functions.",
+      "There is no operational difference between the two commands; they perform identical functions within the policy map.",
       "`bandwidth` allocates minimum guaranteed bandwidth, while `priority` creates a strict low-latency priority queue.",
-      "`priority` compresses data payloads automatically.",
-      "`bandwidth` can only be applied to incoming traffic streams.",
+      "`priority` compresses the data payloads of the matching class traffic automatically in order to save the bandwidth used.",
+      "`bandwidth` can only be applied to the incoming traffic streams that arrive on the physical interface port and nothing else.",
     ],
     correctAnswer: 1,
     difficulty: "medium",
@@ -1379,9 +1379,9 @@ export const qosQuestions: QuizQuestion[] = [
     question: "What is the purpose of a trust boundary in QoS?",
     options: [
       "To define which network devices are allowed to mark or remark QoS values",
-      "To encrypt traffic between trusted devices",
-      "To limit the bandwidth of trusted devices",
-      "To authenticate users before traffic is prioritized",
+      "To encrypt the traffic that flows between the trusted devices",
+      "To limit the bandwidth that is available to the trusted devices",
+      "To authenticate the users before their traffic is allowed to be prioritized",
     ],
     correctAnswer: 0,
     difficulty: "medium",
