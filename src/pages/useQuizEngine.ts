@@ -52,6 +52,13 @@ export interface QuizEngine {
   passed: boolean;
 }
 
+function shuffleQuestionOptions(q: QuizQuestion): QuizQuestion {
+  const perm = shuffle(q.options.map((_, i) => i));
+  const options = perm.map((i) => q.options[i]) as QuizQuestion["options"];
+  const correctAnswer = perm.indexOf(q.correctAnswer) as QuizQuestion["correctAnswer"];
+  return { ...q, options, correctAnswer };
+}
+
 export function formatElapsedTime(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
@@ -121,7 +128,7 @@ export function useQuizEngine(seedQuestions?: QuizQuestion[], seedTopic?: string
   // When seedQuestions arrive asynchronously, start playing immediately
   useEffect(() => {
     if (!seedQuestions || seedQuestions.length === 0) return;
-    setSessionQuestions(shuffle(seedQuestions));
+    setSessionQuestions(shuffle(seedQuestions).map(shuffleQuestionOptions));
     setCurrentIndex(0);
     setSelectedAnswer(null);
     setIsSubmitted(false);
@@ -177,7 +184,9 @@ export function useQuizEngine(seedQuestions?: QuizQuestion[], seedTopic?: string
     const pool = getFilteredPool();
     if (!pool.length) return;
     const shuffled = shuffle(pool);
-    const selected = shuffled.slice(0, Math.min(questionCount, shuffled.length));
+    const selected = shuffled
+      .slice(0, Math.min(questionCount, shuffled.length))
+      .map(shuffleQuestionOptions);
     setSessionQuestions(selected);
     setCurrentIndex(0);
     setSelectedAnswer(null);
